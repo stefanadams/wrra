@@ -208,20 +208,8 @@ group {
 app->start;
 
 __DATA__
-@@ index.production.html.ep
+@@ index.html.ep
 Washington Rotary Radio Auction
-
-@@ index.development.html.ep
-Washington Rotary Radio Auction
-% unless ( session 'db' ) {
-  %= form_for login => (method => 'POST') => begin
-    DB: <%= text_field 'db' %><br />
-    User: <%= text_field 'user' %><br />
-    Password: <%= password_field 'password' %><br />
-    Year: <%= text_field 'year' %><br />
-    %= submit_button 'Connect'
-  % end
-% }
 
 @@ api/buildselect.html.ep
 <select>
