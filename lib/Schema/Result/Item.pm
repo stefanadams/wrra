@@ -340,6 +340,7 @@ sub TO_JSON {
 		bellringer => $self->bellringer,
 		runningtime => $self->runningtime,
 		timerminutes => $self->timerminutes,
+		highbid => $self->highbid->bid,
 		%{$self->next::method},
 		# Override inflated accessors: Are we CERTAIN that these will ALWAYS override those set in next::method?
 #		%{$self->dt_columns},

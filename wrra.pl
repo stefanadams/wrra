@@ -93,9 +93,28 @@ group {
 	post '/toggle/:table/:column/:id' => (is_xhr => 1) => sub {
 		my $self = shift;
 		my $column = $self->param('column');
-		my $me = $self->db->resultset($self->param('table'))->find($self->param('id'));
-		$me->update({$column=>$me->lead?0:1});
-		$self->render_json({update=>'ok'});
+		if ( my $me = $self->db->resultset($self->param('table'))->find($self->param('id')) ) {
+			$me->update({$column=>$me->$column?0:1});
+			$self->render_json({update=>'ok'});
+		} else {
+			$self->render_json({update=>'err'});
+		}
+	};
+	under '/grid';
+	group {
+		post '/:table/cell' => (is_xhr => 1) => sub {
+			my $self = shift;
+			my $column = $self->param('celname');
+			if ( my $me = $self->db->resultset($self->param('table'))->find($self->param('id')) ) {
+				switch ( $self->param('oper') ) {
+					case 'edit' {
+						$me->update({$column=>$self->param($column)});
+						return $self->render_json({update=>'ok'});
+					}
+				}
+			}
+			$self->render_json({update=>'err'});
+		};
 	};
 };
 
@@ -151,7 +170,7 @@ under '/grid';
 group {
 	under '/rotarians';
 	get '/' => (is_xhr => 0) => 'rotarians';
-	post '/' => sub {
+	post '/' => (is_xhr => 1) => sub {
 		my $self = shift;
 		$self->stash(format => 'json') if $self->req->is_xhr; # Needed because jqGrid sends multiple content-types.  https://github.com/kraih/mojo/issues/227
 #		my $data = $self->db->resultset('Rotarian')->search({$self->search}, {$self->rows, $self->order_by, join=>['leader','donors'], prefetch=>['leader','donors']});
@@ -160,10 +179,11 @@ group {
 		$self->respond_to(
 			json => {json => $data->grid},
 		);
-	} => 'rotarians';
+	};
 
 	under '/donors';
-	any '/' => sub {
+	get '/' => (is_xhr => 0) => 'donors';
+	post '/' => (is_xhr => 1) => sub {
 		my $self = shift;
 		$self->stash(format => 'json') if $self->req->is_xhr;
 		my $data = $self->db->resultset('Donor')->search({$self->search}, {$self->rows, $self->order_by, prefetch=>['rotarian']});
@@ -172,7 +192,17 @@ group {
 			json => {json => $data->grid},
 			html => {},
 		);
-	} => 'donors';
+	};
+	post '/:id' => (is_xhr => 1) => sub {
+		my $self = shift;
+		$self->stash(format => 'json') if $self->req->is_xhr;
+		my $data = $self->db->resultset('Item')->search({donor_id=>$self->param('id')}, {$self->rows, order_by=>'year', prefetch=>['highbid']});
+#		$data->result_class('Schema::Result::Donor::ManageGrid');
+		$self->respond_to(
+			json => {json => $data->grid},
+			html => {},
+		);
+	};
 
 	under '/items';
 	any '/' => sub {
@@ -408,7 +438,7 @@ $("#list1").jqGrid({
         colModel:[
             {name:'chamberid',label:'C-ID',width:30,hidden:true,editable:true,editrules:{number:true,minValue:1,maxValue:9999}},
             {name:'phone',label:'Phone',width:70,editable:true,editoptions:{dataInit:phoneMask},editrules:{required:true},formoptions:{elmsuffix:'(*)'},formatter:'phoneFmatter'},
-            {name:'donorcat',label:'Category',width:40,editable:true,edittype:'select',editoptions:{multiple:false,value:categories},formatter:'categoryFmatter'},
+            {name:'category',label:'Category',width:40,editable:true,edittype:'select',editoptions:{multiple:false,value:categories},formatter:'categoryFmatter'},
             {name:'name',label:'Donor',width:200,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
             {name:'contact',label:'Contact',width:100,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
             {name:'address',label:'Address',width:100,search:false,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
@@ -436,7 +466,6 @@ $("#list1").jqGrid({
                 colModel: [
                     {name:"year",label:"Year",width:130},
                     {name:"sold",label:"Night Sold",width:130},
-                    {name:"items",label:"#",width:130},
                     {name:"value",label:"Value",width:130},
                     {name:"highbid",label:"High Bid",width:130},
                     {name:"bellringer",label:"Bellringer",width:130},
@@ -446,7 +475,7 @@ $("#list1").jqGrid({
             });
         },
         cellEdit: true,
-        cellurl: '<%= url_for %>/cell',
+        cellurl: "<%= url_for '/api/grid/Donor/cell' %>",
         beforeSubmitCell: function(rowid,celname,value,iRow,iCol){
             if (celname=="rotarian"){
                 return {celname:"rotarian_id",rotarian_id:value};
@@ -613,10 +642,10 @@ $(document).ready(function(){
 	});
 });
 function UpdateSubmissions(id) {
-    $.post("<%= url_for %>", {update: "submissions", rotarian_id: id});
+    $.post("<%= url_for '/api/toggle/Rotarian/has_submissions/' %>"+id);
 }
 function UpdateLeader(id) {
-    $.post("<%= url_for %>", {update: "lead", rotarian_id: id});
+    $.post("<%= url_for '/api/toggle/Rotarian/lead/' %>"+id);
 }
 </script>
 </head>
