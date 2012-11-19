@@ -132,6 +132,32 @@ __PACKAGE__->add_unique_constraint("year_phone", ["year", "phone"]);
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-17 16:47:32
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2t8acyejbEASJya1gtfVnA
 
+use Class::Method::Modifiers;
+__PACKAGE__->has_many(bids => 'Schema::Result::Bid', 'bidder_id'); # A Bidder has_many Bids, join to Bid by bidder_id
+__PACKAGE__->many_to_many(items => 'bids', 'item'); # A Bidder bids on many Items, bridge to item via Bid's bids
+
+use overload '""' => sub { shift->name }, fallback => 1;
+
+around 'phone' => sub {
+	my $orig = shift;
+	my $self = shift;
+	if ( $_[0] ) {
+		$_[0] =~ s/\D//g;
+		$_[0] = "($1) $2-$3" if $_[0] =~ /^(\d{3})(\d{3})(\d{4})$/;
+	}
+	return $self->$orig(@_);
+};
+
+sub TO_JSON {
+	my $self = shift;
+
+	return {
+		%{$self->next::method},
+#		Also available, but instead access it via Bidder sub-classes
+#		  bids => [$self->bids],
+#		  items => [$self->items],
+	}
+}
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

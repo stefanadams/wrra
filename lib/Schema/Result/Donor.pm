@@ -188,10 +188,21 @@ __PACKAGE__->set_primary_key("donor_id");
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-17 16:47:32
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mlHqXeu6uTlU0UdnJ2j4Tg
 
+use Class::Method::Modifiers;
 __PACKAGE__->belongs_to(rotarian => 'Schema::Result::Rotarian', 'rotarian_id');	# A Donor belongs_to a Rotarian
 __PACKAGE__->has_many(items => 'Schema::Result::Item', 'donor_id'); # A Donor has_many Items
 
 use overload '""' => sub {shift->name}, fallback => 1;
+
+around 'phone' => sub {
+	my $orig = shift;
+	my $self = shift;
+	if ( $_[0] ) {
+		$_[0] =~ s/\D//g;
+		$_[0] = "($1) $2-$3" if $_[0] =~ /^(\d{3})(\d{3})(\d{4})$/;
+	}
+	return $self->$orig(@_);
+};
 
 sub contact {
 	my $self = shift;

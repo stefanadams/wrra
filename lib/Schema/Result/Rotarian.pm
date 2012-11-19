@@ -80,7 +80,6 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 0, size => 255 },
   "has_submissions",
   {
-    accessor    => "_has_submissions",
     data_type   => "tinyint",
     is_nullable => 1,
   },
@@ -97,19 +96,29 @@ __PACKAGE__->set_primary_key("rotarian_id");
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-17 16:47:32
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1zU/03XgJD476ZgsRgaw0g
 
+use Class::Method::Modifiers;
 __PACKAGE__->has_many(donors => 'Schema::Result::Donor', 'rotarian_id'); # A Rotarian has_many Donors that s/he solicits
 __PACKAGE__->belongs_to(leader => 'Schema::Result::Leader', {'foreign.leader_id'=>'self.rotarian_id'});
 
 use overload '""' => sub {shift->name}, fallback => 1;
 
-sub has_submissions {
-        my $self = shift;
-        return $self->_has_submissions(@_) if @_;
-	return 1 if my $has_submissions = $self->_has_submissions;
-	$has_submissions = $self->search_related('donors')->search_related('items')->current_year->count ? 1 : 0;
-	$self->update({has_submissions => $has_submissions});
-	return $has_submissions;
-}
+around 'phone' => sub {
+	my $orig = shift;
+	my $self = shift;
+	if ( $_[0] ) {
+		$_[0] =~ s/\D//g;
+		$_[0] = "($1) $2-$3" if $_[0] =~ /^(\d{3})(\d{3})(\d{4})$/;
+	}
+	return $self->$orig(@_);
+};
+
+around 'has_submissions' => sub {
+	my $orig = shift;
+	my $self = shift;
+	return 1 if $self->$orig;
+	$_[0] = $self->$orig ? 1 : $self->search_related('donors')->search_related('items')->current_year->count ? 1 : 0;
+	return $self->$orig(@_);
+};
 
 sub name {
 	my $self = shift;
