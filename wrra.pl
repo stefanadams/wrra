@@ -64,6 +64,7 @@ helper order_by => sub { my $self = shift; return order_by => $self->json->{sidx
 #};
 
 get '/' => 'index';
+get '/bookmarks';
 
 under '/api';
 group {
@@ -100,7 +101,6 @@ group {
 
 under '/reports';
 group {
-	get '/bookmarks';
 	get '/solicitation_aids';
 	get '/solicitation_aids.pdf' => sub {
 		my $self = shift;
