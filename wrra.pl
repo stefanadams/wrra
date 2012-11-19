@@ -1,21 +1,32 @@
 use Mojolicious::Lite;  
 use Mojo::JSON;
-use Data::Dumper;
-use FindBin qw($Bin);
 use File::Basename;
+use FindBin qw($Bin);
 use lib "$Bin/lib";
 use Schema;
 use Switch;
 
-plugin Config => {default => {year => $ENV{WRRA_YEAR} || 2012}};
+use Data::Dumper;
 
-app->config(hypnotoad => {pid_file=>$Bin.'/../.'.(basename $0, '.pl'), listen=>[split ',', $ENV{MOJO_LISTEN}], proxy=>$ENV{MOJO_REVERSE_PROXY}});
+my $basename = basename $0, '.pl';
+plugin Config => {
+	default => {
+		year => $ENV{WRRA_YEAR} || 2012,
+		db => {
+			db => $basename,
+			host => 'localhost',
+			user => $basename,
+			pass => $basename,
+		},
+	}
+};
+app->config(hypnotoad => {pid_file=>"$Bin/../$basename", listen=>[split ',', $ENV{MOJO_LISTEN}], proxy=>$ENV{MOJO_REVERSE_PROXY}});
 
+plugin 'write_excel';
 plugin 'IsXHR'; # Needed because jqGrid send multiple content-types.  https://github.com/kraih/mojo/issues/227
                 # However, this is bad because now all xhr's are considered json.  What if xml was requested?
-plugin 'write_excel';
 
-helper db => sub { Schema->connect({dsn=>'DBI:mysql:database=wrra;host=localhost',user=>'wrra',password=>'harris',year=>app->config->{year}}) };
+helper db => sub { Schema->connect({dsn=>"DBI:mysql:database=".app->config->{db}->{db}.";host=".app->config->{db}->{host},user=>app->config->{db}->{user},password=>app->config->{db}->{pass},year=>app->config->{year}}) };
 helper json => sub {
 	my $self = shift;
 	unless ( $self->{__JSON} ) {
@@ -51,7 +62,7 @@ helper search => sub {
 		cn => {'like' => '%'.$string.'%'},
 		nc => {'not like' => '%'.$string.'%'},
 	};
-	my @search = $field && $oper ? ($field => $sopt->{$oper}) : ();
+	my @search = $field && $oper ? ("me.$field" => $sopt->{$oper}) : ();
 #warn Dumper(\@search);
 	return @search;
 };
@@ -500,43 +511,33 @@ $("#list1").jqGrid({
         {edit:true,add:true,del:true},
         // {edit}, {add}, {del}, {search}, {view}
         {
-/*
             url: "/donors/edit",
             editCaption: "Edit Donor",
             width: 700,
             closeOnEscape: true,
             closeAfterEdit: true,
             afterSubmit: checkUpdate
-*/
         },
         {
-/*
             url: "/donors/add",
             addCaption: "Add Donor",
             width: 700,
             closeOnEscape: true,
             afterSubmit: checkUpdate
-*/
         },
         {
-/*
             url: "/donors/del",
             caption: "Delete Donor",
             msg: "Deleted selected donor(s)?",
             afterSubmit: checkUpdate
-*/
         },
         {
-/*
             url: "/donors/search",
             caption: "Search Donor"
-*/
         },
         {
-/*
             url: "/donors/view",
             caption: "View Donor"
-*/
         }
 //    ).ajaxComplete(function(e, xhr, settings){
 //        var json = $.parseJSON(xhr.responseText);
