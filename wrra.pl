@@ -100,6 +100,7 @@ group {
 
 under '/reports';
 group {
+	get '/bookmarks';
 	get '/solicitation_aids';
 	get '/solicitation_aids.pdf' => sub {
 		my $self = shift;
@@ -210,6 +211,11 @@ app->start;
 __DATA__
 @@ index.html.ep
 Washington Rotary Radio Auction
+
+@@ bookmarks.html.ep
+<%= link_to 'Solicitation Aids' => 'solicitation_aids' %><br />
+<%= link_to 'Rotarians Grid' => 'rotarians' %><br />
+<%= link_to 'Donors Grid' => 'donors' %><br />
 
 @@ api/buildselect.html.ep
 <select>
