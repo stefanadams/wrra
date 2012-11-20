@@ -27,4 +27,14 @@ sub grid {
 	};
 }
 
+sub grid_xls {
+	my $self = shift;
+
+	my @xls = ();
+	foreach my $xls ( $self->all ) {
+		push @xls, [map { $xls->can($_) && $xls->$_ } grep { $_ } $xls->columns];
+	}
+	return [@xls];
+}
+
 1;

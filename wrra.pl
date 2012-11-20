@@ -69,8 +69,7 @@ helper search => sub {
 };
 helper order_by => sub {
 	my $self = shift;
-warn "ROUTE: ", $self->json->{grid}, "\n";
-	switch ( $self->json->{grid} ) {
+	switch ( $self->json->{grid}||'' ) {
 		case 'rotarians' {
 			switch ( $self->json->{sidx} ) {
 				case 'name' {
@@ -172,17 +171,8 @@ group {
 
 under '/reports';
 group {
-	get '/solicitation_aids';
-	get '/solicitation_aids.pdf' => sub {
+	get '/solicitation_aids' => sub {
 		my $self = shift;
-		my $data = $self->db->resultset('Leader')->leaders->search({}, {prefetch=>{rotarian=>{donors=>{items=>'highbid'}}}});
-		$self->respond_to(
-			pdf => [$data->hashref_array],
-		);
-	};
-	post '/solicitation_aids' => (is_xhr => 1) => sub {
-		my $self = shift;
-		$self->stash(format => 'json') if $self->req->is_xhr;
 		my $data;
 		switch ( $self->param('template') ) {
 			case 'checklist' {
@@ -198,87 +188,102 @@ group {
 		$data = $data->hashref_array;
 		walk(\&with, $data);
 		$self->respond_to(
-			json => {json => $data},
 			html => {},
+			json => {json => $data},
 		);
 	};
-	get '/postcards.xls' => sub {
+	get '/postcards' => sub {
 		my $self = shift;
-		$self->render_xls(
-			format => 'xls',
-			result => $self->db->resultset('Donor')->postcards,
+		$self->respond_to(
+			html => {},
+			xls => sub {
+				$self->render_xls(
+					format => 'xls',
+					result => $self->db->resultset('Donor')->postcards,
+				);
+			},
 		);
 	};
 };
 
 under '/grid';
 group {
-	under '/rotarians';
-	get '/' => (is_xhr => 0) => 'rotarians';
-	post '/' => (is_xhr => 1) => sub {
+	any '/rotarians' => sub {
 		my $self = shift;
-		$self->stash(format => 'json') if $self->req->is_xhr; # Needed because jqGrid sends multiple content-types.  https://github.com/kraih/mojo/issues/227
-#		my $data = $self->db->resultset('Rotarian')->search({$self->search}, {$self->rows, $self->order_by, join=>['leader','donors'], prefetch=>['leader','donors']});
 		my $data = $self->db->resultset('Rotarian')->search({$self->search}, {$self->rows, $self->order_by});
-#		$data->result_class('Schema::Result::Rotarian::Three');
 		$self->respond_to(
+			html => {},
+			xls => sub {
+				$self->cookie(fileDownload=>'true');
+				$self->cookie(path=>'/');
+				$self->render_xls(result => $data->grid_xls);
+			},
 			json => {json => $data->grid},
 		);
 	};
 
-	under '/donors';
-	get '/' => (is_xhr => 0) => 'donors';
-	post '/' => (is_xhr => 1) => sub {
+	any '/donors' => sub {
 		my $self = shift;
-		$self->stash(format => 'json') if $self->req->is_xhr;
 		my $data = $self->db->resultset('Donor')->search({$self->search}, {$self->rows, $self->order_by, prefetch=>['rotarian']})->solicit;
-#		$data->result_class('Schema::Result::Donor::ManageGrid');
 		$self->respond_to(
-			json => {json => $data->grid},
 			html => {},
+			xls => sub {
+				$self->cookie(fileDownload=>'true');
+				$self->cookie(path=>'/');
+				$self->render_xls(result => $data->grid_xls);
+			},
+			json => {json => $data->grid},
 		);
 	};
-	post '/:id' => (is_xhr => 1) => sub {
+	any '/donors/:id' => (is_xhr => 1) => sub {
 		my $self = shift;
-		$self->stash(format => 'json') if $self->req->is_xhr;
 		my $data = $self->db->resultset('Item')->search({donor_id=>$self->param('id')}, {$self->rows, order_by=>'year', prefetch=>['highbid']});
-#		$data->result_class('Schema::Result::Donor::ManageGrid');
 		$self->respond_to(
 			json => {json => $data->grid},
-			html => {},
 		);
 	};
 
-	under '/items';
-	any '/' => sub {
+	any '/items' => sub {
 		my $self = shift;
-		$self->stash(format => 'json') if $self->req->is_xhr;
 		my $data = $self->db->resultset('Item')->search({$self->search}, {$self->rows, $self->order_by})->current_year;
 		$self->respond_to(
+			html => {},
+			xls => sub {
+				$self->cookie(fileDownload=>'true');
+				$self->cookie(path=>'/');
+				$self->render_xls(result => $self->db->resultset('Donor')->postcards);
+			},
 			json => {json => $data->grid},
-			html => {},
 		);
-	} => 'items';
+	};
 
-	under '/stockitems';
-	any '/' => sub {
+	any '/stockitems' => sub {
 		my $self = shift;
-		$self->stash(format => 'json') if $self->req->is_xhr;
+		my $data = $self->db->resultset('Stockitem')->search({$self->search}, {$self->rows, $self->order_by})->current_year;
 		$self->respond_to(
-			json => {json => $self->db->resultset('Stockitem')->search({$self->search}, {$self->order_by, $self->rows})->current_year->grid},
 			html => {},
+			xls => sub {
+				$self->cookie(fileDownload=>'true');
+				$self->cookie(path=>'/');
+				$self->render_xls(result => $self->db->resultset('Donor')->postcards);
+			},
+			json => {json => $data->grid},
 		);
-	} => 'stockitems';
+	};
 
-	under '/bidders';
-	any '/' => sub {
+	any '/bidders' => sub {
 		my $self = shift;
-		$self->stash(format => 'json') if $self->req->is_xhr;
+		my $data = $self->db->resultset('Bidder')->search({$self->search}, {$self->rows, $self->order_by})->current_year;
 		$self->respond_to(
-			json => {json => $self->db->resultset('Bidder')->search({$self->search}, {$self->order_by, $self->rows})->current_year->stefan->grid},
 			html => {},
+			xls => sub {
+				$self->cookie(fileDownload=>'true');
+				$self->cookie(path=>'/');
+				$self->render_xls(result => $self->db->resultset('Donor')->postcards);
+			},
+			json => {json => $data->grid},
 		);
-	} => 'bidders';
+	};
 };
 
 app->start;
@@ -326,6 +331,7 @@ Washington Rotary Radio Auction
 <script  src="/s/js/jquery.jqGrid.min.js" type="text/javascript"></script>  
 <script  src="/s/js/jquery.json-2.3.min.js" type="text/javascript"></script>
 <script  src="/s/js/jquery.maskedinput.js" type="text/javascript"></script>
+<script  src="/s/js/jquery.fileDownload.js" type="text/javascript"></script>
 <style>
     #loggedin {display:none}
 </style>
@@ -397,6 +403,13 @@ $(document).ready(function(){
             return '&nbsp;';
         }
     });  
+    $(document).on("click", "a.fileDownloadSimpleRichExperience", function () {
+        $.fileDownload($(this).attr('href'), {
+            preparingMessageHtml: "We are preparing your report, please wait...",
+            failMessageHtml: "There was a problem generating your report, please try again."
+        });
+        return false; //this is critical to stop the click event which will trigger a normal file download!
+    });
     %= content grid => begin
     // Grid
     % end
@@ -406,7 +419,8 @@ $(document).ready(function(){
 <body>   
 <%= scalar localtime %>
 <div id="loggedin"></div>
-<a href="<%= url_for 'bookmarks' %>">Back to Bookmarks</a>
+<a href="<%= url_for 'bookmarks' %>">Back to Bookmarks</a><br />
+<a class="fileDownloadSimpleRichExperience" href="<%= url_for undef, format=>'xls' %>">Download as Excel</a>
 <table id="list1" class="scroll"></table> 
 <div id="pager1" class="scroll" style="text-align:center;" />
 </body>
@@ -421,8 +435,16 @@ $("#list1").jqGrid({
         url: '<%= url_for %>',
         mtype: 'POST',
         datatype: 'json',
+	accepts: {
+		json: "application/json"
+	},
         jsonReader: {repeatitems: false, id: "rotarian_id"},
-        ajaxGridOptions: { contentType: "application/json; charset=utf-8" },
+        ajaxGridOptions: {
+		contentType: "application/json; charset=utf-8",
+		headers: { 
+			Accept : "application/json; charset=utf-8",
+		}
+	},
 	postData: {grid: "rotarians"},
         serializeGridData: function (postData) { return $.toJSON(postData); },
         caption: "Rotarians",
@@ -491,7 +513,12 @@ $("#list1").jqGrid({
         mtype: 'POST',
         datatype: 'json',
         jsonReader: {repeatitems: false, id: "donor_id", subgrid: {root: "rows", repeatitems: true}},
-        ajaxGridOptions: { contentType: "application/json; charset=utf-8" },
+        ajaxGridOptions: {
+		contentType: "application/json; charset=utf-8",
+		headers: { 
+			Accept : "application/json; charset=utf-8",
+		}
+	},
         serializeGridData: function (postData) { return $.toJSON(postData); },
         caption: "Donors",
         colModel:[
