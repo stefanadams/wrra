@@ -4,6 +4,7 @@ use File::Basename;
 use FindBin qw($Bin);
 use lib "$Bin/lib";
 use Schema;
+use Data::Walk;
 use Switch;
 
 use Data::Dumper;
@@ -154,8 +155,10 @@ group {
 				$data = $self->db->resultset('Leader')->leaders->search({}, {order_by=>['me.lastname', 'rotarians.lastname', 'donors.name', 'items.year'], prefetch=>{rotarians=>{donors=>{items=>'highbid'}}}});
 			}
 		}
+		$data = $data->hashref_array;
+		walk(\&with, $data);
 		$self->respond_to(
-			json => {json => [$data->hashref_array]},
+			json => {json => $data},
 			html => {},
 		);
 	};
@@ -248,6 +251,19 @@ group {
 };
 
 app->start;
+
+##############################
+
+sub with {
+	no warnings;
+	my ($container, $type, $seen, $address, $depth) = ($Data::Walk::container, $Data::Walk::type, $Data::Walk::seen, $Data::Walk::address, $Data::Walk::depth);
+	return unless $type eq 'HASH';
+	switch ( $_ ) {
+		case 'contact1' { # Wherever a contact1 key is found, add a contact key
+			$container->{contact} = join('|', grep { $_ } $container->{contact1}, $container->{contact2});
+		}
+	}
+};
 
 __DATA__
 @@ index.html.ep
@@ -734,7 +750,13 @@ function UpdateLeader(id) {
 				<table class="donors">
 					{#foreach $T.rotarian.donors as donor}
 					<tr class="row">
-						<td class="donor"><b>{#if $T.donor.items.length >= 1}<img src="/s/img/yes.gif" />{#else}<img src="/s/img/no.gif" />{#/if}</b>{$T.donor.name}<br />{#if $T.donor.contact && $T.donor.contact != $T.donor.name}{$T.donor.contact}<br />{#/if}{#if $T.donor.address && $T.donor.address != ""}{$T.donor.address}{#if $T.donor.city} ({$T.donor.city}){#/if}<br />{#/if}{#if $T.donor.phone || $T.donor.email}{$T.donor.phone||""} {$T.donor.email||""}{#/if}</td>
+						<td class="donor">
+							{#if $T.donor.items.length >= 1}<img src="/s/img/yes.gif" />{#else}<img src="/s/img/no.gif" />{#/if}
+							{$T.donor.name}<br />
+							{#if $T.donor.contact && $T.donor.contact != $T.donor.name}{$T.donor.contact}<br />{#/if}
+							{#if $T.donor.address && $T.donor.address != ""}{$T.donor.address}{#if $T.donor.city} ({$T.donor.city}){#/if}<br />{#/if}
+							{#if $T.donor.phone || $T.donor.email}{$T.donor.phone||""} {$T.donor.email||""}{#/if}
+						</td>
 						<td class="items">
 						<table class="items">
 						{#foreach $T.donor.items as item}
