@@ -67,9 +67,40 @@ helper search => sub {
 #warn Dumper(\@search);
 	return @search;
 };
+helper order_by => sub {
+	my $self = shift;
+warn "ROUTE: ", $self->json->{grid}, "\n";
+	switch ( $self->json->{grid} ) {
+		case 'rotarians' {
+			switch ( $self->json->{sidx} ) {
+				case 'name' {
+					return order_by => {'-'.($self->json->{sord}||'asc')=>['me.lastname','me.firstname']};
+				}
+				else {
+					return order_by => $self->json->{sidx} ? {'-'.($self->json->{sord}||'asc')=>'me.'.$self->json->{sidx}} : undef;
+				}
+			}
+		}
+		case 'donors' {
+			switch ( $self->json->{sidx} ) {
+				case 'contact' {
+					return order_by => {'-'.($self->json->{sord}||'asc')=>'me.contact1'};
+				}
+				case 'rotarian' {
+					return order_by => {'-'.($self->json->{sord}||'asc')=>['rotarian.lastname', 'rotarian.firstname']};
+				}
+				else {
+					return order_by => $self->json->{sidx} ? {'-'.($self->json->{sord}||'asc')=>'me.'.$self->json->{sidx}} : undef;
+				}
+			}
+		}
+		else {
+			return order_by => $self->json->{sidx} ? {'-'.($self->json->{sord}||'asc')=>'me.'.$self->json->{sidx}} : undef;
+		}
+	}
+};
 # DEBUG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-helper rows => sub { my $self = shift; my %json = (page => $self->json->{page}||1, rows => $self->json->{rows}||10); warn Dumper(\%json); return %json; };
-helper order_by => sub { my $self = shift; return order_by => $self->json->{sidx} ? {'-'.($self->json->{sord}||'asc')=>'me.'.$self->json->{sidx}} : undef; };
+helper rows => sub { my $self = shift; return (page => $self->json->{page}||1, rows => $self->json->{rows}||10) };
 #helper bind => sub {
 #	my $self = shift;
 #	return bind => [map { $self->session->{$_}||$self->stash->{$_}||$self->config->{$_}||undef } @_];
@@ -392,6 +423,7 @@ $("#list1").jqGrid({
         datatype: 'json',
         jsonReader: {repeatitems: false, id: "rotarian_id"},
         ajaxGridOptions: { contentType: "application/json; charset=utf-8" },
+	postData: {grid: "rotarians"},
         serializeGridData: function (postData) { return $.toJSON(postData); },
         caption: "Rotarians",
         colModel:[
@@ -455,7 +487,7 @@ $("#list1").jqGrid({
         // To do: run boolFmatter after update
         // To do: Escape on cell edit sometimes does not work
         url: '<%= url_for %>',
-        postData: {debug: 1},
+        postData: {grid: "donors"},
         mtype: 'POST',
         datatype: 'json',
         jsonReader: {repeatitems: false, id: "donor_id", subgrid: {root: "rows", repeatitems: true}},
@@ -476,7 +508,7 @@ $("#list1").jqGrid({
             {name:'donorurl',label:'URL',width:60,search:false,editable:true,hidden:true,editrules:{url:true,edithidden:true,required:false}},
             {name:'advertisement',label:'Advertisement',hidden:true,search:false,editable:true,edittype:'textarea',editrules:{edithidden:true}},
             {name:'solicit',label:'Solicit',width:25,editable:true,edittype:'select',editoptions:{multiple:false,value:selectBool},formatter:'boolFmatter'},
-            {name:'ly_items',label:'LY#',width:25,editable:false},
+            {name:'ly_items',label:'LY#',width:25,editable:false,sortable:false},
             {name:'rotarian',label:'Rotarian',width:100,editable:true,edittype:'select',editoptions:{multiple:false,dataUrl:'/api/buildselect/rotarians'}},
             {name:'comments',label:'Comments',width:100,search:false,editable:true}
         ],
@@ -515,7 +547,7 @@ $("#list1").jqGrid({
         altRows: true,
         rownumbers: true,
         rownumWidth: 50,
-        scroll: true,
+        scroll: false,
         rowNum: 50,
         rowList: [10, 20, 50, 100, 500, 1000, 5000, 10000],
         pager: $('#pager1'),
