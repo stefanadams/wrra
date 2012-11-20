@@ -106,6 +106,15 @@ helper rows => sub { my $self = shift; return (page => $self->json->{page}||1, r
 #	return bind => [map { $self->session->{$_}||$self->stash->{$_}||$self->config->{$_}||undef } @_];
 #};
 
+##############################
+# IMPORTANT
+# use ->hashref_array when you want to prefetch a bunch of data and return a tree.  NO RESULTCLASS OBJECT HANDLING!
+#    use for custom non-grid handling
+# use ->all when you want to process methods via TO_JSON.  DO NOT CHAIN RELATIONSHIPS!
+#    use for grid handling.  Rather than chaining relationships, specify each method in TO_JSON.  Think 2D vs 3D.
+#    Then apply a result_class "filter" to select the TO_JSON you want
+##############################
+
 get '/' => 'index';
 get '/bookmarks';
 
@@ -202,15 +211,6 @@ group {
 	};
 };
 
-##############################
-# IMPORTANT
-# use ->hashref_array when you want to prefetch a bunch of data and return a tree.  NO RESULTCLASS OBJECT HANDLING!
-#    use for custom non-grid handling
-# use ->all when you want to process methods via TO_JSON.  DO NOT CHAIN RELATIONSHIPS!
-#    use for grid handling.  Rather than chaining relationships, specify each method in TO_JSON.  Think 2D vs 3D.
-#    Then apply a result_class "filter" to select the TO_JSON you want
-##############################
-
 under '/grid';
 group {
 	under '/rotarians';
@@ -231,7 +231,7 @@ group {
 	post '/' => (is_xhr => 1) => sub {
 		my $self = shift;
 		$self->stash(format => 'json') if $self->req->is_xhr;
-		my $data = $self->db->resultset('Donor')->search({$self->search}, {$self->rows, $self->order_by, prefetch=>['rotarian']});
+		my $data = $self->db->resultset('Donor')->search({$self->search}, {$self->rows, $self->order_by, prefetch=>['rotarian']})->solicit;
 #		$data->result_class('Schema::Result::Donor::ManageGrid');
 		$self->respond_to(
 			json => {json => $data->grid},
