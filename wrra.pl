@@ -21,7 +21,7 @@ plugin Config => {
 		},
 	}
 };
-app->config(hypnotoad => {pid_file=>"$Bin/../$basename", listen=>[split ',', $ENV{MOJO_LISTEN}], proxy=>$ENV{MOJO_REVERSE_PROXY}});
+app->config(hypnotoad => {pid_file=>"$Bin/../.$basename", listen=>[split ',', $ENV{MOJO_LISTEN}], proxy=>$ENV{MOJO_REVERSE_PROXY}});
 
 plugin 'write_excel';
 plugin 'IsXHR'; # Needed because jqGrid send multiple content-types.  https://github.com/kraih/mojo/issues/227
@@ -171,7 +171,7 @@ group {
 
 under '/reports';
 group {
-	get '/solicitation_aids' => sub {
+	any '/solicitation_aids' => sub {
 		my $self = shift;
 		my $data;
 		switch ( $self->param('template') ) {
@@ -185,14 +185,14 @@ group {
 				$data = $self->db->resultset('Leader')->leaders->search({}, {order_by=>['me.lastname', 'rotarians.lastname', 'donors.name', 'items.year'], prefetch=>{rotarians=>{donors=>{items=>'highbid'}}}});
 			}
 		}
-		$data = $data->hashref_array;
+		$data = ref $data ? $data->hashref_array : undef;
 		walk(\&with, $data);
 		$self->respond_to(
 			html => {},
 			json => {json => $data},
 		);
 	};
-	get '/postcards' => sub {
+	any '/postcards' => sub {
 		my $self = shift;
 		$self->respond_to(
 			html => {},
@@ -417,7 +417,6 @@ $(document).ready(function(){
 </script>
 </head>  
 <body>   
-<%= scalar localtime %>
 <div id="loggedin"></div>
 <a href="<%= url_for 'bookmarks' %>">Back to Bookmarks</a><br />
 <a class="fileDownloadSimpleRichExperience" href="<%= url_for undef, format=>'xls' %>">Download as Excel</a>
@@ -683,7 +682,7 @@ $("#list1").jqGrid({
 	.link {color:blue;cursor:pointer;text-decoration:underline}
 </style>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-<script type="text/javascript" src="/s/js/jquery-jtemplates.js"></script>
+<script type="text/javascript" src="/s/js/jquery-jtemplates_uncompressed.js"></script>
 <script type="text/javascript" src="/s/js/jquery.blockUI.js"></script>
 <script type="text/javascript">
 $(document).ready(function(){
@@ -692,7 +691,10 @@ $(document).ready(function(){
 			$("#packet").setTemplateElement("t_packet", null, {runnable_functions: true});
 			$("#packet").processTemplateURL("<%= url_for %>", null, {
 				type: 'POST',
-				data: {template: "packet", id: id}
+				data: {template: "packet", id: id},
+				headers: { 
+					Accept : "application/json; charset=utf-8"
+				}
 			});
 		});
 		true;
@@ -703,7 +705,10 @@ $(document).ready(function(){
 
 	$("#checklist").processTemplateURL("<%= url_for %>", null, {
 		type: 'POST',
-		data: {template: "checklist"}
+		data: {template: "checklist"},
+		headers: { 
+			Accept : "application/json; charset=utf-8"
+		}
 	});
 	$("#all").click(function(){
 		$("#checklist").block({ message: '<h1><img src="/s/img/busy.gif" /> Just a moment...</h1>' });
@@ -711,6 +716,9 @@ $(document).ready(function(){
 		$("#packet").processTemplateURL("<%= url_for %>", null, {
 			type: 'POST',
 			data: {template: "packets"},
+			headers: { 
+				Accept : "application/json; charset=utf-8"
+			},
 			on_complete: function(){
 				$("#checklist").unblock();
 			}
