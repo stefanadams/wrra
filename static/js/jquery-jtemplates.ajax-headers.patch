@@ -1,0 +1,10 @@
+--- jquery-jtemplates_uncompressed.js	2012-08-06 12:11:49.000000000 -0500
++++ jquery-jtemplates_uncompressed-new.js	2012-11-19 21:25:00.317769880 -0600
+@@ -1225,6 +1225,7 @@
+ 			dataFilter: o.dataFilter,
+ 			async: o.async,
+ 			cache: o.cache,
++			headers: o.headers,
+ 			timeout: o.timeout,
+ 			dataType: 'text',
+ 			success: function (d) {
