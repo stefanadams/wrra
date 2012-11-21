@@ -215,7 +215,7 @@ sub TO_JSON {
 	return {
 		contact => $self->contact,
 		rotarian => $self->rotarian->name,
-		ly_items => $self->items->count,
+		ly_items => $self->items->last_year->count,
 		%{$self->next::method},
 #		Also available, but instead access it via Bid sub-classes   
 #		  rotarian => $self->rotarian,

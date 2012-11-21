@@ -12,7 +12,7 @@ use Data::Dumper;
 my $basename = basename $0, '.pl';
 plugin Config => {
 	default => {
-		year => $ENV{WRRA_YEAR} || 2012,
+		year => $ENV{WRRA_YEAR} || 2013,
 		db => {
 			db => $basename,
 			host => 'localhost',
@@ -69,37 +69,47 @@ helper search => sub {
 };
 helper order_by => sub {
 	my $self = shift;
+	do { $self->session->{$_} = $self->json->{$_} if $self->json->{$_}; } foreach qw/sidx sord/;
+	my $sidx = $self->json->{sidx}||$self->session->{sidx};
+	my $sord = $self->json->{sord}||$self->session->{sord};
+warn $sidx, $sord, "\n";
 	switch ( $self->json->{grid}||'' ) {
 		case 'rotarians' {
-			switch ( $self->json->{sidx} ) {
+			switch ( $sidx ) {
 				case 'name' {
-					return order_by => {'-'.($self->json->{sord}||'asc')=>['me.lastname','me.firstname']};
+					return order_by => {'-'.($sord||'asc')=>['me.lastname','me.firstname']};
 				}
 				else {
-					return order_by => $self->json->{sidx} ? {'-'.($self->json->{sord}||'asc')=>'me.'.$self->json->{sidx}} : undef;
+					return order_by => $sidx ? {'-'.($sord||'asc')=>'me.'.$sidx} : undef;
 				}
 			}
 		}
 		case 'donors' {
-			switch ( $self->json->{sidx} ) {
+			switch ( $sidx ) {
 				case 'contact' {
-					return order_by => {'-'.($self->json->{sord}||'asc')=>'me.contact1'};
+					return order_by => {'-'.($sord||'asc')=>'me.contact1'};
 				}
 				case 'rotarian' {
-					return order_by => {'-'.($self->json->{sord}||'asc')=>['rotarian.lastname', 'rotarian.firstname']};
+					return order_by => {'-'.($sord||'asc')=>['rotarian.lastname', 'rotarian.firstname']};
 				}
 				else {
-					return order_by => $self->json->{sidx} ? {'-'.($self->json->{sord}||'asc')=>'me.'.$self->json->{sidx}} : undef;
+					return order_by => $sidx ? {'-'.($sord||'asc')=>'me.'.$sidx} : undef;
 				}
 			}
 		}
 		else {
-			return order_by => $self->json->{sidx} ? {'-'.($self->json->{sord}||'asc')=>'me.'.$self->json->{sidx}} : undef;
+			return order_by => $sidx ? {'-'.($sord||'asc')=>'me.'.$sidx} : undef;
 		}
 	}
 };
-# DEBUG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-helper rows => sub { my $self = shift; return (page => $self->json->{page}||1, rows => $self->json->{rows}||10) };
+helper rows => sub {
+	my $self = shift;
+	do { $self->session->{$_} = $self->json->{$_} if $self->json->{$_}; } foreach qw/page rows/;
+	my $page = $self->json->{page}||$self->session->{page};
+	my $rows = $self->json->{rows}||$self->session->{rows};
+warn $page, $rows, "\n";
+	return (page => $page||1, rows => $rows||10);
+};
 #helper bind => sub {
 #	my $self = shift;
 #	return bind => [map { $self->session->{$_}||$self->stash->{$_}||$self->config->{$_}||undef } @_];
@@ -116,6 +126,12 @@ helper rows => sub { my $self = shift; return (page => $self->json->{page}||1, r
 
 get '/' => 'index';
 get '/bookmarks';
+
+get '/session' => (is_xhr => 1) => sub {
+	my $self = shift;
+	$self->session->{$self->param('key')} = $self->param('value');
+	return $self->render_json({response=>'ok'});
+};
 
 under '/api';
 group {
@@ -224,7 +240,8 @@ group {
 
 	any '/donors' => sub {
 		my $self = shift;
-		my $data = $self->db->resultset('Donor')->search({$self->search}, {$self->rows, $self->order_by, prefetch=>['rotarian']})->solicit;
+		$self->session->{solicit} //= 1;
+		my $data = $self->db->resultset('Donor')->search({$self->search}, {$self->rows, $self->order_by, prefetch=>['rotarian']})->search({solicit=>$self->session->{solicit}});
 		$self->respond_to(
 			html => {},
 			xls => sub {
@@ -334,6 +351,7 @@ Washington Rotary Radio Auction
 <script  src="/s/js/jquery.fileDownload.js" type="text/javascript"></script>
 <style>
     #loggedin {display:none}
+    .link {cursor:pointer;color:blue;text-decoration:underline;}
 </style>
 <script type="text/javascript">
 $(document).ready(function(){  
@@ -395,8 +413,8 @@ $(document).ready(function(){
             return '&nbsp;';
         },
         boolFmatter : function(cellvalue, options, rowdata) {
-            if ( cellvalue == 1 ) return 'Yes';
-            return 'No';
+            if ( cellvalue == 0 ) return 'No';
+            return 'Yes';
         },
         categoryFmatter : function(cellvalue, options, rowdata) {
             if ( cellvalue ) return cellvalue.charAt(0).toUpperCase() + cellvalue.slice(1);
@@ -410,6 +428,12 @@ $(document).ready(function(){
         });
         return false; //this is critical to stop the click event which will trigger a normal file download!
     });
+//    $("input[name=solicit]").prop(checked, <%= $self->session->{solicit}?'true':'flase' %>
+    $("input[name=solicit]").click(function(){
+        $.get("<%= url_for '/session' %>", {key: "solicit", value: $('input:radio[name=solicit]:checked').val()}, function(){
+            $('#list1').trigger('reloadGrid');
+        });
+    });
     %= content grid => begin
     // Grid
     % end
@@ -419,6 +443,11 @@ $(document).ready(function(){
 <body>   
 <div id="loggedin"></div>
 <a href="<%= url_for 'bookmarks' %>">Back to Bookmarks</a><br />
+% if ( $self->current_route eq 'donors' ) {
+    <%= radio_button solicit => '1', id => 'solicit' %>Show <b>Solicit</b> Records
+    <%= radio_button solicit => '0', id => 'solicit' %>Show <b>Non-Solicit</b> Records
+    <br />
+% }
 <a class="fileDownloadSimpleRichExperience" href="<%= url_for undef, format=>'xls' %>">Download as Excel</a>
 <table id="list1" class="scroll"></table> 
 <div id="pager1" class="scroll" style="text-align:center;" />
@@ -534,7 +563,7 @@ $("#list1").jqGrid({
             {name:'donorurl',label:'URL',width:60,search:false,editable:true,hidden:true,editrules:{url:true,edithidden:true,required:false}},
             {name:'advertisement',label:'Advertisement',hidden:true,search:false,editable:true,edittype:'textarea',editrules:{edithidden:true}},
             {name:'solicit',label:'Solicit',width:25,editable:true,edittype:'select',editoptions:{multiple:false,value:selectBool},formatter:'boolFmatter'},
-            {name:'ly_items',label:'LY#',width:25,editable:false,sortable:false},
+            {name:'ly_items',label:'LY',width:25,editable:false,sortable:false,formatter:'boolFmatter'},
             {name:'rotarian',label:'Rotarian',width:100,editable:true,edittype:'select',editoptions:{multiple:false,dataUrl:'/api/buildselect/rotarians'}},
             {name:'comments',label:'Comments',width:100,search:false,editable:true}
         ],
@@ -574,7 +603,7 @@ $("#list1").jqGrid({
         rownumbers: true,
         rownumWidth: 50,
         scroll: false,
-        rowNum: 50,
+        rowNum: 10,
         rowList: [10, 20, 50, 100, 500, 1000, 5000, 10000],
         pager: $('#pager1'),
         sortname: 'name',

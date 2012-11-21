@@ -10,10 +10,10 @@ sub year { shift->result_source->storage->_connect_info->[0]->{year} || ((localt
 # !!! Does NOT work as expected!!!!!!!!!!!!
 sub warn_json { my $self = shift; warn Dumper($self->${\('hashref_'.(shift || 'first'))}); $self }
 
-sub next_year { $_[0]->search({year => $_[0]->year+1}) }
-sub current_year { $_[0]->search({year => $_[0]->year}) }
-sub last_year { $_[0]->search({year => $_[0]->year-1}) }
-sub recent_years { $_[0]->search({year => {-between => [$_[0]->year-2, $_[0]->year]}}) }
+sub next_year { $_[0]->search({($_[1]?"$_[1].year":'year') => $_[0]->year+1}) }
+sub current_year { $_[0]->search({($_[1]?"$_[1].year":'year') => $_[0]->year}) }
+sub last_year { $_[0]->search({($_[1]?"$_[1].year":'year') => $_[0]->year-1}) }
+sub recent_years { $_[0]->search({($_[1]?"$_[1].year":'year') => {-between => [$_[0]->year-2, $_[0]->year]}}) }
 sub donor { $_[0]->search({'donor.name' => {-like => '%'.$_[0].'%'}}, {join=>'donor'}) }
 
 # Grid can use ->all TO_JSON recursion; ->hashref_array for big trees of data
