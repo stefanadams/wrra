@@ -186,7 +186,15 @@ group {
 			if ( my $me = $self->db->resultset($self->param('table'))->find($self->param('id')) ) {
 				switch ( $self->param('oper') ) {
 					case 'edit' {
-						$me->update({$column=>$self->param($column)});
+						switch ( $column ) {
+							case 'contact' {
+								my ($contact1, $contact2) = split /\|/, $self->param($column);
+								$me->update({contact1=>$contact1,contact2=>$contact2});
+							}
+							else {
+								$me->update({$column=>$self->param($column)});
+							}
+						}
 						return $self->render_json({update=>'ok'});
 					}
 				}
