@@ -24,10 +24,23 @@ plugin Config => {
 app->config(hypnotoad => {pid_file=>"$Bin/../.$basename", listen=>[split ',', $ENV{MOJO_LISTEN}], proxy=>$ENV{MOJO_REVERSE_PROXY}});
 
 plugin 'write_excel';
-plugin 'IsXHR'; # Needed because jqGrid send multiple content-types.  https://github.com/kraih/mojo/issues/227
-                # However, this is bad because now all xhr's are considered json.  What if xml was requested?
+plugin 'HeaderCondition';
+plugin 'IsXHR';
 
 helper db => sub { Schema->connect({dsn=>"DBI:mysql:database=".app->config->{db}->{db}.";host=".app->config->{db}->{host},user=>app->config->{db}->{user},password=>app->config->{db}->{pass},year=>app->config->{year}}) };
+helper detect_type => sub {
+  my $self = shift;
+
+  # Detect formats
+  my $app     = $self->app;
+  my $formats = {map { $_ => 1 } @{$app->types->detect($self->req->headers->accept)}};
+  my $stash   = $self->stash;
+  unless (keys %$formats) {
+    my $format = $stash->{format} || $self->req->param('format');
+    $formats->{$format ? $format : $app->renderer->default_format} = 1;
+  }
+  return $formats;
+};
 helper json => sub {
 	my $self = shift;
 	unless ( $self->{__JSON} ) {
@@ -72,8 +85,7 @@ helper order_by => sub {
 	do { $self->session->{$_} = $self->json->{$_} if $self->json->{$_}; } foreach qw/sidx sord/;
 	my $sidx = $self->json->{sidx}||$self->session->{sidx};
 	my $sord = $self->json->{sord}||$self->session->{sord};
-warn $sidx, $sord, "\n";
-	switch ( $self->json->{grid}||'' ) {
+	switch ( $self->current_route||'' ) {
 		case 'rotarians' {
 			switch ( $sidx ) {
 				case 'name' {
@@ -107,7 +119,6 @@ helper rows => sub {
 	do { $self->session->{$_} = $self->json->{$_} if $self->json->{$_}; } foreach qw/page rows/;
 	my $page = $self->json->{page}||$self->session->{page};
 	my $rows = $self->json->{rows}||$self->session->{rows};
-warn $page, $rows, "\n";
 	return (page => $page||1, rows => $rows||10);
 };
 #helper bind => sub {
@@ -189,36 +200,52 @@ under '/reports';
 group {
 	any '/solicitation_aids' => sub {
 		my $self = shift;
-		my $data;
-		switch ( $self->param('template') ) {
-			case 'checklist' {
-				$data = $self->db->resultset('Leader')->leaders->search({}, {order_by=>['me.lastname', 'rotarians.lastname'], prefetch=>'rotarians'});
+		switch ( $self->req->is_xhr ) {
+			case 0 {
+				$self->respond_to(
+					html => {},
+				);
 			}
-			case 'packet' {
-				$data = $self->db->resultset('Rotarian')->search({'me.rotarian_id'=>$self->param('id')}, {order_by=>['me.lastname', 'donors.name', 'items.year'], prefetch=>{donors=>{items=>'highbid'}}});
-			}
-			case 'packets' {
-				$data = $self->db->resultset('Leader')->leaders->search({}, {order_by=>['me.lastname', 'rotarians.lastname', 'donors.name', 'items.year'], prefetch=>{rotarians=>{donors=>{items=>'highbid'}}}});
+			case 1 {
+				my $data;
+				switch ( $self->param('template') ) {
+					case 'checklist' {
+						$data = $self->db->resultset('Leader')->leaders->search({}, {order_by=>['me.lastname', 'rotarians.lastname'], prefetch=>'rotarians'});
+					}
+					case 'packet' {
+						$data = $self->db->resultset('Rotarian')->search({'me.rotarian_id'=>$self->param('id')}, {order_by=>['me.lastname', 'donors.name', 'items.year'], prefetch=>{donors=>{items=>'highbid'}}});
+					}
+					case 'packets' {
+						$data = $self->db->resultset('Leader')->leaders->search({}, {order_by=>['me.lastname', 'rotarians.lastname', 'donors.name', 'items.year'], prefetch=>{rotarians=>{donors=>{items=>'highbid'}}}});
+					}
+				}
+				$data = ref $data ? $data->hashref_array : undef;
+				walk(\&with, $data);
+				$self->respond_to(
+					json => {json => $data},
+				);
 			}
 		}
-		$data = ref $data ? $data->hashref_array : undef;
-		walk(\&with, $data);
-		$self->respond_to(
-			html => {},
-			json => {json => $data},
-		);
 	};
 	any '/postcards' => sub {
 		my $self = shift;
-		$self->respond_to(
-			html => {},
-			xls => sub {
-				$self->render_xls(
-					format => 'xls',
-					result => $self->db->resultset('Donor')->postcards,
+		switch ( $self->req->is_xhr ) {
+			case 0 {
+				$self->respond_to(
+					html => {},
 				);
-			},
-		);
+			}
+			case 1 {
+				$self->respond_to(
+					xls => sub {
+						$self->render_xls(
+							format => 'xls',
+							result => $self->db->resultset('Donor')->postcards,
+						);
+					},
+				);
+			}
+		}
 	};
 };
 
@@ -226,9 +253,9 @@ under '/grid';
 group {
 	any '/rotarians' => sub {
 		my $self = shift;
+		return $self->render if $self->detect_type->{html};
 		my $data = $self->db->resultset('Rotarian')->search({$self->search}, {$self->rows, $self->order_by});
 		$self->respond_to(
-			html => {},
 			xls => sub {
 				$self->cookie(fileDownload=>'true');
 				$self->cookie(path=>'/');
@@ -241,9 +268,9 @@ group {
 	any '/donors' => sub {
 		my $self = shift;
 		$self->session->{solicit} //= 1;
+		return $self->render if $self->detect_type->{html};
 		my $data = $self->db->resultset('Donor')->search({$self->search}, {$self->rows, $self->order_by, prefetch=>['rotarian']})->search({solicit=>$self->session->{solicit}});
 		$self->respond_to(
-			html => {},
 			xls => sub {
 				$self->cookie(fileDownload=>'true');
 				$self->cookie(path=>'/');
@@ -262,13 +289,13 @@ group {
 
 	any '/items' => sub {
 		my $self = shift;
+		return $self->render if $self->detect_type->{html};
 		my $data = $self->db->resultset('Item')->search({$self->search}, {$self->rows, $self->order_by})->current_year;
 		$self->respond_to(
-			html => {},
 			xls => sub {
 				$self->cookie(fileDownload=>'true');
 				$self->cookie(path=>'/');
-				$self->render_xls(result => $self->db->resultset('Donor')->postcards);
+				$self->render_xls(result => $data->grid_xls);
 			},
 			json => {json => $data->grid},
 		);
@@ -276,13 +303,13 @@ group {
 
 	any '/stockitems' => sub {
 		my $self = shift;
+		return $self->render if $self->detect_type->{html};
 		my $data = $self->db->resultset('Stockitem')->search({$self->search}, {$self->rows, $self->order_by})->current_year;
 		$self->respond_to(
-			html => {},
 			xls => sub {
 				$self->cookie(fileDownload=>'true');
 				$self->cookie(path=>'/');
-				$self->render_xls(result => $self->db->resultset('Donor')->postcards);
+				$self->render_xls(result => $data->grid_xls);
 			},
 			json => {json => $data->grid},
 		);
@@ -290,13 +317,13 @@ group {
 
 	any '/bidders' => sub {
 		my $self = shift;
+		return $self->render if $self->detect_type->{html};
 		my $data = $self->db->resultset('Bidder')->search({$self->search}, {$self->rows, $self->order_by})->current_year;
 		$self->respond_to(
-			html => {},
 			xls => sub {
 				$self->cookie(fileDownload=>'true');
 				$self->cookie(path=>'/');
-				$self->render_xls(result => $self->db->resultset('Donor')->postcards);
+				$self->render_xls(result => $data->grid_xls);
 			},
 			json => {json => $data->grid},
 		);
@@ -497,7 +524,7 @@ $("#list1").jqGrid({
         rownumbers: true,
         rownumWidth: 50,
         scroll: false,
-        rowNum: 50,
+        rowNum: 10,
         rowList: [10, 20, 50, 100, 500, 1000, 5000, 10000],
         pager: '#pager1',
         sortname: 'lastname',
