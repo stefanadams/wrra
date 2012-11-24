@@ -138,12 +138,6 @@ helper rows => sub {
 get '/' => 'index';
 get '/bookmarks';
 
-get '/session' => (is_xhr => 1) => sub {
-	my $self = shift;
-	$self->session->{$self->param('key')} = $self->param('value');
-	return $self->render_json({response=>'ok'});
-};
-
 under '/api';
 group {
 	get '/buildselect/:for' => (is_xhr => 1) => sub { # Authen Authz('admins')
@@ -180,6 +174,27 @@ group {
 	};
 	under '/grid';
 	group {
+		get '/filter' => (is_xhr => 1) => sub {
+			my $self = shift;
+			my $filter = $self->session->{filter};
+			switch ( $self->param('key') ) {
+				case 'assigned' {
+					switch ( $self->param('value') ) {
+						case 0 { $filter->{'me.rotarian_id'} = undef }
+						case 1 { $filter->{'me.rotarian_id'} = {'!=' => undef} }
+						case '' { delete $filter->{'me.rotarian_id'} }
+					}
+				}
+				else {
+					switch ( $self->param('value') ) {
+						case '' { delete $filter->{$self->param('key')} }
+						else { $filter->{$self->param('key')} = $self->param('value') }
+					}
+				}
+			}
+			$self->session->{filter} = $filter;
+			return $self->render_json({response=>'ok'});
+		};
 		post '/:table/cell' => (is_xhr => 1) => sub {
 			my $self = shift;
 			my $column = $self->param('celname');
@@ -276,8 +291,10 @@ group {
 	any '/donors' => sub {
 		my $self = shift;
 		$self->session->{solicit} //= 1;
+		$self->session->{rotarian_id} //= {'!=' => undef};
 		return $self->render if $self->detect_type->{html};
-		my $data = $self->db->resultset('Donor')->search({$self->search}, {$self->rows, $self->order_by, prefetch=>['rotarian']})->search({solicit=>$self->session->{solicit}});
+		my $data = $self->db->resultset('Donor')->search({$self->search}, {$self->rows, $self->order_by, prefetch=>['rotarian']});
+		$data = $data->search($self->session->{filter}) if defined $self->session->{filter};
 		$self->respond_to(
 			xls => sub {
 				$self->cookie(fileDownload=>'true');
@@ -465,7 +482,12 @@ $(document).ready(function(){
     });
 //    $("input[name=solicit]").prop(checked, <%= $self->session->{solicit}?'true':'flase' %>
     $("input[name=solicit]").click(function(){
-        $.get("<%= url_for '/session' %>", {key: "solicit", value: $('input:radio[name=solicit]:checked').val()}, function(){
+        $.get("<%= url_for 'filter' %>", {key: "solicit", value: $('input:radio[name=solicit]:checked').val()}, function(){
+            $('#list1').trigger('reloadGrid');
+        });
+    });
+    $("input[name=assigned]").click(function(){
+        $.get("<%= url_for 'filter' %>", {key: "assigned", value: $('input:radio[name=assigned]:checked').val()}, function(){
             $('#list1').trigger('reloadGrid');
         });
     });
@@ -481,6 +503,11 @@ $(document).ready(function(){
 % if ( $self->current_route eq 'donors' ) {
     <%= radio_button solicit => '1', id => 'solicit' %>Show <b>Solicit</b> Records
     <%= radio_button solicit => '0', id => 'solicit' %>Show <b>Non-Solicit</b> Records
+    <%= radio_button solicit => '', id => 'solicit' %>Show <b>Both Sets</b> of Records
+    <br />
+    <%= radio_button assigned => '1', id => 'assigned' %>Show <b>Assigned</b> Records
+    <%= radio_button assigned => '0', id => 'assigned' %>Show <b>Unassigned</b> Records
+    <%= radio_button assigned => '', id => 'assigned' %>Show <b>Both Sets</b> of Records
     <br />
 % }
 <a class="fileDownloadSimpleRichExperience" href="<%= url_for undef, format=>'xls' %>">Download as Excel</a>

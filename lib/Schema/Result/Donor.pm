@@ -189,7 +189,7 @@ __PACKAGE__->set_primary_key("donor_id");
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mlHqXeu6uTlU0UdnJ2j4Tg
 
 use Class::Method::Modifiers;
-__PACKAGE__->belongs_to(rotarian => 'Schema::Result::Rotarian', 'rotarian_id');	# A Donor belongs_to a Rotarian
+__PACKAGE__->belongs_to(rotarian => 'Schema::Result::Rotarian', 'rotarian_id', {join_type=>'left'});	# A Donor belongs_to a Rotarian
 __PACKAGE__->has_many(items => 'Schema::Result::Item', 'donor_id'); # A Donor has_many Items
 
 use overload '""' => sub {shift->name}, fallback => 1;
@@ -214,7 +214,7 @@ sub TO_JSON {
 
 	return {
 		contact => $self->contact,
-		rotarian => $self->rotarian->name,
+		rotarian => defined $self->rotarian ? $self->rotarian->name : undef,
 		ly_items => $self->items->last_year->count,
 		%{$self->next::method},
 #		Also available, but instead access it via Bid sub-classes   
