@@ -140,6 +140,16 @@ get '/bookmarks';
 
 under '/api';
 group {
+	get '/ac/:for' => (is_xhr => 1) => sub { # Authen Authz('admins')
+		my $self = shift;
+
+		my $select = {};
+		switch ( $self->param('for') ) {
+			case 'city' {
+				return $self->render_json([map { {label=>$_->city,state=>$_->state,zip=>$_->zip} } $self->db->resultset('Donor')->search({city => {'like'=>$self->param('term').'%'}}, {select=>[qw/city state zip/], group_by=>'city', order_by=>'city'})->all]);
+			}
+		}
+	};
 	get '/buildselect/:for' => (is_xhr => 1) => sub { # Authen Authz('admins')
 		my $self = shift;
 
@@ -215,6 +225,13 @@ group {
 				}
 			}
 			$self->render_json({update=>'err'});
+		};
+		post '/:table/add' => (is_xhr => 1) => sub {
+			my $self = shift;
+			my %row = map { $_=>$self->param($_) } split /,/, $self->param('fields');
+			warn Dumper({addrow=>{%row}});
+			$self->db->resultset($self->param('table'))->create({%row});
+			$self->render_json({add=>'ok'});
 		};
 	};
 };
@@ -396,6 +413,7 @@ Washington Rotary Radio Auction
 <link   href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" type="text/css" rel="stylesheet" media="all" />
 <link   href="/s/css/ui.jqgrid.css" rel="stylesheet" type="text/css" media="screen" />      
 <script  src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js" type="text/javascript"></script>
+<script  src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js" type="text/javascript"></script>
 <script  src="/s/js/i18n/grid.locale-en.js" type="text/javascript"></script>
 <script  src="/s/js/jquery.jqGrid.min.js" type="text/javascript"></script>  
 <script  src="/s/js/jquery.json-2.3.min.js" type="text/javascript"></script>
@@ -413,6 +431,12 @@ $(document).ready(function(){
 //        }
 //        document.title = data.name + " " + data.year + (data.night?", Night " + data.night:'') + (data.live?'':' (Offline)');
 //    });
+    $.ajaxSetup({
+	accepts: {
+            json: "application/json"
+	},
+    });
+
     var selectBool = "1:Yes;0:No";
     var categories = ":;bank:Bank;lawyer:Lawyer;realty:Realty;doctor:Doctor;cpa:CPA;personal:Personal;esq:ESQ;seq:SEQ;insurance:Insurance";
     // Forces a specific format for a phone number.  Make sure that the
@@ -431,11 +455,14 @@ $(document).ready(function(){
     }
 
     function ac_city(elem){
-        $(elem).autocomplete('pl/ac/city');
-        $(elem).result(function(event, data, formatted){
-            if (data) {
-                $('#state').val(data[1]);
-                $('#zip').val(data[2]);
+        $(elem).autocomplete({
+            source: "/api/ac/city",
+            minLength: 2,
+            select: function( event, ui ) {
+                if (ui.item) {
+                    $('#state').val(ui.item.state);
+                    $('#zip').val(ui.item.zip);
+                }
             }
         });
         return true;
@@ -618,7 +645,7 @@ $("#list1").jqGrid({
             {name:'name',label:'Donor',width:200,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
             {name:'contact',label:'Contact',width:100,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
             {name:'address',label:'Address',width:100,search:false,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
-            {name:'city',label:'City',width:60,editable:true,editoptions:{dataInit:ac_city}},
+            {name:'city',label:'City',width:60,editable:true,editrules:{required:true},editoptions:{dataInit:ac_city},formoptions:{elmsuffix:'(*)'}},
             {name:'state',label:'State',width:60,editable:true,hidden:true,editrules:{edithidden:true}},
             {name:'zip',label:'Zip',width:60,editable:true,hidden:true,editrules:{edithidden:true}},
             {name:'email',label:'Email',width:60,search:false,editable:true,hidden:true,editrules:{email:true,edithidden:true,required:false}},
@@ -676,7 +703,7 @@ $("#list1").jqGrid({
         {edit:true,add:true,del:true},
         // {edit}, {add}, {del}, {search}, {view}
         {
-            url: "/donors/edit",
+            url: "/api/grid/Donor/edit",
             editCaption: "Edit Donor",
             width: 700,
             closeOnEscape: true,
@@ -684,24 +711,28 @@ $("#list1").jqGrid({
             afterSubmit: checkUpdate
         },
         {
-            url: "/donors/add",
+            url: "/api/grid/Donor/add",
             addCaption: "Add Donor",
             width: 700,
             closeOnEscape: true,
+            beforeSubmit: function(postdata, formid){
+                postdata.fields = 'chamberid,phone,category,name,contact,address,city,state,zip,email,donorurl,advertisement,solicit,rotarian,comments';
+                return [true,''];
+            },
             afterSubmit: checkUpdate
         },
         {
-            url: "/donors/del",
+            url: "/api/grid/Donor/del",
             caption: "Delete Donor",
             msg: "Deleted selected donor(s)?",
             afterSubmit: checkUpdate
         },
         {
-            url: "/donors/search",
+            url: "/api/grid/Donor/search",
             caption: "Search Donor"
         },
         {
-            url: "/donors/view",
+            url: "/api/grid/Donor/view",
             caption: "View Donor"
         }
 //    ).ajaxComplete(function(e, xhr, settings){

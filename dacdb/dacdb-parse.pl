@@ -33,8 +33,11 @@ my @reqs = (
 );
 
 my ($update, $new) = (0, 0);
+my %dacdb = ();
+my %wrra = ();
 my $p = new HTML::TableParser([
 	{id => 1, row => sub {
+		$dacdb{${$_[2]}[10]}=1;
 		${$_[2]}[17] =~ /^.*?(\d{3}).*?(\d{3}).*?(\d{4}).*?$/;
 		${$_[2]}[17] = $1 && $2 && $3 ? "($1) $2-$3" : '';
 		if ( my $r = $db->resultset('Rotarian')->find(${$_[2]}[10]) ) {
@@ -62,4 +65,8 @@ my $p = new HTML::TableParser([
 ], { Decode => 1, Trim => 1, Chomp => 1 });
 $p->parse_file($html);
 
+my $r = $db->resultset('Rotarian');
+while ( $_ = $r->next ) {
+	print "Delete: ", $_->lastname, ', ', $_->firstname, "\n" unless $dacdb{$_->id};
+}
 print STDERR "Updated: $update\nNew: $new\n";

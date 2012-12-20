@@ -17,4 +17,4 @@ echo Get Page ; curl -b /tmp/cookie -d @dacdb-request.txt -s -o dacdb-results.ht
 echo -n "MySQL Username: "; read user
 echo -n "MySQL Password: "; stty -echo ; read pass ; stty echo ; echo
 echo -n "MySQL DB [$user]: "; read db
-`dirname $0`/dacdb-parse.pl -u $user -p $pass ${db:-$user} dacdb-results.html && rm -f /tmp/cookie dacdb-credentials.txt dacdb-request.txt dacdb-results.html
+`dirname $0`/dacdb-parse.pl -u $user -p $pass ${db:-$user} dacdb-results.html # && rm -f /tmp/cookie dacdb-credentials.txt dacdb-request.txt dacdb-results.html

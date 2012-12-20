@@ -1286,6 +1286,7 @@ if (window.jQuery && !window.jQuery.createTemplate) {(function (jQuery) {
 			dataType: 'text',
 			data: this._args,
 			cache: false,
+			headers: that._options.headers,
 			success: function (d) {
 				try {
 					var r = jQuery(that.objs).processTemplate(d, that._param, {StrToJSON:true});
