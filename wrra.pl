@@ -29,19 +29,6 @@ plugin 'HeaderCondition';
 plugin 'IsXHR';
 
 helper db => sub { Schema->connect({dsn=>"DBI:mysql:database=".app->config->{db}->{db}.";host=".app->config->{db}->{host},user=>app->config->{db}->{user},password=>app->config->{db}->{pass},year=>app->config->{year}}) };
-helper detect_type => sub {
-  my $self = shift;
-
-  # Detect formats
-  my $app     = $self->app;
-  my $formats = {map { $_ => 1 } @{$app->types->detect($self->req->headers->accept)}};
-  my $stash   = $self->stash;
-  unless (keys %$formats) {
-    my $format = $stash->{format} || $self->req->param('format');
-    $formats->{$format ? $format : $app->renderer->default_format} = 1;
-  }
-  return $formats;
-};
 helper json => sub {
 	my $self = shift;
 	unless ( $self->{__JSON} ) {
@@ -294,7 +281,7 @@ under '/grid';
 group {
 	any '/rotarians' => sub {
 		my $self = shift;
-		return $self->render if $self->detect_type->{html};
+		return $self->render unless $self->req->is_xhr;
 		my $data = $self->db->resultset('Rotarian')->search({$self->search}, {$self->rows, $self->order_by});
 		$self->respond_to(
 			xls => sub {
@@ -310,7 +297,7 @@ group {
 		my $self = shift;
 		$self->session->{solicit} //= 1;
 		$self->session->{rotarian_id} //= {'!=' => undef};
-		return $self->render if $self->detect_type->{html};
+		return $self->render unless $self->req->is_xhr;
 		my $data = $self->db->resultset('Donor')->search({$self->search}, {$self->rows, $self->order_by, prefetch=>['rotarian']});
 		$data = $data->search($self->session->{filter}) if defined $self->session->{filter};
 		$self->respond_to(
@@ -332,7 +319,7 @@ group {
 
 	any '/items' => sub {
 		my $self = shift;
-		return $self->render if $self->detect_type->{html};
+		return $self->render unless $self->req->is_xhr;
 		my $data = $self->db->resultset('Item')->search({$self->search}, {$self->rows, $self->order_by})->current_year;
 		$self->respond_to(
 			xls => sub {
@@ -346,7 +333,7 @@ group {
 
 	any '/stockitems' => sub {
 		my $self = shift;
-		return $self->render if $self->detect_type->{html};
+		return $self->render unless $self->req->is_xhr;
 		my $data = $self->db->resultset('Stockitem')->search({$self->search}, {$self->rows, $self->order_by})->current_year;
 		$self->respond_to(
 			xls => sub {
@@ -360,7 +347,7 @@ group {
 
 	any '/bidders' => sub {
 		my $self = shift;
-		return $self->render if $self->detect_type->{html};
+		return $self->render unless $self->req->is_xhr;
 		my $data = $self->db->resultset('Bidder')->search({$self->search}, {$self->rows, $self->order_by})->current_year;
 		$self->respond_to(
 			xls => sub {
@@ -558,9 +545,9 @@ $("#list1").jqGrid({
 	},
         jsonReader: {repeatitems: false, id: "rotarian_id"},
         ajaxGridOptions: {
-		contentType: "application/json; charset=utf-8",
+		contentType: "application/json",
 		headers: { 
-			Accept : "application/json; charset=utf-8",
+			Accept : "application/json",
 		}
 	},
 	postData: {grid: "rotarians"},
@@ -632,9 +619,9 @@ $("#list1").jqGrid({
         datatype: 'json',
         jsonReader: {repeatitems: false, id: "donor_id", subgrid: {root: "rows", repeatitems: true}},
         ajaxGridOptions: {
-		contentType: "application/json; charset=utf-8",
+		contentType: "application/json",
 		headers: { 
-			Accept : "application/json; charset=utf-8",
+			Accept : "application/json",
 		}
 	},
         serializeGridData: function (postData) { return $.toJSON(postData); },
@@ -717,7 +704,8 @@ $("#list1").jqGrid({
             width: 700,
             closeOnEscape: true,
             beforeSubmit: function(postdata, formid){
-                postdata.fields = 'chamberid,phone,category,name,contact,address,city,state,zip,email,donorurl,advertisement,solicit,rotarian,comments';
+                postdata.rotarian_id = postdata.rotarian;
+                postdata.fields = 'chamberid,phone,category,name,contact,address,city,state,zip,email,donorurl,advertisement,solicit,rotarian_id,comments';
                 return [true,''];
             },
             afterSubmit: checkUpdate
@@ -816,7 +804,7 @@ $(document).ready(function(){
 				type: 'POST',
 				data: {template: "packet", id: id},
 				headers: { 
-					Accept : "application/json; charset=utf-8"
+					Accept : "application/json"
 				}
 			});
 		});
@@ -830,7 +818,7 @@ $(document).ready(function(){
 		type: 'POST',
 		data: {template: "checklist"},
 		headers: { 
-			Accept : "application/json; charset=utf-8"
+			Accept : "application/json"
 		}
 	});
 	$("#all").click(function(){
@@ -840,7 +828,7 @@ $(document).ready(function(){
 			type: 'POST',
 			data: {template: "packets"},
 			headers: { 
-				Accept : "application/json; charset=utf-8"
+				Accept : "application/json"
 			},
 			on_complete: function(){
 				$("#checklist").unblock();
