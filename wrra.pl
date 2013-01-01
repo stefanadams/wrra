@@ -1,4 +1,5 @@
-use Mojolicious::Lite;  
+use Mojolicious 3.67;
+use Mojolicious::Lite;
 use Mojo::JSON;
 use File::Basename;
 use FindBin qw($Bin);
