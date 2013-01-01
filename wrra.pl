@@ -219,7 +219,7 @@ group {
 			my %row = map { $_=>$self->param($_) } split /,/, $self->param('fields');
 			warn Dumper({addrow=>{%row}});
 			$self->db->resultset($self->param('table'))->create({%row});
-			$self->render_json({add=>'ok'});
+			$self->render_json({res=>'ok'});
 		};
 	};
 };
@@ -468,7 +468,7 @@ $(document).ready(function(){
         // Reference in .navGrid {add/edit/del} object afterSubmit: property
         var json=response.responseText;
         var result=eval("("+json+")");
-        return [result.sc == 'true' ? true : false,result.msg,null];
+        return [result.res == 'ok' ? true : false,result.msg,null];
     }
     jQuery.extend($.fn.fmatter , {
         // Reference in .jqGrid {options} colModel {name:...} property with formatter:'___Fmatter' property
@@ -704,9 +704,13 @@ $("#list1").jqGrid({
             width: 700,
             closeOnEscape: true,
             beforeSubmit: function(postdata, formid){
-                postdata.rotarian_id = postdata.rotarian;
-                postdata.fields = 'chamberid,phone,category,name,contact,address,city,state,zip,email,donorurl,advertisement,solicit,rotarian_id,comments';
-                return [true,''];
+                postdata.rotarian_id = postdata.rotarian || "";
+                postdata.url = postdata.donorurl || "";
+                var contact = postdata.contact.split("|");
+		postdata.contact1 = contact[0] || "";
+		postdata.contact2 = contact[1] || "";
+                postdata.fields = 'chamberid,phone,category,name,contact1,contact2,address,city,state,zip,email,url,advertisement,solicit,rotarian_id,comments';
+                return [true,'Success'];
             },
             afterSubmit: checkUpdate
         },
