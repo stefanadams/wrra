@@ -226,7 +226,7 @@ group {
 
 under '/reports';
 group {
-	any '/solicitation_aids' => sub {
+	any '/committee' => sub {
 		my $self = shift;
 		switch ( $self->req->is_xhr ) {
 			case 0 {
@@ -239,6 +239,35 @@ group {
 				switch ( $self->param('template') ) {
 					case 'checklist' {
 						$data = $self->db->resultset('Leader')->leaders->search({}, {order_by=>['me.lastname', 'rotarians.lastname'], prefetch=>'rotarians'});
+					}
+					case 'packet' {
+						$data = $self->db->resultset('Rotarian')->search({'me.rotarian_id'=>$self->param('id')}, {order_by=>['me.lastname', 'donors.name', 'items.year'], prefetch=>{donors=>{items=>'highbid'}}});
+					}
+					case 'packets' {
+						$data = $self->db->resultset('Leader')->leaders->search({}, {order_by=>['me.lastname', 'rotarians.lastname', 'donors.name', 'items.year'], prefetch=>{rotarians=>{donors=>{items=>'highbid'}}}});
+					}
+				}
+				$data = ref $data ? $data->hashref_array : undef;
+				walk(\&with, $data);
+				$self->respond_to(
+					json => {json => $data},
+				);
+			}
+		}
+	};
+	any '/solicitation_aids' => sub {
+		my $self = shift;
+		switch ( $self->req->is_xhr ) {
+			case 0 {
+				$self->respond_to(
+					html => {},
+				);
+			}
+			case 1 {
+				my $data;
+				switch ( $self->param('template') ) {
+					case 'checklist' {
+						$data = $self->db->resultset('Leader')->leaders->search({}, {order_by=>['rotarians.lastname', 'rotarians.firstname'], prefetch=>'rotarians'});
 					}
 					case 'packet' {
 						$data = $self->db->resultset('Rotarian')->search({'me.rotarian_id'=>$self->param('id')}, {order_by=>['me.lastname', 'donors.name', 'items.year'], prefetch=>{donors=>{items=>'highbid'}}});
@@ -734,6 +763,91 @@ $("#list1").jqGrid({
 //        if ( json && json.error == "403" ) { window.location = "login.html?referer=donors.html"; } }
     );
 % end
+
+@@ template.html.ep
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1" />
+<title>Rotarian Solicitation Aids</title>
+<link   href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" type="text/css" rel="stylesheet" media="all" />
+<script  src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js" type="text/javascript"></script>
+<script  src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js" type="text/javascript"></script>
+<script type="text/javascript" src="/s/js/jquery-jtemplates_uncompressed.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+});
+</script>
+</head>
+<body>
+</body>
+</html>
+
+@@ committee.html.ep
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1" />
+<title>Auction Committee</title>
+<link   href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" type="text/css" rel="stylesheet" media="all" />
+<script  src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js" type="text/javascript"></script>
+<script  src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js" type="text/javascript"></script>
+<script type="text/javascript" src="/s/js/jquery-jtemplates_uncompressed.js"></script>
+  <style>
+  #draggable { width: 100px; height: 40px; padding: 0.5em; float: left; margin: 10px 10px 10px 0; }
+  #droppable, #droppable2 { width: 230px; height: 120px; padding: 0.5em; float: left; margin: 10px; }
+  #droppable-inner, #droppable2-inner { width: 170px; height: 60px; padding: 0.5em; float: left; margin: 10px; }
+  </style>
+<script type="text/javascript">
+$(document).ready(function(){
+    $( "#draggable" ).draggable();
+ 
+    $( "#droppable, #droppable-inner" ).droppable({
+      activeClass: "ui-state-hover",
+      hoverClass: "ui-state-active",
+      drop: function( event, ui ) {
+        $( this )
+          .addClass( "ui-state-highlight" )
+          .find( "> p" )
+            .html( "Dropped!" );
+        return false;
+      }
+    });
+ 
+    $( "#droppable2, #droppable2-inner" ).droppable({
+      greedy: true,
+      activeClass: "ui-state-hover",
+      hoverClass: "ui-state-active",
+      drop: function( event, ui ) {
+        $( this )
+          .addClass( "ui-state-highlight" )
+          .find( "> p" )
+            .html( "Dropped!" );
+      }
+    });
+});
+</script>
+</head>
+<body>
+<div id="draggable" class="ui-widget-content">
+  <p>Drag me to my target</p>
+</div>
+ 
+<div id="droppable" class="ui-widget-header">
+  <p>Outer droppable</p>
+  <div id="droppable-inner" class="ui-widget-header">
+    <p>Inner droppable (not greedy)</p>
+  </div>
+</div>
+ 
+<div id="droppable2" class="ui-widget-header">
+  <p>Outer droppable</p>
+  <div id="droppable2-inner" class="ui-widget-header">
+    <p>Inner droppable (greedy)</p>
+  </div>
+</div>
+</body>
+</html>
 
 @@ solicitation_aids.html.ep
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
