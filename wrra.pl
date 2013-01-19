@@ -273,7 +273,7 @@ group {
 						$data = $self->db->resultset('Rotarian')->search({'me.rotarian_id'=>$self->param('id')}, {order_by=>['me.lastname', 'donors.name', 'items.year'], prefetch=>{donors=>{items=>'highbid'}}});
 					}
 					case 'packets' {
-						$data = $self->db->resultset('Leader')->leaders->search({}, {order_by=>['me.lastname', 'rotarians.lastname', 'donors.name', 'items.year'], prefetch=>{rotarians=>{donors=>{items=>'highbid'}}}});
+						$data = $self->db->resultset('Leader')->leaders->search({}, {order_by=>['rotarians.lastname', 'rotarians.firstname', 'donors.name', 'items.year'], prefetch=>{rotarians=>{donors=>{items=>'highbid'}}}});
 					}
 				}
 				$data = ref $data ? $data->hashref_array : undef;
