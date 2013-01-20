@@ -97,6 +97,16 @@ helper order_by => sub {
 				}
 			}
 		}
+		case 'bankreport' {
+			switch ( $sidx ) {
+				case 'soldday' {
+					return order_by => {'-'.($sord||'asc')=>[\'cast(sold as date)']};
+				}
+				else {
+					return order_by => $sidx ? {'-'.($sord||'asc')=>'me.'.$sidx} : undef;
+				}
+			}
+		}
 		else {
 			return order_by => $sidx ? {'-'.($sord||'asc')=>'me.'.$sidx} : undef;
 		}
@@ -432,6 +442,32 @@ group {
 			html => {},
 		);
 	};
+
+	any '/bankreport' => sub {
+		my $self = shift;
+		my $data = $self->db->resultset('Item')->current_year->sold->search({$self->search}, {$self->rows, $self->order_by});
+		$self->respond_to(
+			xls => sub {
+				$self->cookie(fileDownload=>'true');
+				$self->cookie(path=>'/');
+				$self->render_xls(
+					result => $data->grid_xls(
+						[
+							soldday => 'Date Sold',
+							number => 'Item Number',
+							name => 'Item',
+							highbid => 'Winning Bid',
+							highbidder => 'Winner',
+						],
+				        ),
+				);
+			},
+			json => sub {
+				$self->render_json($data->grid);
+			},
+			html => {},
+		);
+	};
 };
 
 app->start;
@@ -481,7 +517,7 @@ Washington Rotary Radio Auction
 <!-- <%= link_to 'Manage Winners' => 'winners' %><br /> -->
 <br />
 <!-- <%= link_to 'View Current Summary' => 'summary' %><br /> -->
-<!-- <%= link_to 'Bank Report (Excel Data File Only)' => url_for 'bankreport', format => 'xls' %><br /> -->
+<%= link_to 'Bank Report' => 'bankreport' %><br />
 <!-- <%= link_to 'Pre-arranged Items Report (Excel Data File Only)' => url_for 'stockreport', format => 'xls' %><br /> -->
 <br />
 <%= link_to 'Test Paypal Interface' => 'paypaltest' %><br />
@@ -838,6 +874,74 @@ $("#list1").jqGrid({
 //        var json = $.parseJSON(xhr.responseText);
 //        if ( json && json.error == "401" ) { window.location = "error.html?referer=donors.html;status=401"; }
 //        if ( json && json.error == "403" ) { window.location = "login.html?referer=donors.html"; } }
+    );
+% end
+
+@@ bankreport.html.ep
+% extends 'grid', title=>'Bank Report';
+% content grid => begin
+$("#list1").jqGrid({
+        // To do: run boolFmatter after update
+        // To do: Escape on cell edit sometimes does not work
+        url: '<%= url_for %>',
+        mtype: 'POST',
+        datatype: 'json',
+	accepts: {
+		json: "application/json"
+	},
+        jsonReader: {repeatitems: false, id: "number"},
+        ajaxGridOptions: {
+		contentType: "application/json",
+		headers: { 
+			Accept : "application/json",
+		}
+	},
+	postData: {grid: "bankreport"},
+        serializeGridData: function (postData) { return $.toJSON(postData); },
+        caption: "Bank Report",
+        colModel:[
+            {name:'soldday',label:'Date Sold',width:200,editable:false},
+            {name:'number',label:'Item Number',width:200,editable:false},
+            {name:'name',label:'Item',width:200,editable:false},
+            {name:'highbid',label:'Winning Bid',width:200,editable:false},
+            {name:'highbidder',label:'Winner',width:200,editable:false}
+        ],
+        loadComplete: formatGridCells,
+        recreateForm: true,
+        altRows: true,
+        rownumbers: true,
+        rownumWidth: 50,
+        scroll: false,
+        rowNum: 10,
+        rowList: [10, 20, 50, 100, 500, 1000, 5000, 10000],
+        pager: '#pager1',
+        sortname: 'soldday',
+        viewrecords: true,
+        height: "75\%",
+        autowidth: true
+    });
+    $("#list1").jqGrid('navGrid','#pager1',
+        {edit:false,add:false,del:false},
+        // {edit}, {add}, {del}, {search}, {view}
+        {},
+        {},
+        {},
+        {
+/*
+            url: "<%= url_for %>",
+            caption: "Search Bank Report"
+*/
+        },
+        {
+/*
+            url: "<%= url_for %>/view",
+            caption: "View Bank Report"
+*/
+        }
+//    ).ajaxComplete(function(e, xhr, settings){
+//        var json = $.parseJSON(xhr.responseText);
+//        if ( json && json.error == "401" ) { window.location = "error.html?referer=rotarians.html;status=401"; }
+//        if ( json && json.error == "403" ) { window.location = "login.html?referer=rotarians.html"; } }
     );
 % end
 
