@@ -107,7 +107,10 @@ helper rows => sub {
 	do { $self->session->{$_} = $self->json->{$_} if $self->json->{$_}; } foreach qw/page rows/;
 	my $page = $self->json->{page}||$self->session->{page};
 	my $rows = $self->json->{rows}||$self->session->{rows};
-	return (page => $page||1, rows => $rows||10);
+	given ( $self->stash->{'format'} ) {
+		when ('xls') { return () }
+		default { return (page => $page||1, rows => $rows||10) }
+	}
 };
 #helper bind => sub {
 #	my $self = shift;
@@ -310,7 +313,6 @@ under '/grid';
 group {
 	any '/rotarians' => sub {
 		my $self = shift;
-		return $self->render unless $self->req->is_xhr;
 		my $data = $self->db->resultset('Rotarian')->search({$self->search}, {$self->rows, $self->order_by});
 		$self->respond_to(
 			xls => sub {
@@ -318,7 +320,10 @@ group {
 				$self->cookie(path=>'/');
 				$self->render_xls(result => $data->grid_xls);
 			},
-			json => {json => $data->grid},
+			json => sub {
+				$self->render_json($data->grid);
+			},
+			html => {},
 		);
 	};
 
@@ -326,7 +331,6 @@ group {
 		my $self = shift;
 		$self->session->{solicit} //= 1;
 		$self->session->{rotarian_id} //= {'!=' => undef};
-		return $self->render unless $self->req->is_xhr;
 		my $data = $self->db->resultset('Donor')->search({$self->search}, {$self->rows, $self->order_by, prefetch=>['rotarian']});
 		$data = $data->search($self->session->{filter}) if defined $self->session->{filter};
 		$self->respond_to(
@@ -335,14 +339,19 @@ group {
 				$self->cookie(path=>'/');
 				$self->render_xls(result => $data->grid_xls);
 			},
-			json => {json => $data->grid},
+			json => sub {
+				$self->render_json($data->grid);
+			},
+			html => {},
 		);
 	};
 	any '/donors/:id' => (is_xhr => 1) => sub {
 		my $self = shift;
 		my $data = $self->db->resultset('Item')->search({donor_id=>$self->param('id')}, {$self->rows, order_by=>'year', prefetch=>['highbid']});
 		$self->respond_to(
-			json => {json => $data->grid},
+			json => sub {
+				$self->render_json($data->grid);
+			},
 		);
 	};
 
@@ -356,7 +365,10 @@ group {
 				$self->cookie(path=>'/');
 				$self->render_xls(result => $data->grid_xls);
 			},
-			json => {json => $data->grid},
+			json => sub {
+				$self->render_json($data->grid);
+			},
+			html => {},
 		);
 	};
 
@@ -370,7 +382,10 @@ group {
 				$self->cookie(path=>'/');
 				$self->render_xls(result => $data->grid_xls);
 			},
-			json => {json => $data->grid},
+			json => sub {
+				$self->render_json($data->grid);
+			},
+			html => {},
 		);
 	};
 
@@ -384,7 +399,10 @@ group {
 				$self->cookie(path=>'/');
 				$self->render_xls(result => $data->grid_xls);
 			},
-			json => {json => $data->grid},
+			json => sub {
+				$self->render_json($data->grid);
+			},
+			html => {},
 		);
 	};
 };
