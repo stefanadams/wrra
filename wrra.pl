@@ -128,6 +128,9 @@ helper rows => sub {
 
 get '/' => 'index';
 get '/bookmarks';
+get '/paypaltest';
+get '/ringcentral';
+get '/notes';
 
 under '/api';
 group {
@@ -451,10 +454,41 @@ __DATA__
 Washington Rotary Radio Auction
 
 @@ bookmarks.html.ep
-<%= link_to 'Postcards' => url_for 'postcards', format => 'xls' %><br />
-<%= link_to 'Solicitation Aids' => 'solicitation_aids' %><br />
-<%= link_to 'Rotarians Grid' => 'rotarians' %><br />
-<%= link_to 'Donors Grid' => 'donors' %><br />
+<%= link_to 'Manage Rotarians' => 'rotarians' %><br />
+<%= link_to 'Manage Donors' => 'donors' %><br />
+<%= link_to 'Donor Mailing Label (Excel Data File Only)' => url_for 'postcards', format => 'xls' %><br />
+<!-- <%= link_to 'Manage Pre-arranged Items' => url_for 'stockitems', format => 'xls' %><br /> -->
+<%= link_to 'Rotarian Solicitation Aids' => 'solicitation_aids' %><br />
+<br />
+<!-- <%= link_to 'Manage Items' => 'items' %><br /> -->
+<!-- <%= link_to 'Sequence Items' => 'seqitems' %><br /> -->
+<!-- <%= link_to 'Manage Bellringers' => 'bellitems' %><br /> -->
+<!-- <%= link_to 'Missourian Insert Data (Excel Data File Only)' => url_for 'insert', format => 'xls' %><br /> -->
+<br />
+<!-- <%= link_to 'Manage Ads' => 'ads' %><br /> -->
+<!-- <%= link_to 'Schedule Ads' => 'schedule_ads' %><br /> -->
+<br />
+<!-- <%= link_to 'Public View' => 'auction' %><br /> -->
+<!-- <%= link_to 'Sequence Items' => 'seqitems' %><br /> -->
+<!-- <a href="http://iis.radioauction.washingtonrotary.com/admin_auctioneer_a.asp">Auctioneer A</a><br /> -->
+<!-- <a href="http://iis.radioauction.washingtonrotary.com/admin_auctioneer_b.asp">Auctioneer B</a><br /> -->
+<!-- <a href="http://iis.radioauction.washingtonrotary.com/admin_start_auction_01.asp">Start Auctions (Assign Auctioneers)</a><br /> -->
+<!-- <a href="http://iis.radioauction.washingtonrotary.com/admin_main.asp">Control Functions (Start Timers, Sell Items)</a><br /> -->
+<!-- <a href="http://iis.radioauction.washingtonrotary.com/admin_place_bid_01.asp">Place Bids from Callers</a><br /> -->
+<!-- <%= link_to 'Manage Requests' => 'requests' %><br /> -->
+<!-- <%= link_to 'Manage Bidders' => 'bidders' %><br /> -->
+<!-- <%= link_to 'Manage Items Currently In Bidding' => 'bidding' %><br /> -->
+<!-- <%= link_to 'Manage Winners' => 'winners' %><br /> -->
+<br />
+<!-- <%= link_to 'View Current Summary' => 'summary' %><br /> -->
+<!-- <%= link_to 'Bank Report (Excel Data File Only)' => url_for 'bankreport', format => 'xls' %><br /> -->
+<!-- <%= link_to 'Pre-arranged Items Report (Excel Data File Only)' => url_for 'stockreport', format => 'xls' %><br /> -->
+<br />
+<%= link_to 'Test Paypal Interface' => 'paypaltest' %><br />
+<%= link_to 'Ring Central Notes' => 'ringcentral' %><br />
+<!-- <%= link_to 'Committee Notes' => 'notes' %><br /> -->
+<br />
+<!-- <%= link_to 'Backup Database and Application' => 'backup' %><br /> -->
 
 @@ api/buildselect.html.ep
 <select>
@@ -1120,5 +1154,87 @@ function UpdateLeader(id) {
 		<hr />
 		{#/for}
 	</textarea>
+</body>
+</html>
+
+@@ ringcentral.html.ep
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1" />
+<title>Ring Central Notes</title>
+</head>
+<body>
+Notes and links about Ring Central Setup and Configuration
+</body>
+</html>
+
+@@ notes.html.ep
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1" />
+<title>Committee Notes</title>
+</head>
+<body>
+Notes and links about the Auction in general
+</body>
+</html>
+
+@@ paypaltest.html.ep
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1" />
+<title>Test Paypal</title>
+<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" />
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+    $("#paypal").click(function(){
+        $("#dialog-paypal").dialog({
+            autoOpen: false,
+            height: 320,
+            width: 380,
+            modal: true
+        });
+        $("#dialog-paypal").dialog("open");
+        $("#paypal-os0").autocomplete({
+            source: "pl/ac/pay_number",
+            minLength: 3,
+            select: function(event, ui){
+                if (ui.item){
+                    $('#paypal-name').val(ui.item.item);
+                    $('#paypal-os1').val(ui.item.address);
+                    $('#paypal-os2').val(ui.item.csz);
+                }  
+            }
+        });
+    });
+});
+</script>
+<style>
+	    a#paypal {text-decoration:underline;cursor:pointer;}
+		div#dialog-paypal.modal {display:none;}
+</style>
+</head>
+<body>
+<span class="pay">Pay:
+<a id="paypal" class="modal">PayPal</a>
+</span>
+<div id="dialog-paypal" title="Pay by Credit Card" class="modal">
+<form action='https://www.paypal.com/cgi-bin/webscr' method='post'>
+<input type='hidden' name='cmd' value='_s-xclick'><input type='hidden' name='hosted_button_id' value='4113257'>
+<table>
+<tr><td colspan="2">Complete the form below to pay for your item:</td></tr>
+<tr><td>Item #:</td><td><input type='hidden' name='on0' value='Item ID'><input id="paypal-os0" type='text' name='os0' maxlength='60' value='Item ID' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+<tr><td>Item:</td><td><input type='hidden' name='item_name' value='Item'><input id="paypal-name" type='text' name='item_name' maxlength='60' value='Item' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+<tr><td>Street Address:</td><td><input type='hidden' name='on1' value='Street Address'><input id="paypal-os1" type='text' name='os1' maxlength='60' value='Street Address' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+<tr><td>City, ST ZIP</td><td><input type='hidden' name='on2' value='City, State, Zip'><input id="paypal-os2" type='text' name='os2' maxlength='60' value='City, State, Zip' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+<tr><td colspan="2" align="center"><input type='image' src='https://www.paypal.com/en_US/i/btn/btn_paynowCC_LG.gif' border='0' name='submit' alt='PayPal - The safer, easier way to pay online!'><img alt='' border='0' src='https://www.paypal.com/en_US/i/scr/pixel.gif' width='1' height='1'></td></tr>
+</table>
+</form>
+</div>
 </body>
 </html>
