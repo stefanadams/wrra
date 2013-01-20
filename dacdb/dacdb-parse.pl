@@ -40,9 +40,9 @@ my $p = new HTML::TableParser([
 		$dacdb{${$_[2]}[10]}=1;
 		${$_[2]}[17] =~ /^.*?(\d{3}).*?(\d{3}).*?(\d{4}).*?$/;
 		${$_[2]}[17] = $1 && $2 && $3 ? "($1) $2-$3" : '';
-		if ( my $r = $db->resultset('Rotarian')->find(${$_[2]}[10]) ) {
+		if ( my $r = $db->resultset('Rotarian')->search({'-or' => {rotarian_id => ${$_[2]}[10], first) ) {
 			return if join("\t", map { $r->$_||'' } qw/rotarian_id lastname firstname phone email/) eq join("\t", map { ${$_[2]}[$_]||'' } qw/10 1 2 17 19/);
-			print "Updating ${$_[2]}[1], ${$_[2]}[2]...\n";
+			print "Updating ${$_[2]}[1], ${$_[2]}[2] (${$_[2]}[10])...\n";
 			$r->update({
 				lastname=>${$_[2]}[1],
 				firstname=>${$_[2]}[2],
@@ -51,7 +51,8 @@ my $p = new HTML::TableParser([
 			}) unless $ENV{DEBUG};
 			$update++;
 		} else {
-			print "Inserting ${$_[2]}[1], ${$_[2]}[2]...\n";
+			${$_[2]}[10] = int(rand(1000))+1 unless ${$_[2]}[10] =~ /^\d+$/;
+			print "Inserting ${$_[2]}[1], ${$_[2]}[2] (${$_[2]}[10])...\n";
 			$db->resultset('Rotarian')->create({
 				rotarian_id=>${$_[2]}[10],
 				lastname=>${$_[2]}[1],
@@ -67,6 +68,6 @@ $p->parse_file($html);
 
 my $r = $db->resultset('Rotarian');
 while ( $_ = $r->next ) {
-	print "Delete: ", $_->lastname, ', ', $_->firstname, "\n" unless $dacdb{$_->id};
+	print "Delete: ", $_->lastname, ', ', $_->firstname, "(", $_->id, ")\n" unless $dacdb{$_->id};
 }
 print STDERR "Updated: $update\nNew: $new\n";
