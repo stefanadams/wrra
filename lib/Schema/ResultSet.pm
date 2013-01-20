@@ -29,15 +29,15 @@ sub grid {
 
 sub grid_xls { # This has an awful API: [columns], sub { ... }
 	my $self = shift;
-	my $cb = pop @_;
-	@_ = @{+shift};
-	my @columns = @_[grep { !($_&1) } 0..$#_];
-	my @headers = @_[grep {  ($_&1) } 0..$#_];
+	my @want = @{+shift} or die "No columns defined\n";
+	my @columns = @want[grep { !($_&1) } 0..$#want];
+	my @headers = @want[grep {  ($_&1) } 0..$#want];
+	my $cb = shift || sub { $_[1] };
 
 	my @xls = ([@headers]);
 	foreach my $xls ( $self->all ) {
 		my $json = $xls->TO_JSON;
-		push @xls, [map { ref $cb ? $cb->($_, $json->{$_}) : $json->{$_} } @columns];
+		push @xls, [map { $cb->($_, $json->{$_}) } @columns];
 	}
 	return [@xls];
 }
