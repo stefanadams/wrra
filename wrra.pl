@@ -289,23 +289,14 @@ group {
 	};
 	any '/postcards' => sub {
 		my $self = shift;
-		switch ( $self->req->is_xhr ) {
-			case 0 {
-				$self->respond_to(
-					html => {},
+		$self->respond_to(
+			xls => sub {
+				$self->render_xls(
+					format => 'xls',
+					result => $self->db->resultset('Donor')->postcards,
 				);
-			}
-			case 1 {
-				$self->respond_to(
-					xls => sub {
-						$self->render_xls(
-							format => 'xls',
-							result => $self->db->resultset('Donor')->postcards,
-						);
-					},
-				);
-			}
-		}
+			},
+		);
 	};
 };
 
@@ -318,7 +309,16 @@ group {
 			xls => sub {
 				$self->cookie(fileDownload=>'true');
 				$self->cookie(path=>'/');
-				$self->render_xls(result => $data->grid_xls);
+				$self->render_xls(
+					result => $data->grid_xls(
+						[
+							rotarian_id => 'RI#',
+							name => 'Rotarian',
+							email => 'Email',
+							phone => 'Phone',
+						],
+				        ),
+				);
 			},
 			json => sub {
 				$self->render_json($data->grid);
@@ -451,6 +451,7 @@ __DATA__
 Washington Rotary Radio Auction
 
 @@ bookmarks.html.ep
+<%= link_to 'Postcards' => url_for 'postcards', format => 'xls' %><br />
 <%= link_to 'Solicitation Aids' => 'solicitation_aids' %><br />
 <%= link_to 'Rotarians Grid' => 'rotarians' %><br />
 <%= link_to 'Donors Grid' => 'donors' %><br />
