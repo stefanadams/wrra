@@ -337,7 +337,31 @@ group {
 			xls => sub {
 				$self->cookie(fileDownload=>'true');
 				$self->cookie(path=>'/');
-				$self->render_xls(result => $data->grid_xls);
+				$self->render_xls(
+					result => $data->grid_xls(
+						[
+							donor_id => 'Donor ID',
+							phone => 'Phone',
+							category => 'Category',
+							name => 'Name',
+							contact => 'Contact',
+							address => 'Address',
+							city => 'City',
+							state => 'State',
+							solicit => 'Solicit',
+							ly_items => 'Last Year Items',
+							rotarian => 'Rotarian',
+							comments => 'Comments',
+						],
+						sub {
+							my ($column, $value) = @_;
+							given ( $column ) {
+								when ( 'solicit' ) { $value?'Yes':'No' }
+								default { $value }
+							}
+						}
+				        ),
+				);
 			},
 			json => sub {
 				$self->render_json($data->grid);

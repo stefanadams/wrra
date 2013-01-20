@@ -27,12 +27,17 @@ sub grid {
 	};
 }
 
-sub grid_xls {
+sub grid_xls { # This has an awful API: [columns], sub { ... }
 	my $self = shift;
+	my $cb = pop @_;
+	@_ = @{+shift};
+	my @columns = @_[grep { !($_&1) } 0..$#_];
+	my @headers = @_[grep {  ($_&1) } 0..$#_];
 
-	my @xls = ();
+	my @xls = ([@headers]);
 	foreach my $xls ( $self->all ) {
-		push @xls, [map { $xls->can($_) && $xls->$_ } grep { $_ } $xls->columns];
+		my $json = $xls->TO_JSON;
+		push @xls, [map { ref $cb ? $cb->($_, $json->{$_}) : $json->{$_} } @columns];
 	}
 	return [@xls];
 }
