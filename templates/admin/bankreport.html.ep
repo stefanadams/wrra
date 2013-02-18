@@ -1,0 +1,72 @@
+% extends 'grid', title=>'Bank Report';
+% content grid => begin
+$("#list1").jqGrid({
+        // To do: run boolFmatter after update
+        // To do: Escape on cell edit sometimes does not work
+        url: '<%= url_for %>',
+        mtype: 'POST',
+        datatype: 'json',
+	accepts: {
+		json: "application/json"
+	},
+        jsonReader: {repeatitems: false, id: "number"},
+        ajaxGridOptions: {
+		contentType: "application/json",
+		headers: { 
+			Accept : "application/json",
+		}
+	},
+	postData: {grid: "bankreport"},
+        serializeGridData: function (postData) { return $.toJSON(postData); },
+        caption: "Bank Report",
+        colModel:[
+            {name:'soldday',label:'Date Sold',width:50,editable:false},
+            {name:'number',label:'Item Number',width:30,editable:false},
+            {name:'name',label:'Item',width:200,editable:false},
+            {name:'highbid',label:'Winning Bid',width:30,editable:false},
+            {name:'highbidder',label:'Winner',width:200,editable:false}
+        ],
+        loadComplete: formatGridCells,
+        recreateForm: true,
+        altRows: true,
+        rownumbers: true,
+        rownumWidth: 50,
+        scroll: false,
+        rowNum: 10,
+        rowList: [10, 20, 50, 100, 500, 1000, 5000, 10000],
+        pager: '#pager1',
+        sortname: 'soldday',
+        viewrecords: true,
+        height: "75\%",
+        autowidth: true
+    });
+    $("#list1").jqGrid('navGrid','#pager1',
+        {edit:false,add:false,del:false},
+        // {edit}, {add}, {del}, {search}, {view}
+        {},
+        {},
+        {},
+        {
+            url: "<%= url_for %>",
+            caption: "Search Bank Report",
+/*
+            onSearch: function(){
+                var postData = $('#list1').jqGrid('getGridParam', 'postData');
+                if (postData.searchField === 'highbidder') {
+                    postData.searchField = 'bidder.name';
+                }
+            }
+*/
+        },
+        {
+/*
+            url: "<%= url_for %>/view",
+            caption: "View Bank Report"
+*/
+        }
+//    ).ajaxComplete(function(e, xhr, settings){
+//        var json = $.parseJSON(xhr.responseText);
+//        if ( json && json.error == "401" ) { window.location = "error.html?referer=rotarians.html;status=401"; }
+//        if ( json && json.error == "403" ) { window.location = "login.html?referer=rotarians.html"; } }
+    );
+% end

@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title><%= $title %></title>
+<link   href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/themes/base/jquery-ui.css" type="text/css" rel="stylesheet" media="all" />
+<link   href="/css/ui.jqgrid.css" rel="stylesheet" type="text/css" media="screen" />      
+<script  src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+<script  src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/jquery-ui.min.js" type="text/javascript"></script>
+<script  src="/js/i18n/grid.locale-en.js" type="text/javascript"></script>
+<script  src="/js/jquery.jqGrid.src.js" type="text/javascript"></script>  
+<script  src="/js/jquery.maskedinput.min.js" type="text/javascript"></script>
+<script  src="/js/jquery.fileDownload.js" type="text/javascript"></script>
+<style>
+    #loggedin {display:none}
+    .link {cursor:pointer;color:blue;text-decoration:underline;}
+</style>
+<script type="text/javascript">
+$(document).ready(function(){  
+//    $.getJSON('pl/about', function(data) {
+//        if ( data.username ) {
+//            $("#loggedin").append("Logged in as " + data.username);
+//        }
+//        document.title = data.name + " " + data.year + (data.night?", Night " + data.night:'') + (data.live?'':' (Offline)');
+//    });
+
+    $.extend($.jgrid.defaults, {
+        mtype: 'GET',
+        datatype: 'json',
+        url: '<%= url_for %>',
+        cellurl: '<%= url_for %>/update',
+        jsonReader: {repeatitems: false},
+        ajaxCellOptions: {
+            type: "POST"
+        },
+        serializeCellData: function (postData) { return JSON.stringify(postData); },
+        ajaxRowOptions: {
+            type: "POST"
+        },
+        serializeRowData: function (postData) { return JSON.stringify(postData); },
+        cellEdit: true,
+        recreateForm: true,
+        altRows: true,
+        rownumbers: true,
+        rownumWidth: 50,
+        scroll: false,
+        rowNum: 10,
+        rowList: [10, 20, 50, 100, 500, 1000, 5000, 10000],
+        sortname: 'name',
+        pager: $('#pager1'),
+        viewrecords: true,
+        height: "75\%",
+        autowidth: true,
+        beforeSubmitCell: function(rowid,celname,value,iRow,iCol){
+            return {celname:celname};
+        },
+        loadComplete: function(){
+            $('table#list1 tbody tr td[title~="Yes"]').css('color', 'green');
+            $('table#list1 tbody tr td[title~="No"]').css('color', 'red');   
+            $('table#list1 tbody tr td[aria-describedby="list1_items"]').css('color', 'green');
+            $('table#list1 tbody tr td[aria-describedby="list1_items"][title="0"]').css('color', 'red');
+        }
+
+    });
+    $.extend($.jgrid.ajaxOptions, {
+        contentType: "application/json",
+        headers: { accept: "application/json" }
+    });
+    $.extend($.jgrid.edit, {
+        ajaxEditOptions: { type: "POST" },
+        serializeEditData: function (postData) { return JSON.stringify(postData); },
+        width: 700,
+        closeOnEscape: true,
+        closeAfterEdit: true,
+        afterSubmit: function (response,postdata) {
+            var json=response.responseText;
+            var result=eval("("+json+")"); 
+            return [result.res == 'ok' ? true : false,result.msg,null];
+        }
+    });
+    $.extend($.jgrid.del, {
+        ajaxDelOptions: { type: "DELETE" },
+        serializeDelData: function (postData) { return JSON.stringify(postData); },
+        afterSubmit: function (response,postdata) {
+            var json=response.responseText;
+            var result=eval("("+json+")"); 
+            return [result.res == 'ok' ? true : false,result.msg,null];
+        }
+    });
+
+    // formatter property: Reference in .jqGrid {options} colModel {name:...} property with formatter:'xxx'
+    function hasFK(value, colname) { var RE = /:[0-9]+$/; if ( RE.test(value) ) return [true,""]; return [false,colname+": Please make a selection from the suggestion menu"]; }
+    $.extend($.fn.fmatter , {
+        phone : function (cellvalue, options, rowdata) {
+            if ( cellvalue ) {
+                var re = /\(?([0-9]{3})\)? ?([0-9]{3})-?([0-9]{4})/.exec(cellvalue);
+                return "(" + re[1] + ") " + re[2] + "-" + re[3];
+            }
+            return '&nbsp;';
+        },
+        bool : function (cellvalue, options, rowdata) {
+            if ( cellvalue == 0 ) return 'No';
+            return 'Yes';
+        },
+        category : function (cellvalue, options, rowdata) {
+            if ( cellvalue ) return cellvalue.charAt(0).toUpperCase() + cellvalue.slice(1);
+            return '&nbsp;';
+        },
+        hideFK : function (cellvalue, options, rowdata) { // Hide the FK during display
+            if ( cellvalue ) {
+                var re = /^(.*?):([0-9]+)$/.exec(cellvalue);
+                return re[1] + '<span style="display: none">:' + re[2] + '</span>';
+            }
+            return '';
+        }
+    });
+    $.extend($.fn.fmatter.hideFK , {
+        unformat : function(cellvalue, options) {
+            if ( cellvalue ) return cellvalue; return '';
+        }
+    });
+
+    <%= content 'functions' %>
+    <%= content 'grid' %>
+
+    $("input[name=solicit]").click(function(){
+        $.get("<%= url_for 'filter' %>", {key: "solicit", value: $('input:radio[name=solicit]:checked').val()}, function(){
+            $('#list1').trigger('reloadGrid');
+        });
+    });
+    $("input[name=assigned]").click(function(){
+        $.get("<%= url_for 'filter' %>", {key: "assigned", value: $('input:radio[name=assigned]:checked').val()}, function(){
+            $('#list1').trigger('reloadGrid');
+        });
+    });
+
+    // Ajax-style file downloading
+    $(document).on("click", "a.fileDownloadSimpleRichExperience", function () {
+        $.fileDownload($(this).attr('href'), {
+            preparingMessageHtml: "We are preparing your report, please wait...",
+            failMessageHtml: "There was a problem generating your report, please try again."
+        });
+        return false; //this is critical to stop the click event which will trigger a normal file download!
+    });
+
+});
+</script>
+</head>  
+<body>   
+<div id="loggedin"></div>
+<a href="<%= url_for 'bookmarks' %>">Back to Bookmarks</a><br />
+<%= content 'filter' %>
+<a class="fileDownloadSimpleRichExperience" href="<%= url_for undef, format=>'xls' %>">Download as Excel</a>
+<table id="list1" class="scroll"></table> 
+<div id="pager1" class="scroll" style="text-align:center;" />
+</body>
+</html>

@@ -1,0 +1,51 @@
+% extends '/admin/layouts/grid', title=>'Rotarians';
+% content grid => begin
+$.extend($.fn.fmatter , {
+    has_submissions : function (cellvalue, options, rowdata) {
+        if ( cellvalue ) {
+            return '<span style="color:'+(rowdata.has_submissions >= 1 ? 'Green' : 'Red')+'">' + cellvalue + '</span>';
+        }
+        return '';
+    }
+});
+$.extend($.fn.fmatter.has_submissions , {
+    unformat : function(cellvalue, options) {
+        if ( cellvalue ) return cellvalue; return '';
+    }
+});
+$("#list1").jqGrid({
+    // To do: run boolFmatter after update
+    // To do: Escape on cell edit sometimes does not work
+    caption: "Rotarians",
+    colModel:[
+        {name:'id',label:'PH#',width:100,editable:false},
+        {name:'name',label:'Rotarian',width:200,editable:true,formatter:'has_submissions'},
+        {name:'email',label:'Email',width:200,editable:true},
+        {name:'phone',label:'Phone',width:200,editable:true,editoptions:{dataInit:function(elem){$(elem).mask("(999) 999-9999");}},editrules:{required:true},formoptions:{elmsuffix:'(*)'},formatter:'phone'},
+    ]
+}).navGrid('#pager1',
+    {edit:true,add:true,del:true},
+    // {edit}, {add}, {del}, {search}, {view}
+    {
+        url: "<%= url_for 'update_rotarians' %>",
+        editCaption: "Edit Rotarian"
+    },
+    {
+        url: "<%= url_for 'create_rotarians' %>",
+        addCaption: "Add Rotarian"
+    },
+    {
+        url: "<%= url_for 'delete_rotarians' %>",
+        caption: "Delete Rotarian",
+        msg: "Deleted selected Rotarian(s)?"
+    },
+    {
+        url: "<%= url_for 'search_rotarians' %>",
+        caption: "Search Rotarians"
+    },
+    {
+        url: "<%= url_for 'view_rotarians' %>",
+        caption: "View Rotarian"
+    }
+);
+% end

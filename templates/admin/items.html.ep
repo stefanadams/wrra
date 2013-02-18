@@ -1,0 +1,65 @@
+% extends '/admin/layouts/grid', title=>'Items';
+% content grid => begin
+var categories = ":;food:Food;gc:Gift Certificates;travel:Travel;personal care:Personal Care;auto:Auto;apparel:Apparel;sports:Sports;event tickets:Event Tickets;baskets:Baskets;wine:Wine;misc:Misc;garden:Garden;one per:One Per;restaurant:Restaurant;catering:Catering;floral:Floral & Landscape;spa:Salon & Spa;golf:Golf;meat:Steak & Meat;car wash:Car Wash;droege:Droege's;kr:K & R";
+var autocomplete = {
+    minLength: 3,
+    limit: 20,
+    extraParams: {donor: function(){ return $('#donor').val(); }}
+};
+<%== autocomplete 'ac_donor', [qw/donor.advertisement/] %>
+<%== autocomplete 'ac_stockitem', [qw/name _value category/] %>
+<%== autocomplete 'ac_item', [qw/description _value url category/] %>
+<%== autocomplete 'ac_advertisement' %>
+
+// Pops an alert after add form indicating the item number that was just added
+function alertAddedItemNumber(response,postdata) {
+    var json=response.responseText;
+    var result=eval("("+json+")"); 
+    if (result.id) $.get('<%= url_for 'item_number' %>', {term:result.id}, function(data){
+        alert("Added Item Number "+data);
+    });
+    return [result.sc,result.msg,null];
+}
+$("#list1").jqGrid({
+    caption: "Items",
+    sortname: 'number',
+
+    colModel:[
+            {name:'number',label:'Number',width:20,editable:false},
+            {name:'donor.nameid',label:'Donor',width:150,editable:true,editoptions:{size:50,dataInit:ac_donor},editrules:{required:true,custom:true,custom_func:hasFK},formoptions:{elmsuffix:'(*)'},formatter:'hideFK'},
+            {name:'stockitem.nameid',label:'Stock Item',width:100,editable:true,hidden:true,editoptions:{size:50,dataInit:ac_stockitem},editrules:{edithidden:true,required:false,custom:true,custom_func:hasFK},formatter:'hideFK'},
+            {name:'name',label:'Item', width:200,editable:true,editoptions:{size:50,dataInit:ac_item},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+            {name:'description',label:'Description', width:100,editable:true,hidden:true,edittype:'textarea',editoptions:{rows:4,cols:40},editrules:{edithidden:true}},
+            {name:'value',label:'Value', width:25, align:'right',editable:true,editoptions:{size:10},editrules:{required:true,number:true,minValue:0},formoptions:{elmsuffix:'(*)'},formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
+            {name:'category',label:'Category', width:50,align:'center',editable:true,edittype:'select',editoptions:{multiple:true,value:categories},formatter:'category'},
+            {name:'donor.advertisement',label:'Advertisement',hidden:true,editable:true,edittype:'textarea',editrules:{edithidden:true},editoptions:{rows:4,cols:40,dataInit:ac_advertisement}},
+            {name:'url',label:'More Info URL', width:100,editable:true,hidden:true,editoptions:{size:50},editrules:{edithidden:true}}
+    ]
+}).navGrid('#pager1',
+    {edit:true,add:true,del:true},
+    // {edit}, {add}, {del}, {search}, {view}
+    {
+            url: "<%= url_for 'update_items' %>",
+            editCaption: "Edit Item"
+    },
+    {
+            url: "<%= url_for 'create_items' %>",
+            addCaption: "Add Item",
+            //editData: {year: 2009},
+            afterSubmit: alertAddedItemNumber
+    },
+    {
+            url: "<%= url_for 'delete_items' %>",
+            caption: "Delete Item",
+            msg: "Deleted selected item(s)?"
+    },
+    {
+            url: "<%= url_for 'search_items' %>",
+            caption: "Search Item"
+    },
+    { 
+            url: "<%= url_for 'view_items' %>",
+            caption: "View Item"
+    }
+);
+% end

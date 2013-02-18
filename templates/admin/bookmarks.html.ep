@@ -1,0 +1,35 @@
+<%= link_to 'Manage Rotarians' => 'rotarians' %><br />
+<%= link_to 'Manage Donors' => 'donors' %><br />
+<%= link_to 'Donor Mailing Label (Excel Data File Only)' => 'postcards', format => 'xls' %><br />
+<%= link_to 'Manage Pre-arranged Items' => 'stockitems' %><br />
+<%= link_to 'Rotarian Solicitation Aids' => 'solicitation_aids' %><br />
+<br />
+<%= link_to 'Manage Items' => 'items' %><br />
+<%= link_to 'Sequence Items' => 'seqitems' %><br />
+<%= link_to 'Manage Bellringers' => 'bellitems' %><br />
+<%= link_to 'Missourian Insert Data (Excel Data File Only)' => 'insert', format => 'xls' %><br />
+<br />
+<%= link_to 'Manage Ads' => 'ads' %><br />
+<%= link_to 'Schedule Ads' => 'schedule_ads' %><br />
+<br />
+<!-- <%= link_to 'Public View' => 'auction' %><br /> -->
+<!-- <%= link_to 'Sequence Items' => 'seqitems' %><br /> -->
+<!-- <a href="http://iis.radioauction.washingtonrotary.com/admin_auctioneer_a.asp">Auctioneer A</a><br /> -->
+<!-- <a href="http://iis.radioauction.washingtonrotary.com/admin_auctioneer_b.asp">Auctioneer B</a><br /> -->
+<!-- <a href="http://iis.radioauction.washingtonrotary.com/admin_start_auction_01.asp">Start Auctions (Assign Auctioneers)</a><br /> -->
+<!-- <a href="http://iis.radioauction.washingtonrotary.com/admin_main.asp">Control Functions (Start Timers, Sell Items)</a><br /> -->
+<!-- <a href="http://iis.radioauction.washingtonrotary.com/admin_place_bid_01.asp">Place Bids from Callers</a><br /> -->
+<!-- <%= link_to 'Manage Requests' => 'requests' %><br /> -->
+<!-- <%= link_to 'Manage Bidders' => 'bidders' %><br /> -->
+<!-- <%= link_to 'Manage Items Currently In Bidding' => 'bidding' %><br /> -->
+<!-- <%= link_to 'Manage Winners' => 'winners' %><br /> -->
+<br />
+<%= link_to 'View Current Summary' => 'summary' %><br />
+<%= link_to 'Bank Report' => 'bankreport' %><br />
+<%= link_to 'Pre-arranged Items Report (Excel Data File Only)' => 'stockreport', format => 'xls' %><br />
+<br />
+<%= link_to 'Test Paypal Interface' => 'paypaltest' %><br />
+<!-- <%= link_to 'Ring Central Notes' => 'ringcentral' %><br /> -->
+<!-- <%= link_to 'Committee Notes' => 'notes' %><br /> -->
+<br />
+<!-- <%= link_to 'Backup Database and Application' => 'backup' %><br /> -->

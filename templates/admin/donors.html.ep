@@ -1,0 +1,87 @@
+% extends '/admin/layouts/grid', title=>'Donors';
+% content grid => begin
+var categories = ":;bank:Bank;lawyer:Lawyer;realty:Realty;doctor:Doctor;cpa:CPA;personal:Personal;esq:ESQ;seq:SEQ;insurance:Insurance";
+var autocomplete = {
+    minLength: 4
+};
+<%== autocomplete 'ac_city', [qw/label state zip/] %>
+$("#list1").jqGrid({
+    // To do: run boolFmatter after update
+    // To do: Escape on cell edit sometimes does not work
+    caption: "Donors",
+    //jsonReader: {subgrid: {root: "rows", repeatitems: true}},
+
+    colModel:[
+        {name:'chamberid',label:'C-ID',width:30,hidden:true,editable:true,editrules:{number:true,minValue:1,maxValue:9999}},
+        {name:'phone',label:'Phone',width:70,editable:true,editoptions:{dataInit:function(elem){$(elem).mask("(999) 999-9999");}},editrules:{required:true},formoptions:{elmsuffix:'(*)'},formatter:'phone'},
+        {name:'category',label:'Category',width:40,editable:true,edittype:'select',editoptions:{multiple:false,value:categories},formatter:'category'},
+        {name:'name',label:'Donor',width:200,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+        {name:'contact',label:'Contact',width:100,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+        {name:'address',label:'Address',width:100,search:false,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+        {name:'city',label:'City',width:60,editable:true,editrules:{required:true},editoptions:{dataInit:ac_city},formoptions:{elmsuffix:'(*)'}},
+        {name:'state',label:'State',width:60,editable:true,hidden:true,editrules:{edithidden:true}},
+        {name:'zip',label:'Zip',width:60,editable:true,hidden:true,editrules:{edithidden:true}},
+        {name:'email',label:'Email',width:60,search:false,editable:true,hidden:true,editrules:{email:true,edithidden:true,required:false}},
+        {name:'url',label:'URL',width:60,search:false,editable:true,hidden:true,editrules:{url:true,edithidden:true,required:false}},
+        {name:'advertisement',label:'Advertisement',hidden:true,search:false,editable:true,edittype:'textarea',editrules:{edithidden:true}},
+        {name:'solicit',label:'Solicit',width:25,editable:true,edittype:'select',editoptions:{multiple:false,value:'1:Yes;0:No'},formatter:'bool'},
+        {name:'ly_items',label:'LY',width:25,editable:false,search:false,sortable:false,formatter:'bool'},
+        {name:'rotarian',label:'Rotarian',width:100,editable:true,edittype:'select',editoptions:{multiple:false,dataUrl:'<%= url_for 'bs_rotarians' %>'}},
+        {name:'comments',label:'Comments',width:100,search:false,editable:true}
+    ],
+    subGrid: true,
+    subGridRowExpanded: function(subgrid_id, row_id) {
+        var subgrid_table_id;
+        subgrid_table_id = subgrid_id+"_t";
+        $("#"+subgrid_id).html("<table id='"+subgrid_table_id+"' class='scroll'></table>");
+        $("#"+subgrid_table_id).jqGrid({
+            url:"<%= url_for %>/"+row_id,
+            jsonReader: {subgrid: {root: "rows", repeatitems: true}},
+            colModel: [
+                {name:"year",label:"Year",width:130},
+                {name:"sold",label:"Night Sold",width:130},
+                {name:"value",label:"Value",width:130},
+                {name:"highbid",label:"High Bid",width:130},
+                {name:"bellringer",label:"Bellringer",width:130},
+            ],
+            height: '100%',
+            rowNum:20,
+        });
+    },
+}).navGrid('#pager1',
+    {edit:true,add:true,del:true},
+    // {edit}, {add}, {del}, {search}, {view}
+    {
+        url: "<%= url_for 'update_donors' %>",
+        editCaption: "Edit Donor"
+    },
+    {
+        url: "<%= url_for 'create_donors' %>",
+        addCaption: "Add Donor"
+    },
+    {
+        url: "<%= url_for 'delete_donors' %>",
+        caption: "Delete Donor",
+        msg: "Deleted selected donor(s)?"
+    },
+    {
+        url: "<%= url_for 'search_donors' %>",
+        caption: "Search Donor"
+    },
+    {
+        url: "<%= url_for 'view_donors' %>",
+        caption: "View Donor"
+    }
+);
+% end
+
+% content filter => begin
+    <%= radio_button solicit => '1', id => 'solicit' %>Show <b>Solicit</b> Records
+    <%= radio_button solicit => '0', id => 'solicit' %>Show <b>Non-Solicit</b> Records
+    <%= radio_button solicit => '', id => 'solicit' %>Show <b>Both Sets</b> of Records
+    <br />
+    <%= radio_button assigned => '1', id => 'assigned' %>Show <b>Assigned</b> Records
+    <%= radio_button assigned => '0', id => 'assigned' %>Show <b>Unassigned</b> Records
+    <%= radio_button assigned => '', id => 'assigned' %>Show <b>Both Sets</b> of Records
+    <br />
+% end
