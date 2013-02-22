@@ -53,6 +53,7 @@ sub rs_create {
 		(map { $_=>$req{$_} } grep { $self->result_source->has_column($_) } keys %req)
 	};
 	warn Dumper({create=>$create});
+	my $id = $self->create($create)->id;
 	return {res=>($id?'ok':'err'), msg=>($id?'ok':'err'), id=>$id};
 	return {id=>50000};
 }
