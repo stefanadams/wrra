@@ -44,7 +44,9 @@ sub rs_create {
 	foreach ( grep { ref $req{$_} eq 'CODE' } grep { !/^\+/ } keys %req ) {
 		my ($search, $update) = $req{$_}->(\%req);
 		warn Dumper({update_related => {$_ => [$search, $update]}});
-		$self->find($search)->$_->update($update);
+		# This isn't the best way to get it.
+		# How to translate a relationship to a resultset?
+		$self->result_source->schema->resultset("\u$_")->find($search)->update($update);
 	}
 	my $create = {
 		(map { my $key = $_; $key =~ s/^\+//; $key => ref $req{$_} eq 'CODE' ? $req{$_}->($self, \%req) : !ref($req{$_}) ? $req{$_} : () } grep { /^\+/ } keys %req),
