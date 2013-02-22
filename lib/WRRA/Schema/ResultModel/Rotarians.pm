@@ -13,6 +13,13 @@ sub resolver {
 		name => ['lastname', 'firstname'],
 		#soldday => [\'cast(sold as date)', 'number'],
 	},
+	update_or_create => {
+		'id' => sub { rotarian_id=>shift },
+		'name' => sub {
+			my ($last, $first) = (shift =~ /^([^,]+), ([^,]+)$/);
+			return lastname=>$last,firstname=>$first;
+		},
+	},
 }
 
 sub TO_XLS { shift->arrayref(qw(id has_submissions name email phone)) }

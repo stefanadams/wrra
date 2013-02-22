@@ -21,7 +21,7 @@ $("#list1").jqGrid({
         {name:'id',label:'PH#',width:100,editable:false},
         {name:'name',label:'Rotarian',width:200,editable:true,formatter:'has_submissions'},
         {name:'email',label:'Email',width:200,editable:true},
-        {name:'phone',label:'Phone',width:200,editable:true,editoptions:{dataInit:function(elem){$(elem).mask("(999) 999-9999");}},editrules:{required:true},formoptions:{elmsuffix:'(*)'},formatter:'phone'},
+        {name:'phone',label:'Phone',width:200,editable:true,formatter:'phone',editoptions:{dataInit:function(elem){$(elem).mask("(999) 999-9999");}}},
     ]
 }).navGrid('#pager1',
     {edit:true,add:true,del:true},
