@@ -46,7 +46,7 @@ sub setup_plugins {
   $self->controller_class('WRRA::Controller');
 
   $self->plugin('PODRenderer');  # Documentation browser under "/perldoc"
-  #$self->plugin('ConsoleLogger');
+  #$self->plugin('ConsoleLogger');  # Only use on HTML docs
   $self->plugin('MyConfig');
   $self->plugin('WriteExcel');
   $self->plugin('HeaderCondition');

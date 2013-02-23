@@ -50,6 +50,13 @@ sub resolver {
 	die;
 }
 
+sub validate {
+	my $class = shift;
+	foreach ( keys %{$request} ) {
+		return $_ unless $request->{$_} =~ $resolver->{validate}->{$_}
+	}
+}
+
 sub AUTOLOAD {
 	my $class = shift;
 	our $AUTOLOAD;

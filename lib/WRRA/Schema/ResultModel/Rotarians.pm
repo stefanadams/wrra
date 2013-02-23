@@ -20,6 +20,9 @@ sub resolver {
 			return lastname=>$last,firstname=>$first;
 		},
 	},
+	validate => {
+		name => qr/^([^,]+), ([^,]+)$/,
+	},
 }
 
 sub TO_XLS { shift->arrayref(qw(id has_submissions name email phone)) }

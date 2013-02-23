@@ -38,6 +38,7 @@ sub xls {
 
 sub rs_create {
 	my $self = shift;
+	return {res=>'err',msg=>WRRA::View->validate} if WRRA::View->validate;
 	my %req = WRRA::View->create;
 	warn Dumper({req=>{%req}});
 	#warn Dumper({update => {map { $_=>[$req{$_}->(\%req)] } grep { ref $req{$_} eq 'CODE' } keys %req}});
@@ -66,6 +67,7 @@ sub rs_read {
 
 sub rs_update {
 	my $self = shift;
+	return {res=>'err',msg=>WRRA::View->validate} if WRRA::View->validate;
 	my %req = WRRA::View->update;
 	#warn Dumper({update => {map { $_=>[$req{$_}->(\%req)] } grep { ref $req{$_} eq 'CODE' } keys %req}});
 	foreach ( grep { ref $req{$_} eq 'CODE' } keys %req ) {

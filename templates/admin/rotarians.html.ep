@@ -18,7 +18,7 @@ $("#list1").jqGrid({
     // To do: Escape on cell edit sometimes does not work
     caption: "Rotarians",
     colModel:[
-        {name:'id',label:'PH#',width:100,editable:false},
+        {name:'id',label:'PH#',width:100,editable:true},
         {name:'name',label:'Rotarian',width:200,editable:true,formatter:'has_submissions'},
         {name:'email',label:'Email',width:200,editable:true},
         {name:'phone',label:'Phone',width:200,editable:true,formatter:'phone',editoptions:{dataInit:function(elem){$(elem).mask("(999) 999-9999");}}},
