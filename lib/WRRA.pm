@@ -41,20 +41,20 @@ sub setup_plugins {
       },
     }
   );
-  warn $self->config->{year};
 
   $self->controller_class('WRRA::Controller');
 
   $self->plugin('PODRenderer');  # Documentation browser under "/perldoc"
   #$self->plugin('ConsoleLogger');  # Only use on HTML docs
   $self->plugin('MyConfig');
+  $self->plugin('TitleVersion');
   $self->plugin('WriteExcel');
   $self->plugin('HeaderCondition');
   $self->plugin('AutoComplete');
   $self->plugin('IsXHR');
   $self->plugin('JSON');
   $self->plugin('Parameters');
-  $self->plugin('I18N' => { default => 'en'});
+  #$self->plugin('I18N' => { default => 'en'});  # Helper "url_for" already exists, replacing
 
   # Add types for responding_to a specific accept type
   $self->types->type(jqgrid => 'x-application/jqgrid');
@@ -97,7 +97,7 @@ sub setup_routing {
   foreach my $model ( qw/rotarians donors stockitems items ads bellitems bidders bids/ ) {
     my $r1 = $admin->under("/$model");
     $r1->post("/create")->xhr->to("crud#create", m=>$model, v=>'jqgrid')->name('create_'.$model);
-    $r1->get('/')->xhr->to('crud#read', m=>$model, v=>'jqgrid');
+    $r1->post('/')->xhr->to('crud#read', m=>$model, v=>'jqgrid');
     $r1->post("/update")->xhr->to("crud#update", m=>$model, v=>'jqgrid')->name('update_'.$model);
     $r1->delete("/delete")->xhr->to("crud#delete", m=>$model, v=>'jqgrid')->name('delete_'.$model);
   }
@@ -129,11 +129,12 @@ sub setup_hooks {
             $c->stash(error => []);
 
             # Debug request logging
+            my $year   = $self->config->{year};
             my $req    = $c->req;
             my $method = $req->method;
             my $path   = $req->url->path->to_abs_string;
             my $params = $req->params->to_string;
-            print STDERR "REQ  : $method $path [$params]\n";
+            print STDERR "REQ($year)  : $method $path [$params]\n" unless $path =~ /\.js$|\.css$/;
         });
 }
 

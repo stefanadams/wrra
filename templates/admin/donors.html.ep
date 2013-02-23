@@ -74,14 +74,3 @@ $("#list1").jqGrid({
     }
 );
 % end
-
-% content filter => begin
-    <%= radio_button solicit => '1', id => 'solicit' %>Show <b>Solicit</b> Records
-    <%= radio_button solicit => '0', id => 'solicit' %>Show <b>Non-Solicit</b> Records
-    <%= radio_button solicit => '', id => 'solicit' %>Show <b>Both Sets</b> of Records
-    <br />
-    <%= radio_button assigned => '1', id => 'assigned' %>Show <b>Assigned</b> Records
-    <%= radio_button assigned => '0', id => 'assigned' %>Show <b>Unassigned</b> Records
-    <%= radio_button assigned => '', id => 'assigned' %>Show <b>Both Sets</b> of Records
-    <br />
-% end

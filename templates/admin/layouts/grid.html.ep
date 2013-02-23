@@ -25,7 +25,8 @@ $(document).ready(function(){
 //    });
 
     $.extend($.jgrid.defaults, {
-        mtype: 'GET',
+        mtype: 'POST',
+        serializeGridData: function (postData) { return JSON.stringify(postData); },
         datatype: 'json',
         url: '<%= url_for %>',
         cellurl: '<%= url_for %>/update',
@@ -65,6 +66,9 @@ $(document).ready(function(){
     $.extend($.jgrid.ajaxOptions, {
         contentType: "application/json",
         headers: { accept: "application/json" }
+    });
+    $.extend($.jgrid.search, {
+        multipleSearch: true,
     });
     $.extend($.jgrid.edit, {
         ajaxEditOptions: { type: "POST" },
@@ -120,19 +124,7 @@ $(document).ready(function(){
         }
     });
 
-    <%= content 'functions' %>
     <%= content 'grid' %>
-
-    $("input[name=solicit]").click(function(){
-        $.get("<%= url_for 'filter' %>", {key: "solicit", value: $('input:radio[name=solicit]:checked').val()}, function(){
-            $('#list1').trigger('reloadGrid');
-        });
-    });
-    $("input[name=assigned]").click(function(){
-        $.get("<%= url_for 'filter' %>", {key: "assigned", value: $('input:radio[name=assigned]:checked').val()}, function(){
-            $('#list1').trigger('reloadGrid');
-        });
-    });
 
     // Ajax-style file downloading
     $(document).on("click", "a.fileDownloadSimpleRichExperience", function () {

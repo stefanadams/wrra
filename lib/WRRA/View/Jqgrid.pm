@@ -1,5 +1,8 @@
 package WRRA::View::Jqgrid;
 
+use base 'WRRA::View';
+
+use Mojo::JSON;
 use Data::Dumper;
 
 sub read {
@@ -23,40 +26,58 @@ sub search {
 	my $request = shift;
 	my $resolver = shift;
 
-	my ($field, $oper, $string) = ($request->{searchField}, $request->{searchOper}, $request->{searchString});
+	my ($field, $oper, $string, $filters) = ($request->{searchField}, $request->{searchOper}, $request->{searchString}, $request->{filters});
+	$filters = Mojo::JSON->new->decode($filters);
+	push @{$filters->{rules}}, {
+		field => $field,
+		op => $oper,
+		data => $string,
+	} if $field && $oper && defined $string;
 
-	my $sopt = {
-		eq => {'=' => $string},
-		ne => {'!=' => $string},
-		lt => {'<' => $string},
-		le => {'<=' => $string},
-		gt => {'>' => $string},
-		ge => {'>=' => $string},
-		bw => {'like' => $string.'%'},
-		bn => {'not like' => $string.'%'},
-		#in => {'<' => $string},  
-		#ni => {'<' => $string},
-		ew => {'like' => '%'.$string},
-		en => {'not like' => '%'.$string},
-		cn => {'like' => '%'.$string.'%'},
-		nc => {'not like' => '%'.$string.'%'},
-	} if defined $string;
+	my $sopt = sub {
+		my ($field, $op, $string) = @_;
+		return undef unless $field && $op && defined $string;
+		local %_ = (
+			eq => {'=' => $string},
+			ne => {'!=' => $string},
+			lt => {'<' => $string},
+			le => {'<=' => $string},
+			gt => {'>' => $string},
+			ge => {'>=' => $string},
+			bw => {'like' => $string.'%'},
+			bn => {'not like' => $string.'%'},
+			#in => {'<' => $string},  
+			#ni => {'<' => $string},
+			ew => {'like' => '%'.$string},
+			en => {'not like' => '%'.$string},
+			cn => {'like' => '%'.$string.'%'},
+			nc => {'not like' => '%'.$string.'%'},
+			nu => {'=' => undef},
+			nn => {'!=' => undef},
+		);
+		return $_{$op};
+	};
 
-	if ( defined $field && defined $resolver->{search}->{$field} ) {
-		$field = $resolver->{search}->{$field};
+	my %search = ();
+	foreach ( @{$filters->{rules}} ) {
+		my ($field, $oper, $string) = ($_->{field}, $_->{op}, $_->{data});
+		if ( defined $field && defined $resolver->{search}->{$field} ) {
+			$field = $resolver->{search}->{$field};
+		}
+
+		if ( ref $field eq 'SCALAR' ) {
+			$field = $$field;
+		} elsif ( ref $field ) {
+			warn "search resolver must be a scalar or scalarref";
+			$field = undef;
+		} elsif ( defined $field ) {
+			$field = "me.$field" unless $field =~ /\./;
+		}
+		$search{$field} = $sopt->($field, $oper, $string) if $sopt->($field, $oper, $string);
 	}
 
-	if ( ref $field eq 'SCALAR' ) {
-		$field = $$field;
-	} elsif ( ref $field ) {
-		warn "search resolver must be a scalar or scalarref";
-		$field = undef;
-	} elsif ( defined $field ) {
-		$field = "me.$field" unless $field =~ /\./;
-	}
-
-	#warn Dumper({'View::Jqgrid' => [$field => $oper => $sopt->{$oper}]});
-	return $field && $oper && $sopt->{$oper} ? ($field => $sopt->{$oper}) : ();
+	warn Dumper({'View::Jqgrid' => {%search}});
+	return (%search);
 }
 
 sub pager {
