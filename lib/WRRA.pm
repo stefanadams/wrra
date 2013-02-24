@@ -105,7 +105,7 @@ sub setup_routing {
 
   my $reports = $admin->under('/reports');
   $reports->get('/postcards')->xhr->to('crud#read', m=>'postcards', v=>'jqgrid');
-  $reports->get('/promo')->xhr->to('crud#read', m=>'promo', v=>'jqgrid');
+  $reports->get('/flyer')->xhr->to('crud#read', m=>'flyer', v=>'jqgrid');
   $reports->get('/bankreport/:year', year=>qr/\d{4}/)->xhr->to('crud#read', m=>'bankreport', v=>'jqgrid');
 
   my $sol_aids = $admin->under('/solicitation_aids');
