@@ -4,7 +4,7 @@ use base 'WRRA::Schema::Result::Stockitem';
 
 sub resolver {
 	update_or_create => {
-		'id' => sub { stockitem_id=>shift },
+		year => sub { shift->year },
 	},
 }
 

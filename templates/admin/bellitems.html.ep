@@ -8,11 +8,9 @@ var autocomplete = {
 
 $("#list1").jqGrid({
     caption: "Bell Items",
-    sortname: 'category,value',
-    sortorder: 'asc,desc',
 
     colModel:[
-        {name:'bellitem',label:'Bellringer Item', width:200,editable:true,editoptions:{size:50},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+        {name:'name',label:'Bellringer Item', width:200,editable:true,editoptions:{size:50},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
     ],
 }).navGrid('#pager1',
     {edit:true,add:true,del:true},

@@ -4,7 +4,7 @@ use base 'WRRA::Schema::Result::Ad';
 
 sub resolver {
 	update_or_create => {
-		'id' => sub { ad_id=>shift },
+		year => sub { shift->year },
 	},
 }
 

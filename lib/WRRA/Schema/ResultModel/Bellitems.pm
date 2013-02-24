@@ -3,8 +3,8 @@ package WRRA::Schema::ResultModel::Bellitems;
 use base 'WRRA::Schema::Result::Bellitem';
 
 sub resolver {
-	update_or_create => {
-		'id' => sub { bellitem_id=>shift },
+	create_defaults => {
+		year => sub { shift->year },
 	},
 }
 
