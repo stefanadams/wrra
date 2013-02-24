@@ -19,35 +19,15 @@ $(document).ready(function(){
 	$( "#sortable0, #sortable1, #sortable2, #sortable3, #sortable4" ).setTemplateElement("nightly", null, {runnable_functions: true});
 	$( "#sortable9999" ).setTemplateElement("full_list", null, {runnable_functions: true});
 
-	function tablabels (data) {
-console.log(data);
-		if (data.rows[0] ) {
-			$('a[href="#tabs-0"]').html(data.rows[0].label||'Not Assigned');
-		}
-		if (data.rows[1] ) {
-			$('a[href="#tabs-1"]').html(data.rows[1].label||'Night 1');
-		}
-		if (data.rows[2] ) {
-			$('a[href="#tabs-2"]').html(data.rows[2].label||'Night 2');
-		}
-		if (data.rows[3] ) {
-			$('a[href="#tabs-3"]').html(data.rows[3].label||'Night 3');
-		}
-		if (data.rows[4] ) {
-			$('a[href="#tabs-4"]').html(data.rows[4].label||'Night 4');
-		}
-		if (data.rows[5] ) {
-			$('a[href="#tabs-9999"]').html(data.rows[5].label||'All Nights');
-		}
-	}
+	var selectedtab = 0;
+	var $tabs = $( "#tabs" ).tabs();
 
-	var selectedtab;
-	var $tabs = $( "#tabs" ).tabs({
-		select: function( event, ui ) {
-			selectedtab = $tabs.tabs('option', 'selected');
-//			$("#sortable9999").processTemplateURL(baseurl+"/9999", null, {type: 'GET'}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
-		}
-	});
+	function tablabel (i) {
+		var Total = 0;
+		$("#sortable"+i).find('li').each(function() { Total += $(this).val()|0; });
+		var label = $('a[href="#tabs-'+i+'"]').html();
+		$('a[href="#tabs-'+i+'"]').html(label.replace(/ : .*/, " : $"+Total));
+	}
 
 	var $tab_items = $( "ul:first li", $tabs ).droppable({
 		accept: ".connectedSortable li",
@@ -55,52 +35,50 @@ console.log(data);
 		tolerance: "pointer",
 		drop: function( event, ui ) {
 			var $item = $( this );
-			var $list = $( $item.find( "a" ).attr( "href" ) )
-				.find( ".connectedSortable" );
+			var $list = $( $item.find( "a" ).attr( "href" ) ).find( ".connectedSortable" );
 			ui.draggable.hide( "slow", function() {
+				selectedtab = $tabs.tabs('option', 'active');
 				$tabs.tabs({active: $tab_items.index( $item )});
-console.log("A");
 				$( this ).appendTo( $list ).show( "slow" );
+				//var Total = 0;
+				//$("#sortable0").find('li').each(function() { Total += $(this).val()|0; });
+				//$('a[href="#tabs-0"]').html("Not Assigned : $"+Total);
+				tablabel(0);
+				for (var i=1; i<=4; i++) {
+					tablabel(i);
+				}
+				tablabel(9999);
 				$tabs.tabs({active: selectedtab});
 			});
 		}
 	});
 
-	$.ajax({
-		type: 'GET',
-		url: baseurl,
-		dataType: 'json',
-		success: function(data) {tablabels(data);}
-	});
-
 	$("#sortable0").sortable({
 		update: function(event, ui) {
-console.log("0");
 			$.ajax({
 				type: 'POST',
 				url: baseurl+'/0',
 				dataType: 'json',
 				contentType: "application/json",
 				data: JSON.stringify({id:$(this).sortable('toArray')}),
-				success: function(data) {tablabels(data);}
 			});
 		}
 	});
-	$("#sortable0").processTemplateURL(baseurl+"/0", null, {type: 'GET'}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
+	$("#sortable0").processTemplateURL(baseurl+"/0", null, {type: 'GET', on_success: function(){tablabel(0)}}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
+
 	$("#sortable1").sortable({
 		update: function(event, ui) {
-console.log("1");
 			$.ajax({
 				type: 'POST',
 				url: baseurl+'/1',
 				dataType: 'json',
 				contentType: "application/json",
 				data: JSON.stringify({id:$(this).sortable('toArray')}),
-				success: function(data) {tablabels(data);}
 			});
 		}
 	});
-	$("#sortable1").processTemplateURL(baseurl+"/1", null, {type: 'GET'}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
+	$("#sortable1").processTemplateURL(baseurl+"/1", null, {type: 'GET', on_success: function(){tablabel(1)}}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
+
 	$("#sortable2").sortable({
 		update: function(event, ui) {
 			$.ajax({
@@ -109,11 +87,11 @@ console.log("1");
 				dataType: 'json',
 				contentType: "application/json",
 				data: JSON.stringify({id:$(this).sortable('toArray')}),
-				success: function(data) {tablabels(data);}
 			});
 		}
 	});
-	$("#sortable2").processTemplateURL(baseurl+"/2", null, {type: 'GET'}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
+	$("#sortable2").processTemplateURL(baseurl+"/2", null, {type: 'GET', on_success: function(){tablabel(2)}}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
+
 	$("#sortable3").sortable({
 		update: function(event, ui) {
 			$.ajax({
@@ -122,11 +100,11 @@ console.log("1");
 				dataType: 'json',
 				contentType: "application/json",
 				data: JSON.stringify({id:$(this).sortable('toArray')}),
-				success: function(data) {tablabels(data);}
 			});
 		}
 	});
-	$("#sortable3").processTemplateURL(baseurl+"/3", null, {type: 'GET'}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
+	$("#sortable3").processTemplateURL(baseurl+"/3", null, {type: 'GET', on_success: function(){tablabel(3)}}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
+
 	$("#sortable4").sortable({
 		update: function(event, ui) {
 			$.ajax({
@@ -135,14 +113,12 @@ console.log("1");
 				dataType: 'json',
 				contentType: "application/json",
 				data: JSON.stringify({id:$(this).sortable('toArray')}),
-				success: function(data) {tablabels(data);}
 			});
 		}
 	});
-	$("#sortable4").processTemplateURL(baseurl+"/4", null, {type: 'GET'}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
-	$("#sortable9999").processTemplateURL(baseurl+"/9999", null, {type: 'GET'}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
-	//$("#summary").load(baseurl, 'summary=5');
+	$("#sortable4").processTemplateURL(baseurl+"/4", null, {type: 'GET', on_success: function(){tablabel(4)}}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
 
+	$("#sortable9999").processTemplateURL(baseurl+"/9999", null, {type: 'GET', on_success: function(){tablabel(9999)}}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
 });
 </script>
 <style>
@@ -155,12 +131,12 @@ console.log("1");
 	Bugs in the item sequencer: when you drag an item to a new tab, the tab information will not recalculate and no sorting will be initiated.  You MUST reorder within the tab that you dragged the item to.  Also, when you drag an item to a new tab, the tabs don't automatically recalc; you MUST reorder a tab first.
 	<div id="tabs">
 		<ul>
-			<li><a href="#tabs-0">Not Assigned</a></li>
-			<li><a href="#tabs-1">Night 1</a></li>
-			<li><a href="#tabs-2">Night 2</a></li>
-			<li><a href="#tabs-3">Night 3</a></li>
-			<li><a href="#tabs-4">Night 4</a></li>
-			<li><a href="#tabs-9999">All Nights</a></li>
+			<li><a href="#tabs-0">Not Assigned : </a></li>
+			<li><a href="#tabs-1">Night 1 : </a></li>
+			<li><a href="#tabs-2">Night 2 : </a></li>
+			<li><a href="#tabs-3">Night 3 : </a></li>
+			<li><a href="#tabs-4">Night 4 : </a></li>
+			<li><a href="#tabs-9999">All Nights : </a></li>
 		</ul>
 		<div id="tabs-0">
 			<ul id="sortable0" class="scroll connectedSortable ui-helper-reset jTemplatesTest">
@@ -192,12 +168,12 @@ console.log("1");
 	<!-- Template content -->
 	<textarea id="nightly" style="display:none">
 		{#foreach $T as r}
-			<li id="id_{$T.r.id}" class="ui-state-default">{$T.r.number} - {$T.r.name}</li>
+			<li id="id_{$T.r.id}" value="{$T.r.value}" class="ui-state-default">{$T.r.number} - {$T.r.name} (${$T.r.value})</li>
 		{#/for}
 	</textarea>
 	<textarea id="full_list" style="display:none">
 		{#foreach $T as r}
-			<li id="id_{$T.r.id}" class="ui-state-default">({$T.r.scheduled}) {$T.r.number} - {$T.r.name}</li>
+			<li id="id_{$T.r.id}" value="{$T.r.value}" class="ui-state-default">({$T.r.scheduled}) {$T.r.number} - {$T.r.name} (${$T.r.value})</li>
 		{#/for}
 	</textarea>
 </body> 

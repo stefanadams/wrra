@@ -9,7 +9,7 @@ sub resolver {
 		scheduled => sub {
 			my ($start, $n) = @_;
 			return ({'='=>undef}) if not(defined $n) || $n <= 0 || $n =~ /\D/ || $start !~ /^\d{4}-\d{2}-\d{2}$/;
-			return () if $n >= 9999;
+			return (-or => [{'='=>undef},{'!='=>undef}]) if $n >= 9999;
 			$n--;
 			return ({'='=>\"date_add('$start', interval $n day)"});
 		},
@@ -38,8 +38,8 @@ sub resolver {
 sub TO_JSON {
 	my $self = shift;
 	return {
-		(map { $_ => $self->$_ } qw(id number name)),
-		night => $self->eval('$self->scheduled->day_name'),
+		(map { $_ => $self->$_ } qw(id number name value)),
+		scheduled => $self->eval('$self->scheduled->day_name'),
 	};
 }
 
