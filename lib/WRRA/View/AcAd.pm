@@ -7,7 +7,7 @@ sub search {
 
 	my ($term) = ($request->{term});
 
-	return (-or => [number=>$term, name=>{'like'=>'%'.$term.'%'}, 'donor.name'=>{'like'=>'%'.$term.'%'}, ad_id=>$term, 'donor.donor_id'=>$term]);
+	return ('me.name'=>{'like'=>'%'.$term.'%'}, 'advertiser.name'=>{'like'=>'%'.$term.'%'}, ad_id=>$term, 'advertiser.donor_id'=>$term);
 }
 
 1;

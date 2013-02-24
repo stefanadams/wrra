@@ -14,7 +14,7 @@ sub TO_JSON {
 	return {
 		(map { $_ => $self->$_ } qw(id scheduled name url)),
 		advertiser => {
-			nameid => $self->eval('$self->donor->nameid'),
+			nameid => $self->eval('$self->advertiser->nameid'),
 		},
 	};
 }

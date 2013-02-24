@@ -12,9 +12,9 @@ $("#list1").jqGrid({
     caption: "Ads",
 
     colModel:[
-        {name:'name',label:'Bellringer Item', width:200,editable:true,editoptions:{size:50},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+        {name:'name',label:'Ad', width:200,editable:true,editoptions:{size:50,dataInit:ac_ad},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
         {name:'scheduled',label:'Scheduled', width:200,editable:true,editoptions:{size:50},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
-        {name:'advertiser.nameid',label:'Advertiser',width:200,editable:true,editoptions:{size:50,dataInit:ac_donor},editrules:{required:true,custom:true,custom_func:hasFK},formoptions:{elmsuffix:'(*)'},formatter:'hideFK'},
+        {name:'advertiser.nameid',label:'Advertiser',width:200,editable:true,editoptions:{size:50,dataInit:ac_advertiser},editrules:{required:true,custom:true,custom_func:hasFK},formoptions:{elmsuffix:'(*)'},formatter:'hideFK'},
         {name:'url',label:'Ad URL', width:200,editable:true,editoptions:{size:50},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
     ],
 }).navGrid('#pager1',

@@ -3,6 +3,6 @@ use Mojo::Base 'WRRA::Model::Base';
 
 has resultset_class => 'Ad';
 
-sub resultset { $_[1]->search({}, {group_by=>'name', order_by=>'name'})->current_year }
+sub resultset { $_[1]->search({}, {prefetch=>'advertiser', group_by=>'me.advertiser_id', order_by=>'me.name'}) }
 
 1;

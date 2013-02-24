@@ -2,11 +2,12 @@ package WRRA::Schema::ResultModel::AcAd;
 
 use base 'WRRA::Schema::Result::Ad';
 
-sub ad {
+sub TO_JSON {
 	my $self = shift;
-	join ':', $self->SUPER::ad->name, $self->SUPER::ad->ad_id;
+	return {  
+		label => $self->nameid,
+		(map { $_ => $self->$_ } qw(url)),
+	};
 }
-
-sub TO_JSON { shift->hashref(qw(url ad)) }
 
 1;

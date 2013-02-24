@@ -4,20 +4,20 @@
 <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1" />
 <title>Sequence Items</title>
 
-<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" />
+<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/themes/base/jquery-ui.css" />
 
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-<script type="text/javascript" src="js/jquery.json-2.3.min.js"></script>
-<script type="text/javascript" src="js/jquery-jtemplates.js"></script>
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
-
-<script type="text/javascript" src="js/env.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type="text/javascript" src="/js/jquery-jtemplates.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/jquery-ui.min.js"></script>
 
 <script type="text/javascript">
 $(document).ready(function(){
-	var baseurl = 'pl/manage/items/sequence';
+	$.ajaxSetup({headers: {Accept : "application/json"}});
+
+	var baseurl = '<%= url_for 'seq_items' %>';
 	$( "#sortable0, #sortable1, #sortable2, #sortable3, #sortable4" ).sortable({placeholder: "ui-state-highlight"}).disableSelection();
-	$( "#sortable0, #sortable1, #sortable2, #sortable3, #sortable4, #sortable9999" ).setTemplateElement("template", null, {runnable_functions: true});
+	$( "#sortable0, #sortable1, #sortable2, #sortable3, #sortable4" ).setTemplateElement("nightly", null, {runnable_functions: true});
+	$( "#sortable9999" ).setTemplateElement("full_list", null, {runnable_functions: true});
 
 	function tablabels (data) {
 console.log(data);
@@ -78,8 +78,8 @@ console.log(data);
 				type: 'POST',
 				url: baseurl+'/0',
 				dataType: 'json',
-				contentType: "application/json; charset=utf-8",
-				data: $.toJSON({item_id:$(this).sortable('toArray')}),
+				contentType: "application/json",
+				data: JSON.stringify({item_id:$(this).sortable('toArray')}),
 				success: function(data) {tablabels(data);}
 			});
 		}
@@ -91,8 +91,8 @@ console.log(data);
 				type: 'POST',
 				url: baseurl+'/1',
 				dataType: 'json',
-				contentType: "application/json; charset=utf-8",
-				data: $.toJSON({item_id:$(this).sortable('toArray')}),
+				contentType: "application/json",
+				data: JSON.stringify({item_id:$(this).sortable('toArray')}),
 				success: function(data) {tablabels(data);}
 			});
 		}
@@ -104,8 +104,8 @@ console.log(data);
 				type: 'POST',
 				url: baseurl+'/2',
 				dataType: 'json',
-				contentType: "application/json; charset=utf-8",
-				data: $.toJSON({item_id:$(this).sortable('toArray')}),
+				contentType: "application/json",
+				data: JSON.stringify({item_id:$(this).sortable('toArray')}),
 				success: function(data) {tablabels(data);}
 			});
 		}
@@ -117,8 +117,8 @@ console.log(data);
 				type: 'POST',
 				url: baseurl+'/3',
 				dataType: 'json',
-				contentType: "application/json; charset=utf-8",
-				data: $.toJSON({item_id:$(this).sortable('toArray')}),
+				contentType: "application/json",
+				data: JSON.stringify({item_id:$(this).sortable('toArray')}),
 				success: function(data) {tablabels(data);}
 			});
 		}
@@ -130,8 +130,8 @@ console.log(data);
 				type: 'POST',
 				url: baseurl+'/4',
 				dataType: 'json',
-				contentType: "application/json; charset=utf-8",
-				data: $.toJSON({item_id:$(this).sortable('toArray')}),
+				contentType: "application/json",
+				data: JSON.stringify({item_id:$(this).sortable('toArray')}),
 				success: function(data) {tablabels(data);}
 			});
 		}
@@ -187,9 +187,14 @@ console.log(data);
 	</div>
 
 	<!-- Template content -->
-	<textarea id="template" style="display:none">
-		{#foreach $T.rows as r}
-			<li id="id_{$T.r.item_id}" class="ui-state-default">{$T.r.item}</li>
+	<textarea id="nightly" style="display:none">
+		{#foreach $T as r}
+			<li id="id_{$T.r.id}" class="ui-state-default">{$T.r.number} - {$T.r.name}</li>
+		{#/for}
+	</textarea>
+	<textarea id="full_list" style="display:none">
+		{#foreach $T as r}
+			<li id="id_{$T.r.id}" class="ui-state-default">({$T.r.scheduled}) {$T.r.number} - {$T.r.name}</li>
 		{#/for}
 	</textarea>
 </body> 

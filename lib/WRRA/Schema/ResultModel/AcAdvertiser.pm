@@ -2,11 +2,13 @@ package WRRA::Schema::ResultModel::AcAdvertiser;
 
 use base 'WRRA::Schema::Result::Donor';
 
-sub advertiser {
+sub TO_JSON {
 	my $self = shift;
-	join ':', $self->SUPER::ad->name, $self->SUPER::ad->ad_id;
+	return {  
+		ad => $self->nameid,
+		label => $self->nameid,
+		(map { $_ => $self->$_ } qw(url)),
+	};
 }
-
-sub TO_JSON { shift->hashref(qw(url advertiser)) }
 
 1;
