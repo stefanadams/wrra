@@ -4,11 +4,11 @@
 <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1" />
 <title>Sequence Items</title>
 
-<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/themes/base/jquery-ui.css" />
+<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/themes/base/jquery-ui.css" />
 
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script type="text/javascript" src="/js/jquery-jtemplates.js"></script>
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/jquery-ui.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/jquery-ui.min.js"></script>
 
 <script type="text/javascript">
 $(document).ready(function(){
@@ -58,9 +58,10 @@ console.log(data);
 			var $list = $( $item.find( "a" ).attr( "href" ) )
 				.find( ".connectedSortable" );
 			ui.draggable.hide( "slow", function() {
-				$tabs.tabs( "select", $tab_items.index( $item ) );
+				$tabs.tabs({active: $tab_items.index( $item )});
+console.log("A");
 				$( this ).appendTo( $list ).show( "slow" );
-				$tabs.tabs( "select", selectedtab );
+				$tabs.tabs({active: selectedtab});
 			});
 		}
 	});
@@ -74,12 +75,13 @@ console.log(data);
 
 	$("#sortable0").sortable({
 		update: function(event, ui) {
+console.log("0");
 			$.ajax({
 				type: 'POST',
 				url: baseurl+'/0',
 				dataType: 'json',
 				contentType: "application/json",
-				data: JSON.stringify({item_id:$(this).sortable('toArray')}),
+				data: JSON.stringify({id:$(this).sortable('toArray')}),
 				success: function(data) {tablabels(data);}
 			});
 		}
@@ -87,12 +89,13 @@ console.log(data);
 	$("#sortable0").processTemplateURL(baseurl+"/0", null, {type: 'GET'}).ajaxError(function(){window.location = "login.html?referer=seqitems.html";});
 	$("#sortable1").sortable({
 		update: function(event, ui) {
+console.log("1");
 			$.ajax({
 				type: 'POST',
 				url: baseurl+'/1',
 				dataType: 'json',
 				contentType: "application/json",
-				data: JSON.stringify({item_id:$(this).sortable('toArray')}),
+				data: JSON.stringify({id:$(this).sortable('toArray')}),
 				success: function(data) {tablabels(data);}
 			});
 		}
@@ -105,7 +108,7 @@ console.log(data);
 				url: baseurl+'/2',
 				dataType: 'json',
 				contentType: "application/json",
-				data: JSON.stringify({item_id:$(this).sortable('toArray')}),
+				data: JSON.stringify({id:$(this).sortable('toArray')}),
 				success: function(data) {tablabels(data);}
 			});
 		}
@@ -118,7 +121,7 @@ console.log(data);
 				url: baseurl+'/3',
 				dataType: 'json',
 				contentType: "application/json",
-				data: JSON.stringify({item_id:$(this).sortable('toArray')}),
+				data: JSON.stringify({id:$(this).sortable('toArray')}),
 				success: function(data) {tablabels(data);}
 			});
 		}
@@ -131,7 +134,7 @@ console.log(data);
 				url: baseurl+'/4',
 				dataType: 'json',
 				contentType: "application/json",
-				data: JSON.stringify({item_id:$(this).sortable('toArray')}),
+				data: JSON.stringify({id:$(this).sortable('toArray')}),
 				success: function(data) {tablabels(data);}
 			});
 		}

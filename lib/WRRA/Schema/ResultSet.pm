@@ -78,8 +78,13 @@ sub rs_update {
 	my $update = {
 		map { $_=>$req{$_} } grep { $self->result_source->has_column($_) } keys %req
 	};
-	warn Dumper({update=>{WRRA::View->key=>$update}});
-	return {res=>($self->find(WRRA::View->key)->update($update)?'ok':'err'),msg=>''};
+	if ( ref WRRA::View->key ) {
+		warn Dumper({update=>[WRRA::View->key=>$update]});
+		return {res=>($self->search(WRRA::View->key)->update($update)?'ok':'err'),msg=>''};
+	} else {
+		warn Dumper({update=>{WRRA::View->key=>$update}});
+		return {res=>($self->find(WRRA::View->key)->update($update)?'ok':'err'),msg=>''};
+	}
 }
 
 sub rs_delete {
