@@ -103,8 +103,8 @@ $(document).ready(function(){
             return '&nbsp;';
         },
         bool : function (cellvalue, options, rowdata) {
-            if ( cellvalue == 0 ) return 'No';
-            return 'Yes';
+            if ( cellvalue == 1 ) return 'Yes';
+            return 'No';
         },
         category : function (cellvalue, options, rowdata) {
             if ( cellvalue ) return cellvalue.charAt(0).toUpperCase() + cellvalue.slice(1);

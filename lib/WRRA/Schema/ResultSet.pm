@@ -61,7 +61,7 @@ sub rs_create {
 
 sub rs_read {
 	my $self = shift;
-	#warn Dumper({read => [{WRRA::View->search}, {WRRA::View->order_by, WRRA::View->pager, WRRA::View->read}]});
+	warn Dumper({read => [{WRRA::View->search}, {WRRA::View->order_by, WRRA::View->pager, WRRA::View->read}]});
 	return $self->search({WRRA::View->search}, {WRRA::View->order_by, WRRA::View->pager, WRRA::View->read});
 }
 

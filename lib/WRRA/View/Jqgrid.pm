@@ -95,16 +95,23 @@ sub order_by {
 	my $resolver = shift;
 
 	my ($sidx, $sord) = ($request->{sidx}, $request->{sord});
+	my @sidx = split /,/, $sidx;
+	my @sord = split /,/, $sord;
 
-	if ( defined $sidx && $resolver->{order_by}->{$sidx} ) {
-		$sidx = $resolver->{order_by}->{$sidx};
+	my @order_by = ();
+	foreach ( 0..$#sidx ) {
+		my ($sidx, $sord) = ($sidx[$_], $sord[$_]);
+		if ( defined $sidx && $resolver->{order_by}->{$sidx} ) {
+			$sidx = $resolver->{order_by}->{$sidx};
+		}
+
+		if ( defined $sidx && not ref $sidx ) {
+			$sidx = "me.$sidx" unless $sidx =~ /\./;
+		}
+		push @order_by, {'-'.($sord||'asc') => $sidx};
 	}
 
-	if ( defined $sidx && not ref $sidx ) {
-		$sidx = "me.$sidx" unless $sidx =~ /\./;
-	}
-
-	return $sidx ? (order_by => {'-'.($sord||'asc') => $sidx}) : ();
+	return @order_by ? (order_by => [@order_by]) : ();
 }
 
 sub key {

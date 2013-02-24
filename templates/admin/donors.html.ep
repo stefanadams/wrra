@@ -35,17 +35,21 @@ $("#list1").jqGrid({
         subgrid_table_id = subgrid_id+"_t";
         $("#"+subgrid_id).html("<table id='"+subgrid_table_id+"' class='scroll'></table>");
         $("#"+subgrid_table_id).jqGrid({
-            url:"<%= url_for %>/"+row_id,
+            url:"<%= url_for 'donor_items' %>",
+            postData: {searchField:"donor_id",searchOper:"eq",searchString:row_id},
             jsonReader: {subgrid: {root: "rows", repeatitems: true}},
             colModel: [
                 {name:"year",label:"Year",width:130},
                 {name:"sold",label:"Night Sold",width:130},
-                {name:"value",label:"Value",width:130},
-                {name:"highbid",label:"High Bid",width:130},
-                {name:"bellringer",label:"Bellringer",width:130},
+                {name:"value",label:"Value",width:130,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
+                {name:"highbid.bid",label:"High Bid",width:130,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
+                {name:"bellringer",label:"Bellringer",width:130,formatter:'bool'},
             ],
+            pager: null,
             height: '100%',
-            rowNum:20,
+            rowNum: 20,
+            sortname: 'year,sold',
+            sortorder: 'desc,asc'
         });
     },
 }).navGrid('#pager1',

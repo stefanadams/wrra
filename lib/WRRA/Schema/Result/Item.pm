@@ -307,10 +307,10 @@ sub cansell {
 }
 sub bellringer {
 	my $self = shift;
-	#return undef unless $self->highbid->can('bid');
-	#return $self->highbid->bid >= $self->value ? 1 : undef;
-	return undef unless $self->highbid;
-	return $self->highbid >= $self->value ? 1 : undef;
+	return undef unless $self->highbid->can('bid');
+	return $self->highbid->bid >= $self->value ? 1 : undef;
+	#return undef unless $self->highbid;
+	#return $self->highbid >= $self->value ? 1 : undef;
 }
 sub runningtime {
 	my $self = shift;

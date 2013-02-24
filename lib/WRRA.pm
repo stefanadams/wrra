@@ -101,7 +101,7 @@ sub setup_routing {
     $r1->post("/update")->xhr->to("crud#update", m=>$model, v=>'jqgrid')->name('update_'.$model);
     $r1->delete("/delete")->xhr->to("crud#delete", m=>$model, v=>'jqgrid')->name('delete_'.$model);
   }
-  $admin->under('/donors')->post('/:id', id=>qr/\d+/)->xhr->to('crud#read', m=>'donor_items', v=>'jqgrid');
+  $admin->under('/donors')->post('/items')->xhr->to('crud#read', m=>'donor_items', v=>'jqgrid')->name('donor_items');
 
   my $reports = $admin->under('/reports');
   $reports->get('/postcards')->xhr->to('crud#read', m=>'postcards', v=>'jqgrid');
