@@ -1,0 +1,45 @@
+% extends '/admin/layouts/grid', title=>'Ads';
+% content grid => begin
+var autocomplete = {
+    minLength: 3,
+    limit: 20,
+    extraParams: {advertiser: function(){ return $('#advertiser').val(); }}
+};
+<%== autocomplete 'ac_ad', [qw/scheduled advertiser.nameid url/] %>
+<%== autocomplete 'ac_advertiser', [qw/name scheduled url/] %>
+
+$("#list1").jqGrid({
+    caption: "Ads",
+
+    colModel:[
+        {name:'name',label:'Bellringer Item', width:200,editable:true,editoptions:{size:50},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+        {name:'scheduled',label:'Scheduled', width:200,editable:true,editoptions:{size:50},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+        {name:'advertiser.nameid',label:'Advertiser',width:200,editable:true,editoptions:{size:50,dataInit:ac_donor},editrules:{required:true,custom:true,custom_func:hasFK},formoptions:{elmsuffix:'(*)'},formatter:'hideFK'},
+        {name:'url',label:'Ad URL', width:200,editable:true,editoptions:{size:50},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+    ],
+}).navGrid('#pager1',
+    {edit:true,add:true,del:true},
+    // {edit}, {add}, {del}, {search}, {view}
+    {
+            url: "<%= url_for 'update_ads' %>",
+            editCaption: "Edit Ad"
+    },
+    {
+            url: "<%= url_for 'create_ads' %>",
+            addCaption: "Add Ad"
+    },
+    {
+            url: "<%= url_for 'delete_ads' %>",
+            caption: "Delete Ad",
+            msg: "Deleted selected ad(s)?"
+    },
+    {
+            url: "<%= url_for 'search_ads' %>",
+            caption: "Search Ad"
+    },
+    { 
+            url: "<%= url_for 'view_ads' %>",
+            caption: "View Ad"
+    }
+);
+% end

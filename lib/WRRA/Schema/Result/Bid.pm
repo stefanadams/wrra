@@ -92,21 +92,11 @@ __PACKAGE__->belongs_to(bidder => 'WRRA::Schema::Result::Bidder', 'bidder_id');
 __PACKAGE__->belongs_to(item => 'WRRA::Schema::Result::Item', 'item_id');
 
 use overload '""' => sub { shift->bid }, fallback=>1;
+sub id { shift->bid_id }
 
 sub bidage {
 	my $self = shift;
 	return defined $self->bidtime ? $self->bidtime->can('epoch') ? time-$self->bidtime->epoch : undef : undef;
-}
-
-sub TO_JSON {
-	my $self = shift;
-	return {
-		bidage => $self->bidage,
-		%{$self->next::method},
-#		Also available, but instead access it via Bid sub-classes
-#		  bidder => $self->bidder,
-#		  item => $self->item,
-	}
 }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

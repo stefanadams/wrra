@@ -1,0 +1,41 @@
+% extends '/admin/layouts/grid', title=>'Bids';
+% content grid => begin
+$("#list1").jqGrid({
+    // To do: run boolFmatter after update
+    // To do: Escape on cell edit sometimes does not work
+    caption: "Bids",
+
+    colModel:[
+        {name:'bidder.nameid',label:'Bidder',width:200,editable:true,editrules:{required:true,custom:true,custom_func:hasFK},formoptions:{elmsuffix:'(*)'},formatter:'hideFK'},
+        {name:'item.nameid',label:'Item',width:200,editable:true,editrules:{required:true,custom:true,custom_func:hasFK},formoptions:{elmsuffix:'(*)'},formatter:'hideFK'},
+        {name:'bid_r',label:'Bid Request',width:200},
+        {name:'bid',label:'Bid',width:200,editable:true,editrules:{required:true},editrules:{required:true,number:true,minValue:0},formoptions:{elmsuffix:'(*)'},formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
+        {name:'bidtime',label:'Time',width:200},
+        {name:'bidage',label:'Age',width:200},
+    ],
+}).navGrid('#pager1',
+    {edit:true,add:true,del:true},
+    // {edit}, {add}, {del}, {search}, {view}
+    {
+        url: "<%= url_for 'update_bids' %>",
+        editCaption: "Edit Bid"
+    },
+    {
+        url: "<%= url_for 'create_bids' %>",
+        addCaption: "Add Bid"
+    },
+    {
+        url: "<%= url_for 'delete_bids' %>",
+        caption: "Delete Bid",
+        msg: "Deleted selected bid(s)?"
+    },
+    {
+        url: "<%= url_for 'search_bids' %>",
+        caption: "Search Bid"
+    },
+    {
+        url: "<%= url_for 'view_bids' %>",
+        caption: "View Bid"
+    }
+);
+% end

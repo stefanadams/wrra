@@ -4,7 +4,6 @@ var categories = ":;food:Food;gc:Gift Certificates;travel:Travel;personal care:P
 var autocomplete = {
     minLength: 3,
     limit: 20,
-    extraParams: {donor: function(){ return $('#stockitem').val(); }}
 };
 <%== autocomplete 'ac_stockitem', [qw/_value cost category/] %>
 
@@ -23,24 +22,24 @@ $("#list1").jqGrid({
     {edit:true,add:true,del:true},
     // {edit}, {add}, {del}, {search}, {view}
     {
-            url: "<%= url_for 'update_items' %>",
+            url: "<%= url_for 'update_stockitems' %>",
             editCaption: "Edit Item"
     },
     {
-            url: "<%= url_for 'create_items' %>",
+            url: "<%= url_for 'create_stockitems' %>",
             addCaption: "Add Item"
     },
     {
-            url: "<%= url_for 'delete_items' %>",
+            url: "<%= url_for 'delete_stockitems' %>",
             caption: "Delete Item",
             msg: "Deleted selected item(s)?"
     },
     {
-            url: "<%= url_for 'search_items' %>",
+            url: "<%= url_for 'search_stockitems' %>",
             caption: "Search Item"
     },
     { 
-            url: "<%= url_for 'view_items' %>",
+            url: "<%= url_for 'view_stockitems' %>",
             caption: "View Item"
     }
 );

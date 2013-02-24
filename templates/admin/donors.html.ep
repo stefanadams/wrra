@@ -2,7 +2,7 @@
 % content grid => begin
 var categories = ":;bank:Bank;lawyer:Lawyer;realty:Realty;doctor:Doctor;cpa:CPA;personal:Personal;esq:ESQ;seq:SEQ;insurance:Insurance";
 var autocomplete = {
-    minLength: 4
+    minLength: 2
 };
 <%== autocomplete 'ac_city', [qw/label state zip/] %>
 $("#list1").jqGrid({

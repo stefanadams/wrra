@@ -192,7 +192,6 @@ __PACKAGE__->has_many(items => 'WRRA::Schema::Result::Item', 'donor_id'); # A Do
 
 use overload '""' => sub {shift->name}, fallback => 1;
 sub id { shift->donor_id }
-#sub nameid { my $self = shift; join ':', $self->name, $self->id; }
 
 around 'phone' => sub {
 	my $orig = shift;
@@ -210,29 +209,6 @@ sub contact {
 }
 
 sub ly_items { shift->items->last_year->count }
-
-#sub TO_JSON {
-#	my $self = shift;
-#
-#	return {
-#		name => $self->name,
-#		nameid => $self->nameid,
-#	};
-#}
-
-#sub TO_JSON {
-#	my $self = shift;
-#
-#	return {
-#		contact => $self->contact,
-#		rotarian => defined $self->rotarian ? $self->rotarian->name : undef,
-#		ly_items => $self->items->last_year->count,
-#		%{$self->next::method},
-#		Also available, but instead access it via Bid sub-classes   
-#		  rotarian => $self->rotarian,
-#		  recent_items => [$self->items->recent_years->all],
-#	}
-#}
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

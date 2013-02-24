@@ -1,0 +1,36 @@
+% extends '/admin/layouts/grid', title=>'Alerts';
+% content grid => begin
+
+$("#list1").jqGrid({
+    caption: "Alerts",
+
+    colModel:[
+            {name:'alert',label:'Whom to Alert',width:200,editable:true,editoptions:{size:50},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+            {name:'msg',label:'Alert Message',width:200,editable:true,editoptions:{size:50},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+    ],
+}).navGrid('#pager1',
+    {edit:true,add:true,del:true},
+    // {edit}, {add}, {del}, {search}, {view}
+    {
+            url: "<%= url_for 'update_alerts' %>",
+            editCaption: "Edit Alert"
+    },
+    {
+            url: "<%= url_for 'create_alerts' %>",
+            addCaption: "Add Alert"
+    },
+    {
+            url: "<%= url_for 'delete_alerts' %>",
+            caption: "Delete Alert",
+            msg: "Deleted selected alert(s)?"
+    },
+    {
+            url: "<%= url_for 'search_alerts' %>",
+            caption: "Search Alert"
+    },
+    { 
+            url: "<%= url_for 'view_alerts' %>",
+            caption: "View Alert"
+    }
+);
+% end
