@@ -13,7 +13,7 @@ $("#list1").jqGrid({
         {name:'phone',label:'Phone',width:70,editable:true,editoptions:{dataInit:function(elem){$(elem).mask("(999) 999-9999");}},editrules:{required:true},formoptions:{elmsuffix:'(*)'},formatter:'phone'},
         {name:'name',label:'Bidder',width:200,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
         {name:'address',label:'Address',width:100,search:false,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
-        {name:'city',label:'City',width:60,editable:true,editoptions:{dataInit:ac_city}},
+        {name:'city',label:'City',width:60,editable:true,editrules:{required:true},editoptions:{dataInit:ac_city},formoptions:{elmsuffix:'(*)'}},
         {name:'state',label:'State',width:60,editable:true,hidden:true,editrules:{edithidden:true}},
         {name:'zip',label:'Zip',width:60,editable:true,hidden:true,editrules:{edithidden:true}},
         {name:'email',label:'Email',width:60,search:false,editable:true,hidden:true,editrules:{email:true,edithidden:true,required:false}}

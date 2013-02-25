@@ -83,7 +83,7 @@ sub setup_routing {
   my $api = $r->under('/api');
 
   my $ac = $api->under('/ac');
-  foreach my $model ( qw/city donor item stockitem advertisement advertiser item_stockitem bellitem ad/ ) {
+  foreach my $model ( qw/city donor item item_current stockitem advertisement advertiser item_stockitem bellitem bidder ad/ ) {
     $ac->get("/$model")->xhr->to("api#auto_complete", mv=>"ac_$model")->name("ac_$model");
   }
   my $bs = $api->under('/bs');
@@ -113,8 +113,14 @@ sub setup_routing {
   $reports->get('/postcards.xls')->to('crud#read', m=>'postcards', v=>'jqgrid', format=>'xls');
   $reports->post('/flyer')->xhr->to('crud#read', m=>'flyer', v=>'jqgrid');
   $reports->get('/flyer.xls')->to('crud#read', m=>'flyer', v=>'jqgrid', format=>'xls');
-  $reports->post('/bankreport/:year', year=>qr/\d{4}/)->xhr->to('crud#read', m=>'bankreport', v=>'jqgrid');
-  $reports->get('/bankreport.xls/:year', year=>qr/\d{4}/)->to('crud#read', m=>'bankreport', v=>'jqgrid', format=>'xls');
+  $reports->post('/bankreport')->xhr->to('crud#read', m=>'bankreport', v=>'jqgrid');
+  $reports->get('/bankreport.xls')->to('crud#read', m=>'bankreport', v=>'jqgrid', format=>'xls');
+  $reports->post('/summary')->xhr->to('crud#read', m=>'summary', v=>'jqgrid');
+  $reports->get('/summary.xls')->to('crud#read', m=>'summary', v=>'jqgrid', format=>'xls');
+  $reports->post('/stockreport')->xhr->to('crud#read', m=>'stockreport', v=>'jqgrid')->name('stockreport');
+  $reports->get('/stockreport.xls')->to('crud#read', m=>'stockreport', v=>'jqgrid', format=>'xls');
+  $reports->post('/winners')->xhr->to('crud#read', m=>'winners', v=>'jqgrid')->name('winners');
+  $reports->get('/winners.xls')->to('crud#read', m=>'winners', v=>'jqgrid', format=>'xls');
 
   my $sol_aids = $admin->under('/solicitation_aids');
   $sol_aids->get('/checklist')->xhr->to('crud#read', m=>'checklist', v=>'jqgrid');

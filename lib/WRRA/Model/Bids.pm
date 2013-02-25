@@ -3,6 +3,6 @@ use Mojo::Base 'WRRA::Model::Base';
 
 has resultset_class => 'Bid';
 
-sub resultset { $_[1]->current_year }
+sub resultset { $_[1]->search({})->search_related('item')->current_year }
 
 1;

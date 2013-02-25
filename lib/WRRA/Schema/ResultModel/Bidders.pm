@@ -14,12 +14,14 @@ sub resolver {
 		#soldday => [\'cast(sold as date)', 'number'],
 	},
 	update_or_create => {
-		year => sub { shift->year },
 		#'id' => sub { rotarian_id=>shift },
 		#'name' => sub {
 		#	my ($last, $first) = (shift =~ /^([^,]+), ([^,]+)$/);
 		#	return lastname=>$last,firstname=>$first;
 		#},
+	},
+	create_defaults => {
+		year => sub { shift->year },
 	},
 	validate => {
 		#name => qr/^([^,]+), ([^,]+)$/,

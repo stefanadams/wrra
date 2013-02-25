@@ -3,7 +3,7 @@ package WRRA::Schema::ResultModel::Stockitems;
 use base 'WRRA::Schema::Result::Stockitem';
 
 sub resolver {
-	update_or_create => {
+	create_defaults => {
 		year => sub { shift->year },
 	},
 }

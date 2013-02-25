@@ -13,6 +13,10 @@
 <script  src="/js/jquery.fileDownload.js" type="text/javascript"></script>
 <style>
     #loggedin {display:none}
+    body {
+	font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+	font-size: 62.5%;
+    }
     .link {cursor:pointer;color:blue;text-decoration:underline;}
 </style>
 <script type="text/javascript">

@@ -61,15 +61,16 @@ $(document).ready(function(){
     <p><a class="disable" href="http://iis.radioauction.washingtonrotary.com/admin_main.asp">Control Functions (Start Timers, Sell Items)</a></p>
     <p><a class="disable" href="http://iis.radioauction.washingtonrotary.com/admin_place_bid_01.asp">Place Bids from Callers</a></p>
     <p><%= link_to 'Manage Requests' => 'requests' => (class=>'disable') %></p>
-    <p><%= link_to 'Manage Bidders' => 'bidders' => (class=>'disable') %></p>
+    <p><%= link_to 'Manage Bids' => 'bids' %></p>
+    <p><%= link_to 'Manage Bidders' => 'bidders' %></p>
     <p><%= link_to 'Manage Items Currently In Bidding' => 'bidding' => (class=>'disable') %></p>
-    <p><%= link_to 'Manage Winners' => 'winners' => (class=>'disable') %></p>
+    <p><%= link_to 'Manage Winners' => 'winners' %></p>
   </div>
   <h3>Live Reports</h3>
   <div>
-    <p><%= link_to 'View Current Summary' => 'summary' => (class=>'disable') %></p>
-    <p><%= link_to 'Bank Report (Excel Data File Only)' => 'bankreport' => {format => 'xls'} => (class=>'disable') %></p>
-    <p><%= link_to 'Pre-arranged Items Report (Excel Data File Only)' => 'stockreport' => {format => 'xls'} => (class=>'disable') %></p>
+    <p><%= link_to 'View Current Summary' => 'summary' %></p>
+    <p><%= link_to 'Bank Report' => 'bankreport' %></p>
+    <p><%= link_to 'Pre-arranged Items Report' => 'stockreport' %></p>
   </div>
   <h3>Notes</h3>
   <div>

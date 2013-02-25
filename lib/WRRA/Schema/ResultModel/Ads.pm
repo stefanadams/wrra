@@ -3,7 +3,7 @@ package WRRA::Schema::ResultModel::Ads;
 use base 'WRRA::Schema::Result::Ad';
 
 sub resolver {
-	update_or_create => {
+	create_defaults => {
 		year => sub { shift->year },
 	},
 }
