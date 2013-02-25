@@ -45,7 +45,7 @@ $(document).ready(function(){
         rownumbers: true,
         rownumWidth: 50,
         scroll: false,
-        rowNum: 10,
+        rowNum: 20,
         rowList: [10, 20, 50, 100, 500, 1000, 5000, 10000],
         sortname: 'name',
         pager: $('#pager1'),
@@ -135,14 +135,20 @@ $(document).ready(function(){
         return false; //this is critical to stop the click event which will trigger a normal file download!
     });
 
+    $("#list1").jqGrid('navButtonAdd', '#pager1', {
+        caption:"Download Excel", 
+        buttonicon:"none", 
+        onClickButton: function(){
+            console.log('<%= url_for undef, {format=>'xls'} %>');
+            $.fileDownload('<%= url_for undef, {format=>'xls'} %>');
+        },
+        title: '<%= url_for undef, {format=>'xls'} %>',
+        position:"last"
+    });
 });
 </script>
 </head>  
 <body>   
-<div id="loggedin"></div>
-<a href="<%= url_for 'bookmarks' %>">Back to Bookmarks</a><br />
-<%= content 'filter' %>
-<a class="fileDownloadSimpleRichExperience" href="<%= url_for undef, format=>'xls' %>">Download as Excel</a>
 <table id="list1" class="scroll"></table> 
 <div id="pager1" class="scroll" style="text-align:center;" />
 </body>

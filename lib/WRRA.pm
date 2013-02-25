@@ -98,6 +98,7 @@ sub setup_routing {
     my $r1 = $admin->under("/$model");
     $r1->post("/create")->xhr->to("crud#create", m=>$model, v=>'jqgrid')->name('create_'.$model);
     $r1->post('/')->xhr->to('crud#read', m=>$model, v=>'jqgrid');
+    $admin->get("/$model.xls")->to('crud#read', m=>$model, v=>'jqgrid', format=>'xls');
     $r1->post("/update")->xhr->to("crud#update", m=>$model, v=>'jqgrid')->name('update_'.$model);
     $r1->delete("/delete")->xhr->to("crud#delete", m=>$model, v=>'jqgrid')->name('delete_'.$model);
   }
@@ -107,9 +108,9 @@ sub setup_routing {
   $admin->post('/sequence/:n')->xhr->to('crud#update', m=>'seq_items', v=>'seq_items', start=>$self->app->config('start'))->name('seq_items');
 
   my $reports = $admin->under('/reports');
-  $reports->get('/postcards')->xhr->to('crud#read', m=>'postcards', v=>'jqgrid');
-  $reports->get('/flyer')->xhr->to('crud#read', m=>'flyer', v=>'jqgrid');
-  $reports->get('/bankreport/:year', year=>qr/\d{4}/)->xhr->to('crud#read', m=>'bankreport', v=>'jqgrid');
+  $reports->get('/postcards')->to('crud#read', m=>'postcards', v=>'jqgrid');
+  $reports->get('/flyer')->to('crud#read', m=>'flyer', v=>'jqgrid');
+  $reports->get('/bankreport/:year', year=>qr/\d{4}/)->to('crud#read', m=>'bankreport', v=>'jqgrid');
 
   my $sol_aids = $admin->under('/solicitation_aids');
   $sol_aids->get('/checklist')->xhr->to('crud#read', m=>'checklist', v=>'jqgrid');
