@@ -105,27 +105,20 @@ sub setup_routing {
   }
   $admin->under('/donors')->post('/items')->xhr->to('crud#read', m=>'donor_items', v=>'jqgrid')->name('donor_items');
   $admin->get('/sequence')->xhr->to('crud#read', m=>'seq_items', v=>'seq_items', start=>$self->app->config('start'))->name('seq_items');
-  $admin->get('/sequence/:n')->xhr->to('crud#read', m=>'seq_items', v=>'seq_items', start=>$self->app->config('start'))->name('seq_items');
-  $admin->post('/sequence/:n')->xhr->to('crud#update', m=>'seq_items', v=>'seq_items', start=>$self->app->config('start'))->name('seq_items');
+  $admin->get('/sequence/:n')->xhr->to('crud#read', m=>'seq_items', v=>'seq_items', start=>$self->app->config('start'));
+  $admin->post('/sequence/:n')->xhr->to('crud#update', m=>'seq_items', v=>'seq_items', start=>$self->app->config('start'));
 
   my $reports = $admin->under('/reports');
-  $reports->post('/postcards')->xhr->to('crud#read', m=>'postcards', v=>'jqgrid');
-  $reports->get('/postcards.xls')->to('crud#read', m=>'postcards', v=>'jqgrid', format=>'xls');
-  $reports->post('/flyer')->xhr->to('crud#read', m=>'flyer', v=>'jqgrid');
-  $reports->get('/flyer.xls')->to('crud#read', m=>'flyer', v=>'jqgrid', format=>'xls');
-  $reports->post('/bankreport')->xhr->to('crud#read', m=>'bankreport', v=>'jqgrid');
-  $reports->get('/bankreport.xls')->to('crud#read', m=>'bankreport', v=>'jqgrid', format=>'xls');
-  $reports->post('/summary')->xhr->to('crud#read', m=>'summary', v=>'jqgrid');
-  $reports->get('/summary.xls')->to('crud#read', m=>'summary', v=>'jqgrid', format=>'xls');
-  $reports->post('/stockreport')->xhr->to('crud#read', m=>'stockreport', v=>'jqgrid')->name('stockreport');
-  $reports->get('/stockreport.xls')->to('crud#read', m=>'stockreport', v=>'jqgrid', format=>'xls');
-  $reports->post('/winners')->xhr->to('crud#read', m=>'winners', v=>'jqgrid')->name('winners');
-  $reports->get('/winners.xls')->to('crud#read', m=>'winners', v=>'jqgrid', format=>'xls');
+
+  foreach my $model ( qw/postcards flyer bankreport summary stockreport winners/ ) {
+    $reports->post("/$model")->xhr->to('crud#read', m=>"$model", v=>'jqgrid');
+    $reports->get("/$model.xls")->to('crud#read', m=>"$model", v=>'jqgrid', format=>'xls')->name($model);
+  }
 
   my $sol_aids = $admin->under('/solicitation_aids');
-  $sol_aids->get('/checklist')->xhr->to('crud#read', m=>'checklist', v=>'jqgrid');
-  $sol_aids->get('/packets')->xhr->to('crud#read', m=>'packets', v=>'jqgrid');
-  $sol_aids->get('/packet/:id', id=>qr/\d+/)->xhr->to('crud#read', m=>'packet', v=>'jqgrid');
+  $sol_aids->get('/checklist')->xhr->to('crud#read', m=>'checklist', v=>'checklist');
+  $sol_aids->get('/packets')->xhr->to('crud#read', m=>'packets', v=>'packets');
+  $sol_aids->get('/packet/:id', id=>qr/\d+/)->xhr->to('crud#read', m=>'packet', v=>'packet');
 
   # Although this is a plugin, it's an autorouter, so it needs to be last
   # Routes are handled by first match
