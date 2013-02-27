@@ -1,96 +1,17 @@
 package WRRA::Schema::ResultSet;
 
 use base qw/DBIx::Class::ResultSet::HashRef DBIx::Class::ResultSet/;
-__PACKAGE__->load_components(qw{Helper::ResultSet::Shortcut});
+
+__PACKAGE__->load_components(qw(Helper::ResultSet::Me Helper::ResultSet::Jqgrid));
 
 use strict;
 use warnings;
-use WRRA::View;
 
-use Data::Dumper;
+sub year { shift->result_source->schema->year }
 
-sub year { shift->result_source->schema->config->{year} || ((localtime())[5])+1900 }
-
-sub json {
-	my $self = shift;
-	if ( my $output = $self->{attrs}->{json} ) {
-		return $output->($self); # Run the output provided by the view Handler
-	} else {
-		return [$self->all] # TO_JSON
-	}
-}
-
-sub build_select {
-	my $self = shift;
-	if ( my $output = $self->{attrs}->{build_select} ) {
-		return $output->($self); # Run the output provided by the view Handler
-	} else {
-		return [Dumper $self->hashref_array] # TO_JSON
-	}
-}
-
-sub xls {
-	my $self = shift;
-	delete $self->{attrs}->{page};
-	delete $self->{attrs}->{rows};
-	return [map { $_->TO_XLS } $self->all];
-}
-
-sub rs_create {
-	my $self = shift;
-	return {res=>'err',msg=>WRRA::View->validate} if WRRA::View->validate;
-	my %req = WRRA::View->create;
-	warn Dumper({req=>{%req}});
-	#warn Dumper({update => {map { $_=>[$req{$_}->(\%req)] } grep { ref $req{$_} eq 'CODE' } keys %req}});
-	foreach ( grep { ref $req{$_} eq 'CODE' } grep { !/^\+/ } keys %req ) {
-		my ($search, $update) = $req{$_}->(\%req);
-		warn Dumper({update_related => {$_ => [$search, $update]}});
-		# This isn't the best way to get it.
-		# How to translate a relationship to a resultset?
-		$self->result_source->schema->resultset("\u$_")->find($search)->update($update);
-	}
-	my $create = {
-		(map { my $key = $_; $key =~ s/^\+//; $key => ref $req{$_} eq 'CODE' ? $req{$_}->($self, \%req) : !ref($req{$_}) ? $req{$_} : () } grep { /^\+/ } keys %req),
-		(map { $_=>$req{$_} } grep { $self->result_source->has_column($_) } keys %req)
-	};
-	warn Dumper({create=>$create});
-	my $id = $self->create($create)->id;
-	return {res=>($id?'ok':'err'), msg=>($id?'ok':'err'), id=>$id};
-	return {id=>50000};
-}
-
-sub rs_read {
-	my $self = shift;
-	warn Dumper({read => [{WRRA::View->search}, {WRRA::View->order_by, WRRA::View->pager, WRRA::View->read}]});
-	return $self->search({WRRA::View->search}, {WRRA::View->order_by, WRRA::View->pager, WRRA::View->read});
-}
-
-sub rs_update {
-	my $self = shift;
-	return {res=>'err',msg=>WRRA::View->validate} if WRRA::View->validate;
-	my %req = WRRA::View->update;
-	#warn Dumper({update => {map { $_=>[$req{$_}->(\%req)] } grep { ref $req{$_} eq 'CODE' } keys %req}});
-	foreach ( grep { ref $req{$_} eq 'CODE' } keys %req ) {
-		my ($search, $update) = $req{$_}->(\%req);
-		warn Dumper({update_related => {$_ => [$search, $update]}});
-		$self->find($search)->$_->update($update);
-	}
-	my $update = {
-		map { $_=>$req{$_} } grep { $self->result_source->has_column($_) } keys %req
-	};
-	if ( ref WRRA::View->key ) {
-		warn Dumper({update=>[WRRA::View->key=>$update]});
-		return {res=>($self->search(WRRA::View->key)->update($update)?'ok':'err'),msg=>''};
-	} else {
-		warn Dumper({update=>{WRRA::View->key=>$update}});
-		return {res=>($self->find(WRRA::View->key)->update($update)?'ok':'err'),msg=>''};
-	}
-}
-
-sub rs_delete {
-	my $self = shift;
-	warn Dumper({delete => WRRA::View->key});
-	return {res=>($self->find(WRRA::View->key)->delete?'ok':'err'),msg=>''};
-}
+sub next_year { $_[0]->search({$_[0]->me.'year' => $_[0]->year+1}) }
+sub current_year { $_[0]->search({$_[0]->me.'year' => $_[0]->year}) }
+sub last_year { $_[0]->search({$_[0]->me.'year' => $_[0]->year-1}) }
+sub recent_years { $_[0]->search({$_[0]->me.'year' => {-between => [$_[0]->year-2, $_[0]->year]}}) }
 
 1;

@@ -254,10 +254,10 @@ __PACKAGE__->set_primary_key("item_id");
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zzBrNP/WiSzWNNMfSNjxXA
 
 #belongs to means the fk is in your own table, and might have/has_many/has_one means the fk points to you, and is in the other table
-__PACKAGE__->belongs_to(donor => 'WRRA::Schema::Result::Donor', 'donor_id'); # An Item belongs_to a Donor, join to Donor via donor_id
+__PACKAGE__->belongs_to(donor => 'WRRA::Schema::Result::Donor', 'donor_id', {join_type=>'left'}); # An Item belongs_to a Donor, join to Donor via donor_id
 __PACKAGE__->belongs_to(stockitem => 'WRRA::Schema::Result::Stockitem', 'stockitem_id', {join_type=>'left'}); # An Item belongs_to Stockitem, join to Stockitem via stockitem_id
-__PACKAGE__->belongs_to(highbid => 'WRRA::Schema::Result::Bid', {'foreign.bid_id'=>'self.highbid_id'}); # An Item belongs_to a particular highbid
-__PACKAGE__->has_many(bids => 'WRRA::Schema::Result::Bid', 'item_id'); # An Item has_many bids, join to Bid via item_id
+__PACKAGE__->belongs_to(highbid => 'WRRA::Schema::Result::Bid', {'foreign.bid_id'=>'self.highbid_id'}, {join_type=>'left'}); # An Item belongs_to a particular highbid
+__PACKAGE__->has_many(bids => 'WRRA::Schema::Result::Bid', 'item_id', {join_type=>'left'}); # An Item has_many bids, join to Bid via item_id
 __PACKAGE__->many_to_many(bidders => 'bids', 'bidder'); # An Item is bid on by many Bidders, bridge to bidders via Bid's bidder
 
 use overload '""' => sub {shift->name}, fallback => 1;

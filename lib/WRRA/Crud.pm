@@ -1,5 +1,5 @@
-package WRRA::Controller::Crud;
-use Mojo::Base 'WRRA::Controller::Base';
+package WRRA::Crud;
+use Mojo::Base 'Mojolicious::Controller';
 
 # The controller receives a request from a user, passes incoming data to the
 # model and retrieves data from it, which then gets turned into an actual
@@ -24,6 +24,8 @@ use Mojo::Base 'WRRA::Controller::Base';
 #  Response <- |                | <-> | View  |
 #              +----------------+     +-------+
 
+use Mojo::Util qw(camelize);
+
 use Data::Dumper;
 
 sub create {
@@ -39,19 +41,14 @@ sub create {
 
 sub read {
 	my $self = shift;
-	my $v = $self->view($self->param('v')) or $self->render_exception('No view');
-	my $m = $self->model($self->param('m')) or $self->render_exception('No model');
+	my $rs = $self->db->resultset($self->param('results'));
+	my $data = $rs->jqgrid->search;
 	$self->respond_to(
-		json => sub { # With TO_JSON
-			$self->render_json($m->read->json);
-		},
-		#json => sub { # Without TO_JSON
-		#	$self->render_json($m->read->hashref_array);
-		#},
+		json => {json => [$data->all]},
 		xls => sub { # With TO_XLS
 			$self->cookie(fileDownload => 'true');
 			$self->cookie(path => '/');
-			$self->render_xls(result => $m->read->xls);
+			$self->render_xls(result => [$data->all]);
 		},
 	);
 }
