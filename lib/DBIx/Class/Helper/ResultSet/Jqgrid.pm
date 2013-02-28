@@ -12,7 +12,7 @@ my $object_key = '__Helper__ResultSet__Jqgrid__JQGRID';
 
 sub jqgrid {
 	my $self = shift;
-	$self->{$object_key} = shift || {};
+	$self->{$object_key} = {@_} || {};
 	$self;
 }
 
@@ -40,11 +40,10 @@ sub search {
 	my $request = $self->{$object_key} or return $self->next::method(@_);
 	warn "SEARCH JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
 
-	my $result_class = $self->result_class;
-	warn "Using Result Class $result_class\n" if $ENV{JQGRID_DEBUG};
-
-	my $prefetch = $result_class->_prefetch if $result_class->can('_prefetch');
-	my $join = [$self->result_source->relationships] if $self->result_source->relationships;
+	#my $result_class = $self->result_class;
+	#warn "Using Result Class $result_class\n" if $ENV{JQGRID_DEBUG};
+	#my $prefetch = $result_class->_prefetch if $result_class->can('_prefetch');
+	#my $join = [$self->result_source->relationships] if $self->result_source->relationships;
 
 	my %op = (
 		'eq' => { pre => '',  post => '',  op => '=', },            # equal
@@ -65,6 +64,8 @@ sub search {
 		'nn' => { pre => '',  post => '',  op => {'!=' => undef}, },
 	);
 
+	my @prefetch = ();
+
 	my $filters = sub {
 		my ($filters) = @_;
 		$filters ? (%{_complex_search($filters)}) : ();
@@ -73,7 +74,8 @@ sub search {
 	my $search = sub {
 		my ($field, $op, $string) = @_;
 		return () unless $field && $op && defined $string;
-		# Need a callback here
+		# Need a callback here to reference ResultView::Result::
+		push @prefetch, ((split /\./, $field)[0]) if $field =~ /\./;
 		return $self->_me($field) => (ref $op{$op}{op} ? $op{$op}{op} : $op{$op}{pre}.$string.$op{$op}{post});
 	};
 
@@ -86,14 +88,14 @@ sub search {
 		my @order_by = ();
 		foreach ( 0..$#sidx ) {
 			my ($sidx, $sord) = ($sidx[$_], $sord[$_]);
-			# Need a callback here
+			# Need a callback here to reference ResultView::Result::
+			push @prefetch, ((split /\./, $sidx)[0]) if $sidx =~ /\./;
 			push @order_by, {"-$sord" => $self->_me($sidx)};
 		}
 		return @order_by ? (order_by => [@order_by]) : ();
 	};
 
-	$self = $self->next::method({}, {prefetch => $prefetch}) if $prefetch;
-	$self = $self->next::method({}, {join => $join}) if $join && !$prefetch;
+	$self = $self->next::method({}, {prefetch => [@prefetch]}) if @prefetch;
 	$self = $self->next::method({$search->($request->{searchField}, $request->{searchOper}, $request->{searchString})});
 	$self = $self->next::method({$filters->($request->{filters})});
 	$self = $self->next::method({}, {page => ($request->{page}||1), (defined $request->{rows} ? (rows => $request->{rows}) : ())});

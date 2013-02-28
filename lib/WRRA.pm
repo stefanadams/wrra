@@ -32,7 +32,7 @@ sub setup_plugins {
 	$self->plugin('MyConfig');
 	$self->plugin('MyProcess');
 	$self->plugin(DBIC => (schema => 'WRRA::Schema'));
-	$self->plugin('TitleVersion');
+	$self->plugin(TitleTag => {tag => sub { join(' - ', $_[0]->db->year, $_[0]->config('version')) }});
 	$self->plugin('LogRequests', {tag => sub { shift->db->year }});
 	$self->plugin('WriteExcel');
 	$self->plugin('HeaderCondition');
