@@ -41,14 +41,14 @@ sub create {
 
 sub read {
 	my $self = shift;
-	my $rs = $self->db->resultset($self->param('results'));
-	my $data = $rs->jqgrid->search;
+	my ($view, $source) = $self->param('results');
+	my $data = $self->db->resultset($source)->view($view)->jqgrid($self->myrequest)->search->first;
 	$self->respond_to(
-		json => {json => [$data->all]},
+		json => {json => [$data]},
 		xls => sub { # With TO_XLS
 			$self->cookie(fileDownload => 'true');
 			$self->cookie(path => '/');
-			$self->render_xls(result => [$data->all]);
+			$self->render_xls(result => [$data->first]);
 		},
 	);
 }

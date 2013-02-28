@@ -18,7 +18,8 @@ sub startup {
 	$self->helper(year => sub { shift->db->year(@_) });
 	$self->hook(before_dispatch => sub {
 		my $c = shift;
-		$c->year($c->session->{year} || $c->config->{year});
+		#warn Data::Dumper::Dumper([$c->session->{year}, $ENV{WRRA_YEAR}, $c->config]);
+		$c->year($c->session->{year} || $ENV{WRRA_YEAR} || $c->config->{year});
 	});
 }
 
@@ -27,6 +28,7 @@ sub setup_plugins {
 
 	#$self->plugin('PODRenderer');  # Documentation browser under "/perldoc"
 	#$self->plugin('ConsoleLogger');  # Only use on HTML docs
+	$self->plugin('Config');
 	$self->plugin('MyConfig');
 	$self->plugin('MyProcess');
 	$self->plugin(DBIC => (schema => 'WRRA::Schema'));
@@ -75,7 +77,7 @@ sub setup_routing {
 
 	my $admin = $r->under('/admin');
 
-	foreach my $results (
+	foreach (
 		[Rotarians => 'Rotarian'],
 		[Donors => 'Donor'],
 		[Stockitems => 'Stockitem'],
@@ -85,11 +87,10 @@ sub setup_routing {
 		[Bidders => 'Bidder'],
 		[Bids => 'Bid'],
 	) {
-		my ($class, $source) = @$results;
-		my $name = decamelize($class);
+		my $name = decamelize($_->[0]);
 		my $r1 = $admin->under("/$name");
 		$r1->post("/create")->xhr->to("crud#create", m=>$name, v=>'jqgrid')->name('create_'.$name);
-		$r1->post('/')->xhr->to('crud#read', results=>$results)->name($name);
+		$r1->post('/')->xhr->to('crud#read', results=>$_)->name($name);
 		#$r1->get('/', format=>[qw/xls/])->to('crud#read', m=>$name, v=>'jqgrid'); # Why won't this work?
 		$admin->get("/$name.xls")->to('crud#read', m=>$name, v=>'jqgrid', format=>'xls'); # Can only download via a non-xhr get request
 		$r1->post("/update")->xhr->to("crud#update", m=>$name, v=>'jqgrid')->name('update_'.$name);
