@@ -16,7 +16,6 @@ sub view {
 	my $result_class = $self->result_class;
 	$result_class =~ s/::Result::/::ResultView::Result::/;
 	$result_class =~ s/[^:]+$/$view/;
-	#warn Data::Dumper::Dumper($rs_component, $result_class);
 	eval { $resultset_class->load_components("+$rs_component"); };
 	warn "Couldn't load component $rs_component\n" if $@;
 	eval { $self = $self->search({}, {result_class=>$result_class}); };

@@ -12,6 +12,8 @@ my $object_key = '__Helper__ResultSet__Jqgrid__JQGRID';
 
 sub jqgrid {
 	my $self = shift;
+	my $result_class = $self->result_class;
+	$result_class->load_components(qw{Helper::Result::Jqgrid}); 
 	$self->{$object_key} = ref $_[0] ? $_[0] : {@_};
 	$self;
 }

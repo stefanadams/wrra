@@ -55,6 +55,52 @@ sub setup_routing {
 
 	# Shortcuts
 	$r->add_shortcut(xhr => sub { shift->over(is_xhr=>shift||1) });
+	$r->add_shortcut(jqgrid => sub {
+		my $r = shift;
+		my ($view, $source) = (undef, undef);
+		foreach ( @_ ) {
+			($view, $source) = @$_ if ref $_ eq 'ARRAY';
+		}
+		my $name = decamelize($view) or return undef;
+		my $r1 = $r->under("/$name");
+		$r1->view([$view => $source], {jqgrid => 'create'});
+		$r1->view([$view => $source], {jqgrid => 'read'}, name => '');
+		$r1->view([$view => $source], {jqgrid => 'update'});
+		$r1->view([$view => $source], {jqgrid => 'delete'});
+	});
+	$r->add_shortcut(auto_complete => sub {
+		my $r = shift;
+		my ($view, $source) = (undef, undef);
+		foreach ( @_ ) {
+			($view, $source) = @$_ if ref $_ eq 'ARRAY';
+		}
+		my $name = decamelize($view) or return undef;
+		$r->view(["Ac$view", $source], {api => 'auto_complete'}, name => $view);
+	});
+	$r->add_shortcut(build_select => sub {
+		my $r = shift;
+		my ($view, $source) = (undef, undef);
+		foreach ( @_ ) {
+			($view, $source) = @$_ if ref $_ eq 'ARRAY';
+		}
+		my $name = decamelize($view) or return undef;
+		$r->view(["Bs$view", $source], {api => 'build_select'}, name => $view);
+	});
+	$r->add_shortcut(view => sub {
+		my $r = shift;
+		my ($view, $source, $method, $controller, $action) = (undef, undef, 'post', 'crud', 'read');
+		foreach ( @_ ) {
+			($controller, $action) = %$_ if ref $_ eq 'HASH';
+			($view, $source) = @$_ if ref $_ eq 'ARRAY';
+			($method) = $$_ if ref $_ eq 'SCALAR';
+		}
+		%_ = grep { !ref } @_;
+		my $name = delete $_{name} // $view || $action;
+		$name = decamelize($name);
+		my $extra_path = delete $_{extra_path};
+		$r->$method(join('/', '', grep { $_ } $name, $extra_path))->xhr->to("$controller#$action", results=>[$view, $source], %_)->name(join('_', $controller, $action, grep { $_ } $name, $extra_path));
+		#$r1->get("/$name.xls")->to('crud#read', m=>"$name", v=>'jqgrid', format=>'xls')->name($name);
+	});
 
 	# Normal route to controller
 	$r->get('/')->to('user#index');
@@ -64,47 +110,47 @@ sub setup_routing {
 	my $api = $r->under('/api');
 
 	my $ac = $api->under('/ac');
-	foreach my $model ( qw/city donor item item_current stockitem advertisement advertiser item_stockitem bellitem bidder ad/ ) {
-		$ac->get("/$model")->xhr->to("api#auto_complete", mv=>"ac_$model")->name("ac_$model");
-	}
+	$ac->auto_complete([City => 'Donor']);
+	$ac->auto_complete(['Donor']);
+	$ac->auto_complete(['Item']);
+	$ac->auto_complete([ItemCurrent => 'Item']);
+	$ac->auto_complete(['Stockitem']);
+	$ac->auto_complete([Advertisement => 'Donor']);
+	$ac->auto_complete([Advertiser => 'Donor']);
+	$ac->auto_complete([ItemStockitem => 'Item']);
+	$ac->auto_complete(['Bellitem']);
+	$ac->auto_complete(['Bidder']);
+	$ac->auto_complete(['Ad']);
+	#$ac->get("/$model")->xhr->to("api#auto_complete", mv=>"ac_$model")->name("ac_$model") foreach my $model ( qw/city donor item item_current stockitem advertisement advertiser item_stockitem bellitem bidder ad/ );
+
 	my $bs = $api->under('/bs');
-	foreach my $model ( qw/rotarians/ ) {
-		$bs->get("/$model")->xhr->to("api#build_select", mv=>"bs_$model")->name("bs_$model");
-	}
-	my $item_number = $api->get('/item_number')->xhr->to('api#item_number', mv=>'item_number')->name('item_number');
+	$bs->build_select([Rotarians => 'Rotarian']);
+	#$bs->get("/$model")->xhr->to("api#build_select", mv=>"bs_$model")->name("bs_$model") foreach my $model ( qw/rotarians/ );
+
+	$api->view([ItemNumber => 'Item'], {api => 'item_number'});
+	#$api->get('/item_number')->xhr->to('api#item_number', mv=>'item_number')->name('item_number');
 
 	my $admin = $r->under('/admin');
-
-	foreach (
-		[Rotarians => 'Rotarian'],
-		[Donors => 'Donor'],
-		[Stockitems => 'Stockitem'],
-		[Items => 'Item'],
-		[Ads => 'Ad'],
-		[Bellitems => 'Bellitem'],
-		[Bidders => 'Bidder'],
-		[Bids => 'Bid'],
-	) {
-		my $name = decamelize($_->[0]);
-		my $r1 = $admin->under("/$name");
-		$r1->post("/create")->xhr->to("crud#create", m=>$name, v=>'jqgrid')->name('create_'.$name);
-		$r1->post('/')->xhr->to('jqgrid#read', results=>$_)->name($name);
-		#$r1->get('/', format=>[qw/xls/])->to('crud#read', m=>$name, v=>'jqgrid'); # Why won't this work?
-		$admin->get("/$name.xls")->to('crud#read', m=>$name, v=>'jqgrid', format=>'xls'); # Can only download via a non-xhr get request
-		$r1->post("/update")->xhr->to("crud#update", m=>$name, v=>'jqgrid')->name('update_'.$name);
-		$r1->delete("/delete")->xhr->to("crud#delete", m=>$name, v=>'jqgrid')->name('delete_'.$name);
-	}
-	$admin->under('/donors')->post('/items')->xhr->to('crud#read', m=>'donor_items', v=>'jqgrid')->name('donor_items');
-	$admin->get('/sequence')->xhr->to('crud#read', m=>'seq_items', v=>'seq_items', start=>$self->app->config('start'))->name('seq_items');
-	$admin->get('/sequence/:n')->xhr->to('crud#read', m=>'seq_items', v=>'seq_items', start=>$self->app->config('start'));
-	$admin->post('/sequence/:n')->xhr->to('crud#update', m=>'seq_items', v=>'seq_items', start=>$self->app->config('start'));
+	$admin->jqgrid([Rotarians => 'Rotarian']);
+	$admin->jqgrid([Donors => 'Donor']);
+	$admin->under('/donors')->view([DonorItems => 'Item'], {jqgrid => 'read'});
+	$admin->jqgrid([Stockitems => 'Stockitem']);
+	$admin->jqgrid([Items => 'Item']);
+	$admin->jqgrid([Ads => 'Ad']);
+	$admin->jqgrid([Bellitems => 'Bellitem']);
+	$admin->jqgrid([Bidders => 'Bidder']);
+	$admin->jqgrid([Bids => 'Bid']);
+	$admin->view([SeqItems => 'Item'], \'get');
+	$admin->view([SeqItems => 'Item'], \'get', extra_path => ':n');
+	$admin->view([SeqItems => 'Item'], {crud => 'update'}, \'post', extra_path => ':n');
 
 	my $reports = $admin->under('/reports');
-
-	foreach my $name ( qw/postcards flyer bankreport summary stockreport winners/ ) {
-		$reports->post("/$name")->xhr->to('crud#read', m=>"$name", v=>'jqgrid');
-		$reports->get("/$name.xls")->to('crud#read', m=>"$name", v=>'jqgrid', format=>'xls')->name($name);
-	}
+	$reports->view([Postcards => 'Item']);
+	$reports->view([Flyer => 'Item']);
+	$reports->view([Bankreport => 'Item']);
+	$reports->view([Summary => 'Item']);
+	$reports->view([Stockreport => 'Stockitem']);
+	$reports->view([Winners => 'Item']);
 
 	my $sol_aids = $admin->under('/solicitation_aids');
 	$sol_aids->get('/checklist')->xhr->to('crud#read', m=>'checklist', v=>'checklist');
