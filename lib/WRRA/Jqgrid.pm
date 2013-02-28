@@ -1,4 +1,4 @@
-package WRRA::Crud;
+package WRRA::Jqgrid;
 use Mojo::Base 'Mojolicious::Controller';
 
 # The controller receives a request from a user, passes incoming data to the
@@ -42,13 +42,13 @@ sub create {
 sub read {
 	my $self = shift;
 	my ($view, $source) = $self->param('results');
-	my $data = $self->db->resultset($source)->view($view)->jqgrid($self->myrequest)->search->first;
+	my $data = $self->db->resultset($source)->view($view)->jqgrid($self->myrequest)->search->all;
 	$self->respond_to(
-		json => {json => [$data]},
+		json => {json => $data},
 		xls => sub { # With TO_XLS
 			$self->cookie(fileDownload => 'true');
 			$self->cookie(path => '/');
-			$self->render_xls(result => [$data->first]);
+			$self->render_xls(result => $data);
 		},
 	);
 }

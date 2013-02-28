@@ -33,13 +33,11 @@ sub setup_plugins {
 	$self->plugin('MyProcess');
 	$self->plugin(DBIC => (schema => 'WRRA::Schema'));
 	$self->plugin(TitleTag => {tag => sub { join(' - ', $_[0]->db->year, $_[0]->config('version')) }});
-	$self->plugin('LogRequests', {tag => sub { shift->db->year }});
+	$self->plugin(LogRequests => {tag => sub { shift->db->year }});
 	$self->plugin('WriteExcel');
 	$self->plugin('HeaderCondition');
 	$self->plugin('AutoComplete');
 	$self->plugin('IsXHR');
-	$self->plugin('JSON');
-	$self->plugin('Parameters');
 
 	#$self->plugin('I18N' => { default => 'en'});  # Helper "url_for" already exists, replacing
 
@@ -90,7 +88,7 @@ sub setup_routing {
 		my $name = decamelize($_->[0]);
 		my $r1 = $admin->under("/$name");
 		$r1->post("/create")->xhr->to("crud#create", m=>$name, v=>'jqgrid')->name('create_'.$name);
-		$r1->post('/')->xhr->to('crud#read', results=>$_)->name($name);
+		$r1->post('/')->xhr->to('jqgrid#read', results=>$_)->name($name);
 		#$r1->get('/', format=>[qw/xls/])->to('crud#read', m=>$name, v=>'jqgrid'); # Why won't this work?
 		$admin->get("/$name.xls")->to('crud#read', m=>$name, v=>'jqgrid', format=>'xls'); # Can only download via a non-xhr get request
 		$r1->post("/update")->xhr->to("crud#update", m=>$name, v=>'jqgrid')->name('update_'.$name);

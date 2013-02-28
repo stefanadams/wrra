@@ -72,7 +72,7 @@ $(document).ready(function(){
         headers: { accept: "application/json" }
     });
     $.extend($.jgrid.search, {
-        multipleSearch: true,
+//        multipleSearch: true,
     });
     $.extend($.jgrid.edit, {
         ajaxEditOptions: { type: "POST" },

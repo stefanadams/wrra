@@ -1,8 +1,11 @@
-package WRRA::Schema::ResultView::Result::Items;
+package WRRA::Schema::ResultView::Result::Rotarians;
 
-use base 'WRRA::Schema::Result::Item';
+use base 'WRRA::Schema::Result::Rotarian';
 
-sub _columns { qw/id number donor.id donor.nameid donor.advertisement stockitem.id stockitem.nameid name description value category url/ }
+sub _columns { qw/id name has_submissions email phone/ }
+sub _search_id { 'rotarian_id' }
+sub _search_name { 'concat(lastname, firstname)' }
+sub _order_by_name { \'concat(lastname, firstname)' }
 
 1;
 
