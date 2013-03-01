@@ -80,24 +80,25 @@ sub setup_routing {
 
 	my $admin = $r->under('/admin');
 	$admin->jqgrid([Rotarians => 'Rotarian']);
-	$admin->jqgrid([Donors => 'Donor'])->view(['items' => DonorItems => 'Item'], {jqgrid => 'read'});
+	$admin->jqgrid([Donors => 'Donor'])->view(['/items' => DonorItems => 'Item'], {jqgrid => 'read'});
 	$admin->jqgrid([Stockitems => 'Stockitem']);
 	$admin->jqgrid([Items => 'Item']);
 	$admin->jqgrid([Ads => 'Ad']);
 	$admin->jqgrid([Bellitems => 'Bellitem']);
 	$admin->jqgrid([Bidders => 'Bidder']);
 	$admin->jqgrid([Bids => 'Bid']);
-	$admin->view([SeqItems => 'Item'], \'get');
-	$admin->view([SeqItems => 'Item'], \'get', extra_path => ':n');
-	$admin->view([SeqItems => 'Item'], {crud => 'update'}, \'post', extra_path => ':n');
+	$admin->under('/seq_items')
+		->view(['/' => SeqItems => 'Item'], \'get')
+		->view(['/' => SeqItems => 'Item'], \'get', extra_path => ':n')
+		->view(['/' => SeqItems => 'Item'], {crud => 'update'}, \'post', extra_path => ':n');
 
 	my $reports = $admin->under('/reports');
-	$reports->view([Postcards => 'Item']);
-	$reports->view([Flyer => 'Item']);
-	$reports->view([Bankreport => 'Item']);
-	$reports->view([Summary => 'Item']);
-	$reports->view([Stockreport => 'Stockitem']);
-	$reports->view([Winners => 'Item']);
+	$reports->view([Postcards => 'Item'], {jqgrid => 'read'});
+	$reports->view([Flyer => 'Item'], {jqgrid => 'read'});
+	$reports->view([Bankreport => 'Item'], {jqgrid => 'read'});
+	$reports->view([Summary => 'Item'], {jqgrid => 'read'});
+	$reports->view([Stockreport => 'Stockitem'], {jqgrid => 'read'});
+	$reports->view([Winners => 'Item'], {jqgrid => 'read'});
 
 	my $sol_aids = $admin->under('/solicitation_aids');
 	$sol_aids->get('/checklist')->xhr->to('crud#read', m=>'checklist', v=>'checklist');
