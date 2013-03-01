@@ -5,11 +5,9 @@ use Data::Dumper;
 
 sub auto_complete {
 	my $self = shift;
-        my $data = $self->db->resultset($self->param('source'))->view($self->param('view'))->jqgrid($self->myrequest)->search->all;
+        my $data = $self->db->resultset($self->param('source'))->view($self->param('view'))->search->all;
 	$self->respond_to(
-		json => sub {
-			$self->render_json($data);
-		},
+		json => {json => $data},
 	);
 }
 
