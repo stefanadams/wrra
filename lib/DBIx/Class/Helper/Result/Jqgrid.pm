@@ -8,10 +8,7 @@ use warnings;
 
 use parent 'DBIx::Class';
 
-sub eval { my $self = shift; my $eval = eval($_[0]); return $@ ? '' : $eval }
-sub nameid { my $self = shift; join ':', $self->name, $self->id; }
-sub _value { shift->value }
-
+sub _eval { my $self = shift; my $eval = eval($_[0]); return $@ ? '' : $eval }
 sub TO_JSON {
         my $self = shift;
         warn ref($self)." TO_JSON!\n" if $ENV{JQGRID_DEBUG};
@@ -19,7 +16,7 @@ sub TO_JSON {
 	my %tables = ();
 	foreach ( grep { /\./ } $self->_columns ) {
 		my ($table, $field) = split /\./;
-		$tables{$table}{$field} = $self->eval("\$self->$table->$field");
+		$tables{$table}{$field} = $self->_eval("\$self->$table->$field");
 	}
 	warn Data::Dumper::Dumper({%tables}) if $ENV{JQGRID_DEBUG};
         return { (map { $_ => $self->$_ } grep { !/\./ } $self->_columns), (%tables) };

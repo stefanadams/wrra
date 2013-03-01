@@ -1,4 +1,4 @@
-package DBIx::Class::Helper::ResultSet::Views;
+package DBIx::Class::Helper::ResultSet::View;
 {
   $DBIx::Class::Helper::ResultSet::View::VERSION = '0.1.0';
 }

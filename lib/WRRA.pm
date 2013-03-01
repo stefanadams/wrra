@@ -55,7 +55,8 @@ sub setup_routing {
 
 	# Normal route to controller
 	$r->get('/')->to('user#index');
-	$r->post('/' => sub { my $self = shift; $self->render_json($self->req->json); });
+	$r->get('/city')->to('api#auto_complete');
+	$r->post('/' => sub { my $self = shift; $self->req->body_size ? $self->render_json($self->req->json) : $self->render_text('no_json'); });
 	$r->get('/bookmarks')->to(cb=>sub{shift->redirect_to('/admin/bookmarks')});
 
 	my $api = $r->under('/api');

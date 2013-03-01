@@ -1,15 +1,14 @@
-package WRRA::Controller::Api;
-use Mojo::Base 'WRRA::Controller::Base';
+package WRRA::Api;
+use Mojo::Base 'Mojolicious::Controller';
 
 use Data::Dumper;
 
 sub auto_complete {
 	my $self = shift;
-	$self->view($self->param('mv')) or $self->render_exception;
-	my $m = $self->model($self->param('mv')) or $self->render_exception;
+        my $data = $self->db->resultset($self->param('source'))->view($self->param('view'))->jqgrid($self->myrequest)->search->all;
 	$self->respond_to(
 		json => sub {
-			$self->render_json($m->read->json);
+			$self->render_json($data);
 		},
 	);
 }

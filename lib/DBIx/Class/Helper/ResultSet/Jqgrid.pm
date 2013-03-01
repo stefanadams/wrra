@@ -158,7 +158,7 @@ sub delete {
 sub all {
 	my $self = shift;
 	my $request = $self->{$object_key} or return $self->next::method(@_);
-	warn "ALL JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
+	warn "ALL/FIRST JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
 
 	return {   
 		page => $self->pager->current_page||1,
@@ -167,19 +167,20 @@ sub all {
 		rows => [$self->next::method], # TO_JSON
 	} if ref $self;
 };
+*first = *all;
 
-sub first {
-	my $self = shift;
-	my $request = $self->{$object_key} or return $self->next::method(@_);
-	warn "FIRST JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
-
-	return {   
-		page => $self->pager->current_page||1,
-		total => $self->pager->last_page||1,
-		records => $self->pager->total_entries||0,
-		rows => [$self->next::method], # TO_JSON
-	} if ref $self;
-};
+#sub first {
+#	my $self = shift;
+#	my $request = $self->{$object_key} or return $self->next::method(@_);
+#	warn "FIRST JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
+#
+#	return {   
+#		page => $self->pager->current_page||1,
+#		total => $self->pager->last_page||1,
+#		records => $self->pager->total_entries||0,
+#		rows => [$self->next::method], # TO_JSON
+#	} if ref $self;
+#};
 
 #################
 
