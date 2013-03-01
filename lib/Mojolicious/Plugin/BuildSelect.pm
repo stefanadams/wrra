@@ -1,4 +1,4 @@
-package Mojolicious::Plugin::AutoComplete;
+package Mojolicious::Plugin::BuildSelect;
 use Mojo::Base 'Mojolicious::Plugin';
 
 our $VERSION = '0.01';
@@ -9,8 +9,7 @@ sub register {
   my ($self, $app) = @_;
 
   # This requires use of Mojo::Plugin::View
-  #$r->auto_complete([AcCity => 'Donor'], {api => 'auto_complete'}, name=>'City');
-  $app->routes->add_shortcut(auto_complete => sub {
+  $app->routes->add_shortcut(build_select => sub {
     my $r = shift;
     my ($route, $view, $source);
     ($route, $view, $source) = @$_ == 1 ? (undef, @$_, @$_) : @$_ == 2 ? (undef, @$_) : (@$_) foreach grep { ref eq 'ARRAY' } @_;
@@ -19,10 +18,10 @@ sub register {
     my $name = decamelize(delete $_{name} // $view);
     $route =~ s/^\/+// if $route;
     $route //= $name;   
-    $r->view(["/$route" => "Ac$view" => $source], {api => 'auto_complete'}, %_);
+    $r->view(["/$route" => "Bs$view" => $source], {api => 'build_select'}, %_);
   });
 
-  $app->helper(autocomplete => sub {
+  $app->helper(build_select => sub {
     my ($self, $name, $values) = @_;
     $values ||= [];
     #var autocomplete = {
