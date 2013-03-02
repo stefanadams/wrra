@@ -26,7 +26,7 @@ $("#list1").jqGrid({
         {name:'advertisement',label:'Advertisement',hidden:true,search:false,editable:true,edittype:'textarea',editrules:{edithidden:true}},
         {name:'solicit',label:'Solicit',width:25,editable:true,edittype:'select',editoptions:{multiple:false,value:'1:Yes;0:No'},formatter:'bool'},
         {name:'ly_items',label:'LY',width:25,editable:false,search:false,sortable:false,formatter:'bool'},
-        {name:'rotarian',label:'Rotarian',width:100,editable:true,edittype:'select',editoptions:{multiple:false,dataUrl:'<%= url_for 'bs_rotarians' %>'}},
+        {name:'rotarian.name',label:'Rotarian',width:100,editable:true,edittype:'select',editoptions:{multiple:false,dataUrl:'<%= url_for 'bs_rotarians' %>'}},
         {name:'comments',label:'Comments',width:100,search:false,editable:true}
     ],
     subGrid: true,
