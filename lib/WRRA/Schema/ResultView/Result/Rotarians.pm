@@ -1,7 +1,5 @@
 package WRRA::Schema::ResultView::Result::Rotarians;
 
-use base 'WRRA::Schema::Result::Rotarian';
-
 sub TO_VIEW { qw/id name has_submissions email phone/ }
 sub _search_id { 'rotarian_id' }
 sub _search_name { 'concat(lastname, firstname)' }
