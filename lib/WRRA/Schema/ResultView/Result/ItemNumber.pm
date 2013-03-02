@@ -2,6 +2,6 @@ package WRRA::Schema::ResultView::Result::ItemNumber;
 
 use base 'WRRA::Schema::Result::Item';
 
-sub _columns { qw/number/ }
+sub TO_VIEW { qw/number/ }
 
 1;

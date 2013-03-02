@@ -2,6 +2,6 @@ package WRRA::Schema::ResultView::Result::BsRotarians;
 
 use base 'WRRA::Schema::Result::Rotarian';
 
-sub _columns { qw/id name/ }
+sub TO_VIEW { qw/id name/ }
 
 1;

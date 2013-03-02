@@ -5,9 +5,9 @@ use Data::Dumper;
 
 sub auto_complete {
 	my $self = shift;
-        my $data = $self->db->resultset($self->param('source'))->view($self->param('view'))->search->all;
+	my $data = $self->db->resultset($self->param('source'))->myrequest($self->myrequest)->view($self->param('view'));
 	$self->respond_to(
-		json => {json => $data},
+		json => {json => [$data->all]},
 	);
 }
 

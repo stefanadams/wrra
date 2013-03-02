@@ -4,6 +4,6 @@ use base 'WRRA::Schema::Result::Donor';
 
 sub label { shift->city }
 
-sub _columns { qw/label state zip/ }
+sub TO_VIEW { qw/label state zip/ }
 
 1;

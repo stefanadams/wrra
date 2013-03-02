@@ -6,6 +6,9 @@ package DBIx::Class::Helper::ResultSet::View;
 use strict;
 use warnings;
 
+# This resultset method changes the result class and loads helper result methods into that class
+# It also loads additional resultset methods into the resultset class
+# Finally, it kicks off the loaded resultset methods by calling default (if defined)
 sub view {
 	my $self = shift;
 	my $view = shift or return $self;
@@ -20,6 +23,7 @@ sub view {
 	warn "Couldn't load component $rs_component\n" if $@;
 	eval { $self = $self->search({}, {result_class=>$result_class}); };
 	warn "Couldn't load result class $result_class\n" if $@;
+        $result_class->load_components(qw{Helper::Row::ToJSON::View});
 	$self->can('default') ? $self->default : $self;
 }
 

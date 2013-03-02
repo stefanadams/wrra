@@ -19,7 +19,7 @@ sub register {
     my $name = decamelize(delete $_{name} // $view);
     $route =~ s/^\/+// if $route;
     $route //= $name;   
-    $r->view(["/$route" => "Ac$view" => $source], {api => 'auto_complete'}, %_);
+    $r->view(["/$route" => "Ac$view" => $source], {api => 'auto_complete'}, \'get', %_);
   });
 
   $app->helper(autocomplete => sub {
