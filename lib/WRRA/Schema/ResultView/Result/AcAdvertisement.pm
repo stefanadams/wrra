@@ -1,5 +1,7 @@
 package WRRA::Schema::ResultView::Result::AcAdvertisement;
 
-sub TO_VIEW { qw/id/ }
+sub label { shift->advertisement }
+
+sub TO_VIEW { qw/label/ }
 
 1;

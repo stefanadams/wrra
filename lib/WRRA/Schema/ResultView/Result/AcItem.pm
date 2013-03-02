@@ -1,5 +1,7 @@
 package WRRA::Schema::ResultView::Result::AcItem;
 
-sub TO_VIEW { qw/id/ }
+sub label { shift->name }
+
+sub TO_VIEW { qw/label description _value url category/ }
 
 1;

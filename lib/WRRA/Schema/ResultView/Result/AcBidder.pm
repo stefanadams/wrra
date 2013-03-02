@@ -1,5 +1,8 @@
 package WRRA::Schema::ResultView::Result::AcBidder;
 
-sub TO_VIEW { qw/id/ }
+sub label { shift->nameid }
+sub desc { shift->phone }
+
+sub TO_VIEW { qw/label desc/ }
 
 1;

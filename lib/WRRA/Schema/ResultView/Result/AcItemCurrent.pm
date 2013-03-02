@@ -1,5 +1,8 @@
 package WRRA::Schema::ResultView::Result::AcItemCurrent;
 
-sub TO_VIEW { qw/id/ }
+sub label { shift->name }
+sub desc { shift->year }
+
+sub TO_VIEW { qw/label desc description _value category url/ }
 
 1;
