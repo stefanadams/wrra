@@ -6,16 +6,12 @@ package DBIx::Class::Helper::ResultSet::MyRequest;
 use strict;
 use warnings;
 
-our $myrequest;
-our $_myrequest;
-
-# The first call to ->myrequest stores the passed parameters into class variable $_myrequest and returns the resultset object $self
+# The first call to ->myrequest stores the passed parameters into instance key _myrequest and returns the resultset object $self
 # ALL subsequent requests return the stored parameters from the initial call
 sub myrequest {
 	my $self = shift;
-	return $myrequest if $_myrequest;
-	$_myrequest = 1;
-	$myrequest = ref $_[0] ? $_[0] : {@_};
+	exists $self->{_myrequest} and return $self->{_myrequest};
+	$self->{_myrequest} = ref $_[0] ? $_[0] : {@_};
 	return $self;
 }
 

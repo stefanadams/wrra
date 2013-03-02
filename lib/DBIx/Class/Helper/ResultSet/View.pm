@@ -12,18 +12,18 @@ use warnings;
 sub view {
 	my $self = shift;
 	my $view = shift or return $self;
-	my $resultset_class = $self->result_source->resultset_class;
-	my $rs_component = $resultset_class;
-	$rs_component =~ s/::ResultSet::/::ResultView::ResultSet::/;
-	$rs_component =~ s/[^:]+$/$view/;
-	my $result_class = $self->result_class;
-	$result_class =~ s/::Result::/::ResultView::Result::/;
-	$result_class =~ s/[^:]+$/$view/;
-	eval { $resultset_class->load_components("+$rs_component"); };
-	warn "Couldn't load component $rs_component\n" if $@;
-	eval { $self = $self->search({}, {result_class=>$result_class}); };
-	warn "Couldn't load result class $result_class\n" if $@;
-        $result_class->load_components(qw{Helper::Row::ToJSON::View});
+	my $rs = ref $self;
+	$rs =~ s/::ResultSet::/::ResultView::ResultSet::/;
+	$rs =~ s/[^:]+$/$view/;
+	my $r = $self->result_class;
+	$r =~ s/::Result::/::ResultView::Result::/;
+	$r =~ s/[^:]+$/$view/;
+	eval { (ref $self)->load_components("+$rs"); };
+	warn "Couldn't load resultset component $rs\n" if $@;
+	eval { ($self->result_class)->load_components("+$r"); };
+	warn "Couldn't load result component $r\n" if $@;
+        eval { ($self->result_class)->load_components(qw{Helper::Row::ToJSON::View}); };
+	warn "Couldn't load result component Helper::Row::ToJSON::View\n" if $@;
 	$self->can('default') ? $self->default : $self;
 }
 

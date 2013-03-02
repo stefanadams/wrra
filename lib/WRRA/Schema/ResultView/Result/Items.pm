@@ -1,7 +1,5 @@
 package WRRA::Schema::ResultView::Result::Items;
 
-use base 'WRRA::Schema::Result::Item';
-
 sub TO_VIEW { qw/id number donor.id donor.nameid donor.advertisement stockitem.id stockitem.nameid name description value category url/ }
 
 1;

@@ -71,7 +71,7 @@ sub search {
 		} else {
 			push @prefetch, ((split /\./, $field)[0]) if $field =~ /\./;
 		}
-		return $self->_me($field) => (ref $op{$op}{op} ? $op{$op}{op} : $op{$op}{pre}.$string.$op{$op}{post});
+		return $self->_me($field) => (ref $op{$op}{op} ? $op{$op}{op} : {$op{$op}{op} => $op{$op}{pre}.$string.$op{$op}{post}});
 	};
 
 	my $order_by = sub {
@@ -97,6 +97,7 @@ sub search {
 	$self = $self->next::method({$filters->($request->{filters})});
 	$self = $self->next::method({}, {page => ($request->{page}||1), (defined $request->{rows} ? (rows => $request->{rows}) : ())});
 	$self = $self->next::method({}, {$order_by->($request->{sidx}, $request->{sord})});
+	return $self;
 }
 
 sub update {

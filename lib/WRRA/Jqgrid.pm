@@ -14,7 +14,7 @@ sub create {
 
 sub read {
 	my $self = shift;
-	my $data = $self->db->resultset($self->param('source'))->myrequest($self->myrequest)->view($self->param('view'))->jqgrid->search;
+	my $data = $self->db->resultset($self->param('source'))->view($self->param('view'))->myrequest($self->myrequest)->jqgrid->search;
 	$self->respond_to(
 		json => {json => $data->all},
 		xls => sub { # With TO_XLS

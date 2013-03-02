@@ -33,10 +33,12 @@ sub register {
 		if ( ref $cb eq 'CODE' ) {
 			my $postdata = $cb->($c->mypostdata);
 			{%$param, %$postdata}
-		} elsif ( grep { $c->req->headers->content_type eq $_ } qw(application/json) ) {
-			#my $postdata = $c->mypostdata ? Mojo::JSON->new->decode($c->mypostdata) : {};
-			my $postdata = $c->req->json || {};
-			{%$param, %$postdata}
+		} elsif ( $c->req->headers->content_type ) {
+			if ( grep { $c->req->headers->content_type eq $_ } qw(application/json) ) {
+				#my $postdata = $c->mypostdata ? Mojo::JSON->new->decode($c->mypostdata) : {};
+				my $postdata = $c->req->json || {};
+				{%$param, %$postdata}
+			}
 		} else {
 			{%$param}
 		}
