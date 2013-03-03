@@ -21,7 +21,8 @@ sub insert {
 	warn Dumper({insert=>$data}) if $ENV{JQGRID_DEBUG};
 	my $insert = $self->new_result({});
 	$insert->$_($data->{$_}) for keys %$data;
-	return $insert->insert->id;
+	my $id = $insert->insert->id;
+	return {res=>($id?'ok':'err'), msg=>($id?'ok':'err'), id=>$id};
 }
 
 sub search {
@@ -124,7 +125,7 @@ sub update {
 	my $record = $self->find($request->{id}) or return undef;
 	$record->$_($data->{$_}) for keys %$data;
 	$record->update;
-	return $record->id;
+	return {res=>($record->update?'ok':'err'),msg=>''};
 }
 
 sub delete {
@@ -135,11 +136,13 @@ sub delete {
 	my $result_class = $self->result_class;
 	warn "Using Result Class $result_class\n" if $ENV{JQGRID_DEBUG};
 
+	my $err = 0;
 	foreach ( split /,/, $request->{id} ) {
 		warn "Deleting $_\n" if $ENV{JQGRID_DEBUG};
 		my $delete = $self->find($_) or next;
-		$delete->delete;
+		$delete->delete or $err++;
 	}
+	return {res=>(!$err?'ok':'err'),msg=>''};
 }
 
 sub all {

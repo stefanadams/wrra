@@ -3,12 +3,9 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub create {
 	my $self = shift;
-	$self->view($self->param('v')) or $self->render_exception;
-	my $m = $self->model($self->param('m')) or $self->render_exception;
+	my $data = $self->db->resultset($self->param('source'))->myrequest($self->myrequest)->view($self->param('view'))->jqgrid->create;
 	$self->respond_to(
-		json => sub {
-			$self->render_json($m->create);
-		},
+		json => {json => $data},
 	);
 }
 
@@ -27,23 +24,17 @@ sub read {
 
 sub update {
 	my $self = shift;
-	$self->view($self->param('v')) or $self->render_exception;
-	my $m = $self->model($self->param('m')) or $self->render_exception;
+	my $data = $self->db->resultset($self->param('source'))->myrequest($self->myrequest)->view($self->param('view'))->jqgrid->update;
 	$self->respond_to(
-		json => sub {
-			$self->render_json($m->update);
-		},
+		json => {json => $data},
 	);
 }
 
 sub delete {
 	my $self = shift;
-	$self->view($self->param('v')) or $self->render_exception;
-	my $m = $self->model($self->param('m')) or $self->render_exception;
+	my $data = $self->db->resultset($self->param('source'))->myrequest($self->myrequest)->view($self->param('view'))->jqgrid->delete;
 	$self->respond_to(
-		json => sub {
-			$self->render_json($m->delete);
-		},
+		json => {json => $data},
 	);
 }
 
