@@ -8,11 +8,12 @@ use warnings;
 
 # The first call to ->myrequest stores the passed parameters into instance key _myrequest and returns the resultset object $self
 # ALL subsequent requests return the stored parameters from the initial call
-sub myrequest {
+sub set_myrequest {
 	my $self = shift;
-	exists $self->{_myrequest} and return $self->{_myrequest};
 	$self->{_myrequest} = ref $_[0] ? $_[0] : {@_};
 	return $self;
 }
+
+sub get_myrequest { shift->{_myrequest} }
 
 1;

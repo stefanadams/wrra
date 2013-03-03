@@ -7,10 +7,10 @@ use Data::Dumper;
 
 sub insert {
 	my $self = shift;
-	my $request = $self->myrequest or return $self->next::method(@_);
+	my $request = $self->get_myrequest or return $self->next::method(@_);
 	warn "CREATE JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
 
-	return undef unless $request->{oper} eq 'add';
+	return {} unless $request->{oper} eq 'add';
 
 	my $result_class = $self->result_class;
 	warn "Using Result Class $result_class\n" if $ENV{JQGRID_DEBUG};
@@ -27,7 +27,8 @@ sub insert {
 
 sub search {
 	my $self = shift;
-	my $request = $self->myrequest or return $self->next::method(@_);
+	((caller)[0])->isa('DBIx::Class') and return $self->next::method(@_);
+	my $request = $self->get_myrequest or return $self->next::method(@_);
 	warn "SEARCH JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
 
 	my $result_class = $self->result_class;
@@ -98,15 +99,15 @@ sub search {
 	$self = $self->next::method({$filters->($request->{filters})});
 	$self = $self->next::method({}, {page => ($request->{page}||1), (defined $request->{rows} ? (rows => $request->{rows}) : ())});
 	$self = $self->next::method({}, {$order_by->($request->{sidx}, $request->{sord})});
-	return $self;
+	return $self->set_myrequest($request);
 }
 
 sub update {
 	my $self = shift;
-	my $request = $self->myrequest or return $self->next::method(@_);
+	my $request = $self->get_myrequest or return $self->next::method(@_);
 	warn "UPDATE JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
 
-	return undef unless $request->{oper} eq 'edit';
+	return {} unless $request->{oper} eq 'edit';
 
 	my $result_class = $self->result_class;
 	warn "Using Result Class $result_class\n" if $ENV{JQGRID_DEBUG};
@@ -124,14 +125,15 @@ sub update {
 	warn Dumper({update=>$data}) if $ENV{JQGRID_DEBUG};
 	my $record = $self->find($request->{id}) or return undef;
 	$record->$_($data->{$_}) for keys %$data;
-	$record->update;
 	return {res=>($record->update?'ok':'err'),msg=>''};
 }
 
 sub delete {
 	my $self = shift;
-	my $request = $self->myrequest or return $self->next::method(@_);
+	my $request = $self->get_myrequest or return $self->next::method(@_);
 	warn "DELETE JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
+
+	return {} unless $request->{oper} eq 'del';
 
 	my $result_class = $self->result_class;
 	warn "Using Result Class $result_class\n" if $ENV{JQGRID_DEBUG};
@@ -147,7 +149,7 @@ sub delete {
 
 sub all {
 	my $self = shift;
-	my $request = $self->myrequest or return $self->next::method(@_);
+	my $request = $self->get_myrequest or return $self->next::method(@_);
 	warn "ALL/FIRST JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
 
 	return {   
@@ -155,7 +157,7 @@ sub all {
 		total => $self->pager->last_page||1,
 		records => $self->pager->total_entries||0,
 		rows => [$self->next::method], # TO_JSON
-	} if ref $self;
+	};
 };
 *first = *all;
 
