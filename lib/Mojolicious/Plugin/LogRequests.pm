@@ -9,7 +9,7 @@ use lib "$Bin/lib";
 sub register {
   my ($plugin, $app, $conf) = @_;
 
-    $app->hook(before_dispatch => sub {
+    $app->hook(after_dispatch => sub {
             my $c = shift;
             # As "defaults" values are not deep-copied, setting a hashref there
             # would just copy that hashref and stash modifications would actually
@@ -23,10 +23,13 @@ sub register {
             my $method = $req->method;  
             my $path   = $req->url->path->to_abs_string;
             my $params = $req->params->to_string;
-            my $xhr = $c->req->is_xhr ? '(XHR)' : '';
+            my $xhr    = $c->req->is_xhr ? '(XHR)' : '';
+            my $headers= $req->headers->to_string;
+            my $body   = $req->body;
             return if $path =~ /\.js$|\.css$/;
             print STDERR "REQ : $tag : $method$xhr $path [$params]\n";
-            print STDERR "BODY: ".$c->req->body."\n" if $c->req->is_xhr;
+            print STDERR "HEADERS: $headers\n" if $ENV{MOJO_HEADERS};
+            print STDERR "BODY: $body\n" if $xhr;
         });
 }
 

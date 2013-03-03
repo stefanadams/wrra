@@ -1,5 +1,8 @@
 package WRRA::Schema::ResultView::ResultSet::AcDonor;
 
-sub default { shift->search({}, {group_by=>'me.donor_id', order_by=>'me.name'}) }
+sub default {
+	my ($self, $req) = @_;
+	$self->search({-or => ['name'=>{'like' => '%'.$req->{term}.'%'}, 'donor_id'=>$req->{term}]}, {group_by=>'donor_id', order_by=>'name'})
+}
 
 1;

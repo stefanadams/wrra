@@ -34,8 +34,8 @@ sub setup_plugins {
 	$self->plugin('MyConfig');
 	$self->plugin('MyProcess');
 	$self->plugin(DBIC => (schema => 'WRRA::Schema'));
-	$self->plugin(TitleTag => {tag => sub { join(' - ', $_[0]->db->year, $_[0]->config('version')) }});
-	$self->plugin(LogRequests => {tag => sub { shift->db->year }});
+	$self->plugin(TitleTag => {tag => sub { join(' - ', $_[0]->year, $_[0]->config('version')) }});
+	$self->plugin(LogRequests => {tag => sub { shift->app->year }});
 	$self->plugin('WriteExcel');
 	$self->plugin('HeaderCondition');
 	$self->plugin('XHR');
@@ -54,12 +54,14 @@ sub setup_routing {
 	$r->add_condition(role  => sub { $_[1]->auth_require_role($_[3]) });
 
 	# Normal route to controller
-	$r->get('/')->to('user#index');
+	$r->get('/')->to('index#current_bidding');
 	$r->get('/city')->to('api#auto_complete');
 	$r->post('/' => sub { my $self = shift; $self->req->body_size ? $self->render_json($self->req->json) : $self->render_text('no_json'); });
 	$r->get('/bookmarks')->to(cb=>sub{shift->redirect_to('/admin/bookmarks')});
 
 	my $api = $r->under('/api');
+	$api->get('/year')->to('api#api_year');
+	$api->get('/session/year/:year', {year=>undef})->to('api#api_session');
 	my $ac = $api->under('/ac');
 	$ac->auto_complete([City => 'Donor']);
 	$ac->auto_complete(['Donor']);

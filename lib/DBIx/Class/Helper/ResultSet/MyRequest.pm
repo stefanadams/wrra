@@ -10,7 +10,7 @@ use warnings;
 # ALL subsequent requests return the stored parameters from the initial call
 sub set_myrequest {
 	my $self = shift;
-	$self->{_myrequest} = ref $_[0] ? $_[0] : {@_};
+	$self->{_myrequest} = ref $_[0] ? $_[0] : @_%2==0 ? {@_} : {};
 	return $self;
 }
 
