@@ -18,10 +18,9 @@ my $t = Test::Mojo->new('WRRA');
 $t->get_ok('/')->status_is(200)->content_like(qr/ok/i);
 
 # Year
-$t->get_ok('/api/year' => {'Accept' => 'application/json'})->status_is(200)->json_is('/year' => '2013');
-$t->get_ok('/api/session/year' => {'Accept' => 'application/json'})->status_is(200)->json_is('/year' => 'undef');
-$t->get_ok('/api/session/year/2012' => {'Accept' => 'application/json'})->status_is(200)->json_is('/year' => '2012');
-$t->get_ok('/api/session/year' => {'Accept' => 'application/json'})->status_is(200)->json_is('/year' => '2012');
+$t->get_ok('/api/dbconfig/year' => {'Accept' => 'application/json'})->status_is(200)->json_is('/year' => '2013');
+$t->get_ok('/api/dbconfig/year/2012' => {'Accept' => 'application/json'})->status_is(200)->json_is('/year' => '2012');
+$t->get_ok('/api/dbconfig/year' => {'Accept' => 'application/json'})->status_is(200)->json_is('/year' => '2012');
 
 # AutoCompletes
 #$t->get_ok('/api/ac/ad?term=wash' => {'Accept' => 'application/json'})->status_is(200)->json_is('/1/label' => 'Washington');
@@ -31,7 +30,7 @@ $t->get_ok('/api/session/year' => {'Accept' => 'application/json'})->status_is(2
 #$t->get_ok('/api/ac/bidder?term=adams' => {'Accept' => 'application/json'})->status_is(200)->json_is('/1/label' => 'Washington');
 $t->get_ok('/api/ac/city?term=wash' => {'Accept' => 'application/json'})->status_is(200)->json_is('/1/label' => 'Washington');
 $t->get_ok('/api/ac/donor?term=adams' => {'Accept' => 'application/json'})->status_is(200)->json_is('/0/label' => 'Stefan Adams:753');
-$t->get_ok('/api/ac/item_current?term=ipod' => {'Accept' => 'application/json'})->status_is(200)->json_is('/0/label' => 'Bud Amp iPod Speaker with Telescoping handle and Wheels');
+$t->get_ok('/api/ac/item_current?term=cookie' => {'Accept' => 'application/json'})->status_is(200)->json_is('/0/label' => 'One Dozen Boxes of Thin Mint Girl Scout Cookies');
 #$t->get_ok('/api/ac/item?term=cookie' => {'Accept' => 'application/json'})->status_is(200)->json_is('/1/label' => 'Washington');
 #$t->get_ok('/api/ac/item_stockitem?term=wash' => {'Accept' => 'application/json'})->status_is(200)->json_is('/1/label' => 'Washington');
 #$t->get_ok('/api/ac/paynumber?term=wash' => {'Accept' => 'application/json'})->status_is(200)->json_is('/1/label' => 'Washington');

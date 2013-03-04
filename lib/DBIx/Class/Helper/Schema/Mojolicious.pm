@@ -68,7 +68,7 @@ sub postdata {
 
 sub request {
 	my $self = shift;
-	return {%{$self->postdata}, {%{$self->param}}};
+	return {%{$self->postdata}, %{$self->param}};
 }
 
 1;
