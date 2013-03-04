@@ -7,7 +7,7 @@ use Data::Dumper;
 
 sub insert {
 	my $self = shift;
-	my $request = $self->get_myrequest or return $self->next::method(@_);
+	my $request = $self->request or return $self->next::method(@_);
 	warn "CREATE JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
 
 	return {} unless $request->{oper} eq 'add';
@@ -28,7 +28,7 @@ sub insert {
 sub search {
 	my $self = shift;
 	((caller)[0])->isa('DBIx::Class') and return $self->next::method(@_);
-	my $request = $self->get_myrequest or return $self->next::method(@_);
+	my $request = $self->request or return $self->next::method(@_);
 	warn "SEARCH JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
 
 	my $result_class = $self->result_class;
@@ -99,12 +99,12 @@ sub search {
 	$self = $self->next::method({$filters->($request->{filters})});
 	$self = $self->next::method({}, {page => ($request->{page}||1), (defined $request->{rows} ? (rows => $request->{rows}) : ())});
 	$self = $self->next::method({}, {$order_by->($request->{sidx}, $request->{sord})});
-	return $self->set_myrequest($request);
+	return $self;
 }
 
 sub update {
 	my $self = shift;
-	my $request = $self->get_myrequest or return $self->next::method(@_);
+	my $request = $self->request or return $self->next::method(@_);
 	warn "UPDATE JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
 
 	return {} unless $request->{oper} eq 'edit';
@@ -130,7 +130,7 @@ sub update {
 
 sub delete {
 	my $self = shift;
-	my $request = $self->get_myrequest or return $self->next::method(@_);
+	my $request = $self->request or return $self->next::method(@_);
 	warn "DELETE JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
 
 	return {} unless $request->{oper} eq 'del';
@@ -149,7 +149,7 @@ sub delete {
 
 sub all {
 	my $self = shift;
-	my $request = $self->get_myrequest or return $self->next::method(@_);
+	my $request = $self->request or return $self->next::method(@_);
 	warn "ALL/FIRST JQGRID STYLE\n\n" if $ENV{JQGRID_DEBUG};
 
 	return {   

@@ -1,35 +1,40 @@
 package Mojolicious::Plugin::DBIC;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use Data::Dumper;
+use Mojo::Loader;
+
+has 'db';
+
 sub register {
-  my ($self, $app, $conf) = @_;
-  my $schema = $conf->{schema} || ref($app).'::Schema';
+	my ($self, $app, $conf) = @_;
+	my $schema = my $_schema = $conf->{schema} || ref($app).'::Schema';
+	my $moniker = uc($app->moniker);
 
-  my %conf = $app->config->{database} ? (%{$app->config->{database}}) : ();
-  my %env = (map { my $env = uc($app->moniker.'_DB'.$_); $_ => $ENV{$env} } grep { my $env = uc($app->moniker.'_DB'.$_); defined $ENV{$env} ? 1 : 0 } qw/type name host user pass/);
-  my $db = {
-    type => 'mysql',
-    name => $conf->{moniker} || $app->moniker || '',
-    host => 'localhost',
-    user => $conf->{moniker} || $app->moniker || '',
-    pass => $conf->{moniker} || $app->moniker || '',
-    %conf,
-    %env,
-  };
+	eval "use $schema";
+	die "Can't load schema $schema: $@" if $@;
 
-  $app->helper(
-    db => sub {
-      my $c = shift;
-      eval "use $schema";
-      if ( $@ ) {
-        warn "Can't load schema $schema: $@";
-        return undef;
-      } else {
-        return $schema->connect({dsn=>"DBI:$db->{type}:database=".$db->{name}.";host=".$db->{host},user=>$db->{user},password=>$db->{pass}});
-      }
-    },
-  );
+	# Takes no arguments
+	$app->helper(db => sub {
+		my $c = shift;
+
+		if ( $self->db ) {
+			$self->db->controller($c);
+			return $self->db;
+		}
+
+		my %connect = (
+			type => 'mysql',
+			name => $conf->{moniker} || $moniker || '',
+			host => 'localhost',
+			user => $conf->{moniker} || $moniker || '',
+			pass => $conf->{moniker} || $moniker || '',
+		);
+		my $database = delete $c->config->{database};
+		$database = {%$database, (map { s/^${moniker}_DB//; lc($_) => delete $ENV{uc("${moniker}_DB$_")} } grep { /^${moniker}_DB/ } keys %ENV)};
+		$self->db($schema->connect({dsn=>"DBI:$database->{type}:database=".$database->{name}.";host=".$database->{host},user=>$database->{user},password=>$database->{pass}}));
+		$self->db->controller($c);
+		$self->db;
+	});
 }
 
 1;

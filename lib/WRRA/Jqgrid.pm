@@ -3,7 +3,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub create {
 	my $self = shift;
-	my $data = $self->db->resultset($self->param('source'))->set_myrequest($self->myrequest)->view($self->param('view'))->jqgrid->create;
+	my $data = $self->db->resultset($self->param('source'))->view($self->param('view'))->jqgrid->create;
 	$self->respond_to(
 		json => {json => $data},
 	);
@@ -11,7 +11,7 @@ sub create {
 
 sub read {
 	my $self = shift;
-	my $data = $self->db->resultset($self->param('source'))->set_myrequest($self->myrequest)->view($self->param('view'))->jqgrid->search;
+	my $data = $self->db->resultset($self->param('source'))->view($self->param('view'))->jqgrid->search;
 	$self->respond_to(
 		json => {json => $data->all},
 		xls => sub { # With TO_XLS
@@ -24,7 +24,7 @@ sub read {
 
 sub update {
 	my $self = shift;
-	my $data = $self->db->resultset($self->param('source'))->set_myrequest($self->myrequest)->view($self->param('view'))->jqgrid->update;
+	my $data = $self->db->resultset($self->param('source'))->view($self->param('view'))->jqgrid->update;
 	$self->respond_to(
 		json => {json => $data},
 	);
@@ -32,7 +32,7 @@ sub update {
 
 sub delete {
 	my $self = shift;
-	my $data = $self->db->resultset($self->param('source'))->set_myrequest($self->myrequest)->view($self->param('view'))->jqgrid->delete;
+	my $data = $self->db->resultset($self->param('source'))->view($self->param('view'))->jqgrid->delete;
 	$self->respond_to(
 		json => {json => $data},
 	);

@@ -16,13 +16,6 @@ sub startup {
 
 	$self->setup_plugins;
 	$self->setup_routing;
-
-	$self->helper(year => sub { shift->db->year(@_) });
-	$self->hook(before_dispatch => sub {
-		my $c = shift;
-		#warn Data::Dumper::Dumper([$c->session->{year}, $ENV{WRRA_YEAR}, $c->config]);
-		$c->year($c->session->{year} || $ENV{WRRA_YEAR} || $c->config->{year});
-	});
 }
 
 sub setup_plugins {
@@ -33,9 +26,9 @@ sub setup_plugins {
 	$self->plugin('Config');
 	$self->plugin('MyConfig');
 	$self->plugin('MyProcess');
-	$self->plugin(DBIC => (schema => 'WRRA::Schema'));
-	$self->plugin(TitleTag => {tag => sub { join(' - ', $_[0]->year, $_[0]->config('version')) }});
-	$self->plugin(LogRequests => {tag => sub { shift->app->year }});
+	$self->plugin(DBIC => {schema => 'WRRA::Schema'});
+#	$self->plugin(TitleTag => {tag => sub { join(' - ', $_[0]->app->db->session->{year}, $_[0]->config('version')) }});
+#	$self->plugin(LogRequests => {tag => sub { shift->app->db->session->{year} }});
 	$self->plugin('WriteExcel');
 	$self->plugin('HeaderCondition');
 	$self->plugin('XHR');
@@ -55,13 +48,12 @@ sub setup_routing {
 
 	# Normal route to controller
 	$r->get('/')->to('index#current_bidding');
-	$r->get('/city')->to('api#auto_complete');
 	$r->post('/' => sub { my $self = shift; $self->req->body_size ? $self->render_json($self->req->json) : $self->render_text('no_json'); });
 	$r->get('/bookmarks')->to(cb=>sub{shift->redirect_to('/admin/bookmarks')});
 
 	my $api = $r->under('/api');
-	$api->get('/year')->to('api#api_year');
-	$api->get('/session/year/:year', {year=>undef})->to('api#api_session');
+	my $config = $api->under('/dbconfig');
+	$config->get('/year/:year', {year=>undef})->to('api#api_dbconfig', config=>'year');
 	my $ac = $api->under('/ac');
 	$ac->auto_complete([City => 'Donor']);
 	$ac->auto_complete(['Donor']);

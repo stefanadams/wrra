@@ -24,7 +24,7 @@ sub view {
 	warn "Couldn't load result component $r\n" if $@;
         eval { ($self->result_class)->load_components(qw{Helper::Row::ToJSON::View}); };
 	warn "Couldn't load result component Helper::Row::ToJSON::View\n" if $@;
-	$self->can('default') ? $self->default($self->get_myrequest) : $self;
+	$self->can('default') ? $self->default($self->request) : $self;
 }
 
 1;
