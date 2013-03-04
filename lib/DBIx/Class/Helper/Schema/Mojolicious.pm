@@ -32,11 +32,7 @@ sub session {
 	my $self = shift;
 	my $c = $self->controller or return $self->config(@_);
 	return $self->config(@_) unless $c->can('session');
-#warn Data::Dumper::Dumper([@_]);
-	$_ = {%{$self->config(@_)}, %{$c->session(@_)}};
-#warn Data::Dumper::Dumper($_);
-	return $_;
-#	return {%{$self->config(@_)}, %{$c->session(@_)}};
+	return {%{$self->config(@_)}, %{$c->session(@_)}};
 }
 
 sub stash {

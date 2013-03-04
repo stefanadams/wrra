@@ -27,8 +27,8 @@ sub setup_plugins {
 	$self->plugin('MyConfig');
 	$self->plugin('MyProcess');
 	$self->plugin(DBIC => {schema => 'WRRA::Schema'});
-	#$self->plugin(TitleTag => {tag => sub { join(' - ', $_[0]->app->db->session->{year}, $_[0]->config('version')) }});
-	#$self->plugin(LogRequests => {tag => sub { shift->app->db->session->{year} }});
+	$self->plugin(TitleTag => {tag => sub { join(' - ', $_[0]->db->session->{year}, $_[0]->config('version')) }});
+	$self->plugin(LogRequests => {tag => sub { shift->db->session->{year} }});
 	$self->plugin('WriteExcel');
 	$self->plugin('HeaderCondition');
 	$self->plugin('XHR');
