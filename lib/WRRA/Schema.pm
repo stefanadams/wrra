@@ -16,8 +16,6 @@ __PACKAGE__->load_namespaces(
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-16 09:09:02
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wM5zCfXKD5Qnd99BQCHs2w
 
-__PACKAGE__->load_components(qw(Helper::Schema::Mojolicious));
-
 our $defaults = {
 	year => ((localtime())[5])+1900,
 	recent_years => 2,
