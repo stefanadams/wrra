@@ -3,38 +3,38 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub create {
 	my $self = shift;
-	my $data = $self->db->resultset($self->param('source'))->view($self->param('view'))->jqgrid->create;
+	my $rs = $self->jqgrid(create => $self->db->resultset($self->param('results')));
 	$self->respond_to(
-		json => {json => $data},
+		json => {json => [$rs->all]},
 	);
 }
 
 sub read {
 	my $self = shift;
-	my $data = $self->db->resultset($self->param('source'))->view($self->param('view'))->jqgrid->search;
+	my $rs = $self->jqgrid(search => $self->db->resultset($self->param('results')));
 	$self->respond_to(
-		json => {json => $data->all},
+		json => {json => $rs->jqgrid},
 		xls => sub { # With TO_XLS
 			$self->cookie(fileDownload => 'true');
 			$self->cookie(path => '/');
-			$self->render_xls(result => $data->all);
+			$self->render_xls(result => $rs->all);
 		},
 	);
 }
 
 sub update {
 	my $self = shift;
-	my $data = $self->db->resultset($self->param('source'))->view($self->param('view'))->jqgrid->update;
+	my $rs = $self->jqgrid(update => $self->db->resultset($self->param('results')));
 	$self->respond_to(
-		json => {json => $data},
+		json => {json => $rs->all},
 	);
 }
 
 sub delete {
 	my $self = shift;
-	my $data = $self->db->resultset($self->param('source'))->view($self->param('view'))->jqgrid->delete;
+	my $rs = $self->jqgrid(delete => $self->db->resultset($self->param('results')));
 	$self->respond_to(
-		json => {json => $data},
+		json => {json => $rs->all},
 	);
 }
 

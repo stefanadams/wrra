@@ -22,6 +22,12 @@ sub register {
     $r->view(["/$route" => "Ac$view" => $source], {api => 'auto_complete'}, \'get', %_);
   });
 
+  $app->helper(ac => sub {
+    my ($c, $rs) = @_;
+    $rs = ($rs->result_class)->_search($rs, (ref $c->myrequest ? $c->myrequest : {$c->myrequest})) if ($rs->result_class)->can('_search');
+    return $rs;
+  });
+
   $app->helper(autocomplete => sub {
     my ($self, $name, $values) = @_;
     $values ||= [];

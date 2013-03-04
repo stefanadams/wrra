@@ -11,9 +11,9 @@ sub api_dbconfig {
 
 sub auto_complete {
 	my $self = shift;
-	my $data = $self->db->resultset($self->param('source'))->view($self->param('view'));
+	my $rs = $self->ac($self->db->resultset($self->param('results')));
 	$self->respond_to(
-		json => {json => [$data->all]},
+		json => {json => [$rs->all]},
 	);
 }
 

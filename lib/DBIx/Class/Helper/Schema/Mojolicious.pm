@@ -9,13 +9,16 @@ use warnings;
 use 5.010;
 
 sub controller {
-	my ($self, $c) = (shift, shift);
-	if ( $c ) {
-		$self->{_controller} = $c;
-		my $rs_class = ref($self).'::ResultSet';
-		$rs_class->load_components(qw(Helper::ResultSet::Mojolicious));
-	}
-	$self->{_controller};
+	my $c = shift->storage->_connect_info->[0]->{controller};
+	#warn Data::Dumper::Dumper($c->req->url->path);
+	return $c;
+	#my ($self, $c) = (shift, shift);
+	#if ( $c ) {
+	#	$controller = $c;
+	#	#my $rs_class = ref($self).'::ResultSet';
+	#	#$rs_class->load_components(qw(Helper::ResultSet::Mojolicious));
+	#}
+	#$controller;
 }
  
 sub config {
@@ -35,6 +38,7 @@ sub session {
 	return {%{$self->config(@_)}, %{$c->session(@_)}};
 }
 
+=head
 sub stash {
 	my $self = shift;
 	my $c = $self->controller or return undef;
@@ -66,5 +70,6 @@ sub request {
 	my $self = shift;
 	return {%{$self->postdata}, %{$self->param}};
 }
+=cut
 
 1;

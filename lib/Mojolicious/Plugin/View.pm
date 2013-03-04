@@ -31,7 +31,7 @@ sub register {
 #	{to => ["$controller#$action", results=>[$view, $source], %_]},
 #	{name => join('_', map { s/\W//g; $_ } grep { $_ } $name, $extra_path)}
 #]) if $controller eq 'api';
-    $r->$method(join('/', '', grep { $_ } $route, $extra_path))->to("$controller#$action", view=>$view, source=>$source, %_)->name(join('_', map { s/\W//g; $_ } grep { $_ } $name, $extra_path));
+    $r->$method(join('/', '', grep { $_ } $route, $extra_path))->to("$controller#$action", results=>[$source, $view], %_)->name(join('_', map { s/\W//g; $_ } grep { $_ } $name, $extra_path));
     $r;
     #$r1->get("/$name.xls")->to('crud#read', format=>'xls')->name($name); # XLS must be GET and can't be XHR, so it needs to be a unique URI
   });

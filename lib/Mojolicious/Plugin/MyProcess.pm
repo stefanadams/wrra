@@ -34,10 +34,15 @@ sub register {
 			my $postdata = $cb->($c->mypostdata);
 			{%$param, %$postdata}
 		} elsif ( $c->req->headers->content_type ) {
-			if ( grep { $c->req->headers->content_type eq $_ } qw(application/json) ) {
-				#my $postdata = $c->mypostdata ? Mojo::JSON->new->decode($c->mypostdata) : {};
-				my $postdata = $c->req->json || {};
-				{%$param, %$postdata}
+			given ( $c->req->headers->content_type ) {
+				when ( 'application/json' ) {
+					#my $postdata = $c->mypostdata ? Mojo::JSON->new->decode($c->mypostdata) : {};
+					my $postdata = $c->req->json || {};
+					return {%$param, %$postdata};
+				}
+				default {
+					return {%$param};
+				}
 			}
 		} else {
 			{%$param}

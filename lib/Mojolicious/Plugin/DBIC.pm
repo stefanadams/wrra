@@ -17,10 +17,10 @@ sub register {
 	$app->helper(db => sub {
 		my $c = shift;
 
-		if ( $self->db ) {
-			$self->db->controller($c);
-			return $self->db;
-		}
+		#if ( $self->db ) {
+		#	$self->db->controller($c);
+		#	return $self->db;
+		#}
 
 		my %connect = (
 			type => 'mysql',
@@ -29,12 +29,10 @@ sub register {
 			user => $conf->{moniker} || $moniker || '',
 			pass => $conf->{moniker} || $moniker || '',
 		);
-		my $database = delete $c->config->{database};
-		$database = {%$database, (map { s/^${moniker}_DB//; lc($_) => delete $ENV{uc("${moniker}_DB$_")} } grep { /^${moniker}_DB/ } keys %ENV)};
-		$self->db($schema->connect({dsn=>"DBI:$database->{type}:database=".$database->{name}.";host=".$database->{host},user=>$database->{user},password=>$database->{pass}}));
-		$schema->load_components(qw(Helper::Schema::Mojolicious));
-		$self->db->controller($c);
-		$self->db;
+		my $database = $c->config->{database} || {};
+		$database = {%connect, %$database, (map { s/^${moniker}_DB//; lc($_) => delete $ENV{uc("${moniker}_DB$_")} } grep { /^${moniker}_DB/ } keys %ENV)};
+		$self->db($schema->connect({dsn=>"DBI:$database->{type}:database=".$database->{name}.";host=".$database->{host},user=>$database->{user},password=>$database->{pass},controller=>$c}));
+		return $self->db;
 	});
 }
 
