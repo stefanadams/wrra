@@ -1,4 +1,4 @@
-package WRRA::Schema::ResultSet::Bellitems;
+package WRRA::Schema::Result::Bellitems;
 
 use base 'WRRA::Schema::Result::Bellitem';
 

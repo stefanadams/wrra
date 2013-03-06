@@ -1,0 +1,14 @@
+#!/usr/bin/perl
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use QI::Schema;
+
+use Data::Dumper;
+use Mojo::JSON;
+
+$ENV{DBIC_TRACE} = 1;
+my $schema = QI::Schema->connect('DBI:mysql:database=qi_dev;host=localhost', 'qi', 'qi');
+my $a = 'asset_type.name';
+$schema->resultset("Asset")->search({'customer.name'=>'Amdocs'}, {prefetch=>[qw/customer asset_type/], result_class=>'QI::Schema::Result::Assets'})->$a(16);
+print Mojo::JSON->new->encode($schema->resultset("Asset")->search({'customer.name'=>'Amdocs'}, {prefetch=>'customer', result_class=>'QI::Schema::Result::Assets'})->first);

@@ -1,0 +1,8 @@
+DEADJOE
+my.cnf
+log
+*.conf
+*.conf.sh
+*.old
+lib.old2
+lib.old3

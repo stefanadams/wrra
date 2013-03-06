@@ -3,11 +3,6 @@ package DBIx::Class::Helper::Schema::ResultSet;
   $DBIx::Class::Helper::Schema::ResultSet::VERSION = '0.1.0';
 }
 
-use strict;
-use warnings;
-
-use 5.010;
-
 sub resultset {
 	my $self = shift;
 	my ($source, $new_result_class) = @_;

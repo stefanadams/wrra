@@ -3,23 +3,7 @@ package DBIx::Class::Helper::Schema::Mojolicious;
   $DBIx::Class::Helper::Schema::Mojolicious::VERSION = '0.1.0';
 }
 
-use strict;
-use warnings;
-
-use 5.010;
-
-sub controller {
-	my $c = shift->storage->_connect_info->[0]->{controller};
-	#warn Data::Dumper::Dumper($c->req->url->path);
-	return $c;
-	#my ($self, $c) = (shift, shift);
-	#if ( $c ) {
-	#	$controller = $c;
-	#	#my $rs_class = ref($self).'::ResultSet';
-	#	#$rs_class->load_components(qw(Helper::ResultSet::Mojolicious));
-	#}
-	#$controller;
-}
+sub controller { shift->storage->_connect_info->[0]->{controller} }
  
 sub config {
 	my $self = shift;
@@ -37,39 +21,5 @@ sub session {
 	return $self->config(@_) unless $c->can('session');
 	return {%{$self->config(@_)}, %{$c->session(@_)}};
 }
-
-=head
-sub stash {
-	my $self = shift;
-	my $c = $self->controller or return undef;
-	return undef unless $c->can('stash');
-	return {map { $_ => $c->stash->{$_} } grep { !/^mojo\./ } keys %{$c->stash}};
-}
-
-sub param {
-	my $self = shift;
-	my $c = $self->controller or return undef;
-	return undef unless $c->can('param');
-	return $c->req->params->to_hash;
-}
-
-sub postdata {
-	my $self = shift;
-	my $c = $self->controller or return undef;
-	return undef unless $c->can('stash');
-	my $postdata;
-	if ( $c->req->headers->content_type ) {
-		given ( $c->req->headers->content_type ) {
-			when ( 'application/json' ) { $postdata = $c->req->json }
-		}
-	}
-	return $postdata || {};
-}
-
-sub request {
-	my $self = shift;
-	return {%{$self->postdata}, %{$self->param}};
-}
-=cut
 
 1;

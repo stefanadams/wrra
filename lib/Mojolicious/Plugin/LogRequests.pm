@@ -18,7 +18,7 @@ sub register {
             $c->stash(error => []);
  
             # Debug request logging
-	    my $tag    = ref $conf->{tag} eq 'CODE' ? $conf->{tag}->($c) : ref $conf->{tag} ? '' : $conf->{tag};
+	    my $tag    = ref $conf->{tag} eq 'CODE' ? $conf->{tag}->($c) : ref $conf->{tag} ? '' : $conf->{tag} || '[tag]';
             my $req    = $c->req;
             my $method = $req->method;  
             my $path   = $req->url->path->to_abs_string;

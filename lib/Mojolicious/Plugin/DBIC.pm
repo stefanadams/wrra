@@ -2,6 +2,7 @@ package Mojolicious::Plugin::DBIC;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use Mojo::Loader;
+use Mojo::Util 'decamelize';
 
 has 'db';
 
@@ -13,7 +14,6 @@ sub register {
 	eval "use $schema";
 	die "Can't load schema $schema: $@" if $@;
 
-	# Takes no arguments
 	$app->helper(db => sub {
 		my $c = shift;
 
@@ -24,15 +24,33 @@ sub register {
 
 		my %connect = (
 			type => 'mysql',
-			name => $conf->{moniker} || $moniker || '',
+			name => lc($conf->{moniker} || $moniker || ''),
 			host => 'localhost',
-			user => $conf->{moniker} || $moniker || '',
-			pass => $conf->{moniker} || $moniker || '',
+			user => lc($conf->{moniker} || $moniker || ''),
+			pass => lc($conf->{moniker} || $moniker || ''),
 		);
 		my $database = $c->config->{database} || {};
 		$database = {%connect, %$database, (map { s/^${moniker}_DB//; lc($_) => delete $ENV{uc("${moniker}_DB$_")} } grep { /^${moniker}_DB/ } keys %ENV)};
 		$self->db($schema->connect({dsn=>"DBI:$database->{type}:database=".$database->{name}.";host=".$database->{host},user=>$database->{user},password=>$database->{pass},controller=>$c}));
 		return $self->db;
+	});
+
+	$app->routes->add_shortcut(dbroute => sub {
+		my $r = shift;
+		my ($route, $result_class, $source, $method, $controller, $action) = (undef, undef, undef, 'post', 'crud', 'read');
+		foreach ( @_ ) {
+			($route, $result_class, $source) = @$_ == 1 ? (undef, @$_, @$_) : @$_ == 2 ? (undef, @$_) : (@$_) if ref $_ eq 'ARRAY';
+			($controller, $action) = %$_ if ref $_ eq 'HASH';
+			($method) = $$_ if ref $_ eq 'SCALAR';
+		}
+		%_ = grep { !ref } @_;
+		$_{name} =~ s/\W+//g if $_{name};
+		my $name = decamelize(delete $_{name} // $result_class);
+		$route =~ s/^\/+// if $route;
+		$route //= $name;
+		my $extra_path = delete $_{extra_path};
+		$r->$method(join('/', '', grep { $_ } $route, $extra_path))->to("$controller#$action", results=>[$source, $result_class], %_)->name(join('_', map { s/\W//g; $_ } grep { $_ } $name, $extra_path));
+		$r;
 	});
 }
 

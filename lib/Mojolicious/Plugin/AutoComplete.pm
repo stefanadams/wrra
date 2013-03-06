@@ -12,14 +12,14 @@ sub register {
   #$r->auto_complete([AcCity => 'Donor'], {api => 'auto_complete'}, name=>'City');
   $app->routes->add_shortcut(auto_complete => sub {
     my $r = shift;
-    my ($route, $view, $source);
-    ($route, $view, $source) = @$_ == 1 ? (undef, @$_, @$_) : @$_ == 2 ? (undef, @$_) : (@$_) foreach grep { ref eq 'ARRAY' } @_;
+    my ($route, $result_class, $source);
+    ($route, $result_class, $source) = @$_ == 1 ? (undef, @$_, @$_) : @$_ == 2 ? (undef, @$_) : (@$_) foreach grep { ref eq 'ARRAY' } @_;
     %_ = grep { !ref } @_;
     $_{name} =~ s/\W+//g if $_{name};
-    my $name = decamelize(delete $_{name} // $view);
+    my $name = decamelize(delete $_{name} // $result_class);
     $route =~ s/^\/+// if $route;
     $route //= $name;   
-    $r->view(["/$route" => "Ac$view" => $source], {api => 'auto_complete'}, \'get', %_);
+    $r->dbroute(["/$route" => "Ac$result_class" => $source], {api => 'auto_complete'}, \'get', %_);
   });
 
   $app->helper(ac => sub {
