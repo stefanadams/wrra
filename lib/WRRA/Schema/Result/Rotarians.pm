@@ -13,7 +13,11 @@ sub FROM_JSON { qw/id name has_submissions email phone/ }
 #sub sold { shift->SUPER::sold ? 1 : 0 }
 
 # These class methods are passed $rs, $request
-#sub _create { $_[1] };
+sub _create {
+	my ($class, $rs, $req) = @_;
+	$rs->rotarian_id($req->{id});
+	return $rs;
+};
 #sub _search { $_[1] };
 #sub _update { $_[1] };
 #sub _delete { $_[1] };

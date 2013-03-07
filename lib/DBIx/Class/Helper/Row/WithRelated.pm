@@ -6,7 +6,6 @@ package DBIx::Class::Helper::Row::WithRelated;
 sub insert_with_related {
 	my $self = my $insert = shift;
 	my $row = shift;
-	$self = $self->new_result({});
 	$self->$_($row->{me}->{$_}) for keys %{$row->{me}};
 	my $_insert = $self->insert;
 	for my $table ( grep { $_ ne 'me' } keys %$row ) {

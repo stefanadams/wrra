@@ -63,7 +63,7 @@ sub register {
 		$self->controller($c);
 		$self->resultset($rs);
 		$self->request(ref $c->merged ? $c->merged : {$c->merged});
-		$self->id(delete $self->request->{id});
+		$self->id($self->request->{id});
 		$self->result({});
 		{
 			no strict;
@@ -78,7 +78,7 @@ sub register {
 
 sub cell {
 	my ($self, $celname, $value) = @_;
-	return () unless $celname;
+	return () unless $celname && $celname ne 'id';
 	my ($edit, $validate) = ($self->result->{edit}, $self->result->{validate});
 
 	my %cells;
@@ -184,7 +184,7 @@ sub insert {
 
 	my $data = $self->row;
 	return Mojo::Exception->throw($self->failed_input) if $self->failed_input;
-	$rs = $rs->find($id) or return Mojo::Exception->throw("Insert error: Cannot find id $id");
+	$rs = $rs->new_result({});
 	$rs = $result_class->_insert($rs, $self->request) if $result_class->can('_insert');
 	$rs = $result_class->_create($rs, $self->request) if $result_class->can('_create');
 	return $rs->insert_with_related($data);
