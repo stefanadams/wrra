@@ -24,9 +24,15 @@ our $relationships = [qw/rotarian/];
 # if a coderef is provided, pass a hashref of the search condition to search or nothing to ordering.  Expects a fully formulated SQL::Abstract ref.
 our $read = {
 	'rotarian.name' => \'concat(rotarian.lastname, rotarian.firstname)',
+	'contact' => 'contact1',
 };
 # When editing (i.e. creating or updating), use this hashref to lookup coderefs and pass the value to provide and expect back a full hash of key/value pairs.
-#our $edit = {};
+our $edit = {
+	'contact' => sub {
+		my ($contact1, $contact2) = split /\|/, shift;
+		return (contact1 => $contact1||'', contact2 => $contact2||'');
+	},
+};
 # For each field being edited (i.e. created or updated) validate the value with the qr regex in this hashref
 #our $validate = {};
 

@@ -39,7 +39,7 @@ our $edit = {
 		my $value = shift;
 		$error = $name->parse($value);
 		my %name = $name->case_components;
-		return (lastname => $name{surname_1}, firstname => $name{given_name_1});
+		return (lastname => $name{surname_1}||'', firstname => $name{given_name_1}||'');
 	},
 };
 # For each field being edited (i.e. created or updated) validate the value with the qr regex in this hashref

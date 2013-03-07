@@ -41,11 +41,11 @@ our $read = {
 our $edit = {
 	'donor.nameid' => sub {
 		my (undef, $id) = (shift =~ /(.*?):([^:]+)$/);
-		return donor_id => $id;
+		return donor_id => $id||'';
 	},
 	'stockitem.nameid' => sub {
 		my (undef, $id) = (shift =~ /(.*?):([^:]+)$/);
-		return stockitem_id => $id;
+		return stockitem_id => $id||'';
 	},
 	#'donor.advertisement'
 };
