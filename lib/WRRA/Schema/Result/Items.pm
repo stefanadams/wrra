@@ -13,10 +13,10 @@ sub FROM_JSON { qw/id number donor.id donor.nameid donor.advertisement stockitem
 sub _create {
 	my ($class, $r, $rs, $req) = @_;
 	my $number;
-	if ( my $_r = $r->result_source->schema->resultset('Item')->search({stockitem_id=>$req->{stockitem_id}?{'!='=>undef}:{'='=>undef}}, {order_by=>'number desc'})->current_year->first ) {
+	if ( my $_r = $r->result_source->schema->resultset('Item')->search({stockitem_id=>$req->{me}->{stockitem_id}?{'!='=>undef}:{'='=>undef}}, {order_by=>'number desc'})->current_year->first ) {
 		$number = $_r->number+1;
 	} else {
-		$number = $req->{stockitem_id}?1000:100;
+		$number = $req->{me}->{stockitem_id}?1000:100;
 	}
 	$r->year($rs->session->{year});
 	$r->number($number);

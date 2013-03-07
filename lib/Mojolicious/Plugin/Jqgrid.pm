@@ -185,8 +185,8 @@ sub insert {
 	my $data = $self->row;
 	return Mojo::Exception->throw($self->failed_input) if $self->failed_input;
 	my $r = $rs->new_result({});
-	$r = $result_class->_insert($r, $rs, $self->request) if $result_class->can('_insert');
-	$r = $result_class->_create($r, $rs, $self->request) if $result_class->can('_create');
+	$r = $result_class->_insert($r, $rs, $data) if $result_class->can('_insert');
+	$r = $result_class->_create($r, $rs, $data) if $result_class->can('_create');
 	return $r->insert_with_related($data);
 }
 *create = *insert;
@@ -216,7 +216,7 @@ sub update {
 	return Mojo::Exception->throw($self->failed_input) if $self->failed_input;
 	my $r = $rs->find($id);
 	return Mojo::Exception->throw("Update error: Cannot find id $id") unless defined $r;
-	$r = $result_class->_update($r, $rs, $self->request) if $result_class->can('_update');
+	$r = $result_class->_update($r, $rs, $data) if $result_class->can('_update');
 	return $r->update_with_related($data);
 }
 

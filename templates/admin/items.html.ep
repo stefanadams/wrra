@@ -15,10 +15,8 @@ var autocomplete = {
 function alertAddedItemNumber(response,postdata) {
     var json=response.responseText;
     var result=eval("("+json+")"); 
-    if (result.id) $.get('<%= url_for 'item_number' %>', {term:result.id}, function(data){
-        alert("Added Item Number "+data);
-    });
-    return [result.sc,result.msg,null];
+    if (result.number) alert("Added Item Number "+result.number);
+    return [result.res,result.msg,null];
 }
 $("#list1").jqGrid({
     caption: "Items",

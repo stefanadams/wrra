@@ -3,9 +3,9 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub create {
 	my $self = shift;
-	my $rs = $self->jqgrid(create => $self->db->resultset($self->param('results')));
+	my $r = $self->jqgrid(create => $self->db->resultset($self->param('results')));
 	$self->respond_to(
-		json => {json => {res=>($rs?'ok':'err'),msg=>''}},
+		json => {json => {res=>($r?'ok':'err'),msg=>'',number=>$r->number}},
 	);
 }
 
@@ -24,17 +24,17 @@ sub read {
 
 sub update {
 	my $self = shift;
-	my $rs = $self->jqgrid(update => $self->db->resultset($self->param('results')));
+	my $r = $self->jqgrid(update => $self->db->resultset($self->param('results')));
 	$self->respond_to(
-		json => {json => {res=>($rs?'ok':'err'),msg=>''}},
+		json => {json => {res=>($r?'ok':'err'),msg=>''}},
 	);
 }
 
 sub delete {
 	my $self = shift;
-	my $rs = $self->jqgrid(delete => $self->db->resultset($self->param('results')));
+	my $r = $self->jqgrid(delete => $self->db->resultset($self->param('results')));
 	$self->respond_to(
-		json => {json => {res=>($rs?'ok':'err'),msg=>''}},
+		json => {json => {res=>($r?'ok':'err'),msg=>''}},
 	);
 }
 
