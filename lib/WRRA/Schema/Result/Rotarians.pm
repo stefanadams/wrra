@@ -14,9 +14,9 @@ sub FROM_JSON { qw/id name has_submissions email phone/ }
 
 # These class methods are passed $rs, $request
 sub _create {
-	my ($class, $rs, $req) = @_;
-	$rs->rotarian_id($req->{id});
-	return $rs;
+	my ($class, $r, $rs, $req) = @_;
+	$r->rotarian_id($req->{id});
+	return $r;
 };
 #sub _search { $_[1] };
 #sub _update { $_[1] };

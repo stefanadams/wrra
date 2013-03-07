@@ -5,6 +5,10 @@ our $VERSION = '0.01';
 
 use Mojo::Util qw(decamelize);
 
+has 'controller';
+has 'resultset';
+has 'request';
+
 sub register {
   my ($self, $app) = @_;
 
@@ -24,7 +28,11 @@ sub register {
 
   $app->helper(ac => sub {
     my ($c, $rs) = @_;
-    $rs = ($rs->result_class)->_search($rs, (ref $c->myrequest ? $c->myrequest : {$c->myrequest})) if ($rs->result_class)->can('_search');
+    $self->controller($c);
+    $self->resultset($rs);
+    $self->request(ref $c->merged ? $c->merged : {$c->merged});
+    $rs = ($rs->result_class)->_search($rs, $self->request) if ($rs->result_class)->can('_search');
+    $rs = ($rs->result_class)->_read($rs, $self->request) if ($rs->result_class)->can('_read');
     return $rs;
   });
 

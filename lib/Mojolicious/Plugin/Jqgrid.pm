@@ -184,10 +184,10 @@ sub insert {
 
 	my $data = $self->row;
 	return Mojo::Exception->throw($self->failed_input) if $self->failed_input;
-	$rs = $rs->new_result({});
-	$rs = $result_class->_insert($rs, $self->request) if $result_class->can('_insert');
-	$rs = $result_class->_create($rs, $self->request) if $result_class->can('_create');
-	return $rs->insert_with_related($data);
+	my $r = $rs->new_result({});
+	$r = $result_class->_insert($r, $rs, $self->request) if $result_class->can('_insert');
+	$r = $result_class->_create($r, $rs, $self->request) if $result_class->can('_create');
+	return $r->insert_with_related($data);
 }
 *create = *insert;
 
@@ -214,10 +214,10 @@ sub update {
 
 	my $data = $self->row;
 	return Mojo::Exception->throw($self->failed_input) if $self->failed_input;
-	$rs = $rs->find($id);
-	return Mojo::Exception->throw("Update error: Cannot find id $id") unless defined $rs;
-	$rs = $result_class->_update($rs, $self->request) if $result_class->can('_update');
-	return $rs->update_with_related($data);
+	my $r = $rs->find($id);
+	return Mojo::Exception->throw("Update error: Cannot find id $id") unless defined $r;
+	$r = $result_class->_update($r, $rs, $self->request) if $result_class->can('_update');
+	return $r->update_with_related($data);
 }
 
 sub delete {
@@ -230,10 +230,10 @@ sub delete {
 	my @err;
 	foreach ( split /,/, $id ) {
 		warn "Deleting $_\n" if $ENV{JQGRID_DEBUG};
-		my $rs = $self->resultset->find($_);
-		push @err, 0 and next unless defined $rs;
-		$rs = $result_class->_delete($rs, $self->request) if $result_class->can('_delete');
-		push @err, $rs->delete;
+		my $r = $self->resultset->find($_);
+		push @err, 0 and next unless defined $r;
+		$r = $result_class->_delete($r, $self->resultset, $self->request) if $result_class->can('_delete');
+		push @err, $r->delete;
 	}
 	return wantarray ? @err : scalar @err;
 }

@@ -11,14 +11,16 @@ sub FROM_JSON { qw/id number donor.id donor.nameid donor.advertisement stockitem
 
 # These class methods are passed $rs, $request
 sub _create {
-	my ($class, $rs, $req) = @_;
+	my ($class, $r, $rs, $req) = @_;
 	my $number;
-	if ( $rs = $rs->result_source->schema->resultset('Item')->search({stockitem_id=>$req->{stockitem_id}?{'!='=>undef}:{'='=>undef}}, {order_by=>'number desc'})->current_year->first ) {
-		$number = $rs->number+1;
+	if ( my $_r = $r->result_source->schema->resultset('Item')->search({stockitem_id=>$req->{stockitem_id}?{'!='=>undef}:{'='=>undef}}, {order_by=>'number desc'})->current_year->first ) {
+		$number = $_r->number+1;
 	} else {
 		$number = $req->{stockitem_id}?1000:100;
 	}
-	$rs->year($rs->session->{year})->number($number);
+	$r->year($rs->session->{year});
+	$r->number($number);
+	return $r;
 };
 sub _search { $_[1]->current_year };
 #sub _update { $_[1] };
