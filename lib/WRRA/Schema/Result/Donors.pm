@@ -28,6 +28,7 @@ our $read = {
 };
 # When editing (i.e. creating or updating), use this hashref to lookup coderefs and pass the value to provide and expect back a full hash of key/value pairs.
 our $edit = {
+	'rotarian.name' => 'rotarian_id',
 	'contact' => sub {
 		my ($contact1, $contact2) = split /\|/, shift;
 		return (contact1 => $contact1||'', contact2 => $contact2||'');

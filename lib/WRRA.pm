@@ -58,7 +58,7 @@ sub setup_routing {
 	my $bs = $api->under('/bs');
 	$bs->build_select([Rotarians => 'Rotarian']);
 	#$bs->get("/$model")->xhr->to("api#build_select", mv=>"bs_$model")->name("bs_$model") foreach my $model ( qw/rotarians/ );
-	$api->dbroute([ItemNumber => 'Item'], {api => 'item_number'});
+	#$api->dbroute([ItemNumber => 'Item'], {api => 'item_number'});
 	#$api->get('/item_number')->xhr->to('api#item_number', mv=>'item_number')->name('item_number');
 
 	my $admin = $r->under('/admin');

@@ -19,16 +19,7 @@ sub auto_complete {
 
 sub build_select {
 	my $self = shift;
-	$self->view($self->param('mv')) or $self->render_exception;
-	my $m = $self->model($self->param('mv')) or $self->render_exception;
-	$self->stash(select => [$m->read->all]);
-}
-
-sub item_number {
-	my $self = shift;
-	$self->view($self->param('mv')) or $self->render_exception;
-	my $m = $self->model($self->param('mv')) or $self->render_exception;
-	$self->render_text($m->read->first->number);
+	$self->render(rs => [$self->bs($self->db->resultset($self->param('results')))->all]);
 }
 
 1;
