@@ -45,6 +45,7 @@ our $edit = {
 		my (undef, $id) = (shift =~ /(.*?):([^:]+)$/);
 		return stockitem_id => $id;
 	},
+	#'donor.advertisement'
 };
 # For each field being edited (i.e. created or updated) validate the value with the qr regex in this hashref
 our $validate = {
