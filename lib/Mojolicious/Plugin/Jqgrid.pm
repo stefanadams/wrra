@@ -54,7 +54,7 @@ sub register {
 		$r1->dbroute(['/create' => $result_class => $source], {jqgrid => 'create'}, name => "create_$name");
 		$r1->dbroute(['/' => $result_class => $source], {jqgrid => 'read'}, name => "read_$name");
 		$r1->dbroute(['/update' => $result_class => $source], {jqgrid => 'update'}, name => "update_$name");
-		$r1->dbroute(['/delete' => $result_class => $source], {jqgrid => 'delete'}, name => "delete_$name");
+		$r1->dbroute(['/delete' => $result_class => $source], {jqgrid => 'delete'}, \'delete', name => "delete_$name");
 		$r1;
 	});
 
