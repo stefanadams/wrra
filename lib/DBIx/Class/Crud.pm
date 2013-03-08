@@ -173,7 +173,7 @@ sub _cell {
 sub _row {
         my $self = shift;
         my $req = $self->request or return ();
-        my %row = $req->{celname} ? $self->cell($req->{celname} => $req->{$req->{celname}}) : (map { $self->_cell($_, $req->{$_}) } keys %$req);
+        my %row = $req->{celname} ? $self->_cell($req->{celname} => $req->{$req->{celname}}) : (map { $self->_cell($_, $req->{$_}) } keys %$req);
         my $row;
         while ( my ($key, $value) = each %row ) {
                 my ($table, $field) = split /\./, $self->_me($key);

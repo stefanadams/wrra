@@ -1,6 +1,8 @@
 package Mojolicious::Plugin::MergedParams;
 use Mojo::Base 'Mojolicious::Plugin';
 
+has 'merged';
+
 sub register {
 	my ($self, $app, $conf) = @_;
 	my $cb = $conf->{cb};
@@ -10,20 +12,21 @@ sub register {
 		my $param = $c->req->params->to_hash;
 		if ( ref $cb eq 'CODE' ) {
 			my $postdata = $cb->($c->req->body);
-			{%$param, %$postdata}
+			$self->merged({%$param, %$postdata})
 		} elsif ( $c->req->headers->content_type ) {
 			given ( $c->req->headers->content_type ) {
 				when ( 'application/json' ) {
 					my $postdata = $c->req->json || {};
-					return {%$param, %$postdata};
+					$self->merged({%$param, %$postdata});
 				}
 				default {
-					return {%$param};
+					$self->merged({%$param});
 				}
 			}
 		} else {
-			{%$param}
+			$self->merged({%$param});
 		}
+		return $self->merged;
 	});
 }
 

@@ -6,11 +6,11 @@ package DBIx::Class::Helper::Row::WithRelated;
 sub insert_with_related {
 	my $self = my $insert = shift;
 	my $row = shift;
-	$self->$_($row->{me}->{$_}) for keys %{$row->{me}};
+	$self->$_($row->{me}->{$_}) for grep { $self->can($_) } keys %{$row->{me}};
 	my $_insert = $self->insert;
 	for my $table ( grep { $_ ne 'me' } keys %$row ) {
 		my $table_rs = $insert->search_related($table)->first;
-		$table_rs->$_($row->{$table}->{$_}) for keys %{$row->{$table}};
+		$table_rs->$_($row->{$table}->{$_}) for grep { $table_rs->can($_) } keys %{$row->{$table}};
 		$table_rs->update;
 	}
 	return $_insert;
@@ -19,11 +19,11 @@ sub insert_with_related {
 sub update_with_related {
 	my $self = my $update = shift;
 	my $row = shift;
-	$self->$_($row->{me}->{$_}) for keys %{$row->{me}};
+	$self->$_($row->{me}->{$_}) for grep { $self->can($_) } keys %{$row->{me}};
 	my $_update = $self->update;
 	for my $table ( grep { $_ ne 'me' } keys %$row ) {
 		my $table_rs = $update->search_related($table)->first;
-		$table_rs->$_($row->{$table}->{$_}) for keys %{$row->{$table}};
+		$table_rs->$_($row->{$table}->{$_}) for grep { $table_rs->can($_) } keys %{$row->{$table}};
 		$table_rs->update;
 	}
 	return $_update;
