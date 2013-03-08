@@ -88,6 +88,7 @@ __PACKAGE__->set_primary_key("rotarian_id");
 __PACKAGE__->has_many(rotarians => 'WRRA::Schema::Result::Rotarian', {'foreign.leader_id'=>'self.rotarian_id'});
 
 use overload '""' => sub {shift->name}, fallback => 1;
+sub id { shift->leader_id }
 
 sub name {
 	my $self = shift;
@@ -95,18 +96,6 @@ sub name {
 		return join ', ', $self->lastname, $self->firstname;
 	} else {
 		return join('', grep { $_ } $self->lastname, $self->firstname) || undef;
-	}
-}
-
-sub TO_JSON {
-	my $self = shift;
-
-	return {
-		name => $self->name,
-		%{$self->next::method},
-		# Override inflated accessors: Are we CERTAIN that these will ALWAYS override those set in next::method?
-#		Also available, but instead access it via Rotarian sub-classes
-#		  rotarians => [$self->rotarians],
 	}
 }
 

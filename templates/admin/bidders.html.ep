@@ -1,171 +1,46 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1" />
-<title>Donors</title>
+% extends '/admin/layouts/grid', title=>'Bidders';
+% content grid => begin
+var autocomplete = {
+    minLength: 2
+};
+<%== autocomplete 'ac_city', [qw/label state zip/] %>
+$("#list1").jqGrid({
+    // To do: run boolFmatter after update
+    // To do: Escape on cell edit sometimes does not work
+    caption: "Bidders",
 
-<link rel="stylesheet" type="text/css" media="screen" href="css/smoothness/jquery-ui-1.8.16.custom.css" />
-<link rel="stylesheet" type="text/css" media="screen" href="css/ui.jqgrid.css" />
-<link rel="stylesheet" type="text/css" media="screen" href="css/jquery.autocomplete.css" />
-
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-<script type="text/javascript" src="js/i18n/grid.locale-en.js"></script>
-<script type="text/javascript" src="js/jquery.jqGrid.min.js"></script>
-<script type="text/javascript" src="js/jquery.json-2.3.min.js"></script>
-<script type="text/javascript" src="js/jquery.autocomplete.js"></script>
-<script type="text/javascript" src="js/jquery.maskedinput.js"></script>
-
-<script type="text/javascript" src="js/env.js"></script>
-
-<script type="text/javascript">
-$(document).ready(function(){
-	var selectBool = "1:Yes;0:No";
-	var categories = ":;bank:Bank;lawyer:Lawyer;realty:Realty;doctor:Doctor;cpa:CPA;personal:Personal;esq:ESQ;seq:SEQ;insurance:Insurance";
-
-	// Forces a specific format for a phone number.  Make sure that the
-	// DB definition is varchar(14)
-	function phoneMask(elem) {
-		// Reference in .jqGrid {options} colModel {name:...} property with editoptions:{dataInit:___Mask} property
-		$(elem).mask("(999) 999-9999");
-	}
-
-	// Pops an alert after add form indicating the item number that was just added
-	function alertAddedItemNumber(response,postdata) {
-		// Reference in .navGrid {add} object afterSubmit: property
-		var json=response.responseText;
-		var result=eval("("+json+")");
-		if (result.sc) alert("Added Item Number "+result.number);
-		return [result.sc,result.msg,null];
-	}
-
-	function ac_city(elem){
-		$(elem).autocomplete('pl/ac/city');
-		$(elem).result(function(event, data, formatted){
-			if (data) {
-				$('#state').val(data[1]);
-				$('#zip').val(data[2]);
-			}
-		});
-		return true;
-	}
-
-	function formatGridCells() {
-		// Reference in .jqGrid {options} loadComplete: property
-		$('table#list1 tbody tr td[title="Yes"]').css('color', 'green');
-		$('table#list1 tbody tr td[title="No"]').css('color', 'red');
-		$('table#list1 tbody tr td[aria-describedby="list1_items"]').css('color', 'green');
-		$('table#list1 tbody tr td[aria-describedby="list1_items"][title="0"]').css('color', 'red');
-	}
-
-	function checkUpdate(response,postdata) {
-		// Reference in .navGrid {add/edit/del} object afterSubmit: property
-		var json=response.responseText;
-		var result=eval("("+json+")");
-		return [result.sc == 'true' ? true : false,result.msg,null];
-	}
-
-	jQuery.extend($.fn.fmatter , {
-		// Reference in .jqGrid {options} colModel {name:...} property with formatter:'___Fmatter' property
-		phoneFmatter : function(cellvalue, options, rowdata) {
-			if ( cellvalue ) {
-				var re = /\(?([0-9]{3})\)? ?([0-9]{3})-?([0-9]{4})/.exec(cellvalue);
-				return "(" + re[1] + ") " + re[2] + "-" + re[3];
-			}
-			return '&nbsp;';
-		},
-		boolFmatter : function(cellvalue, options, rowdata) {
-			if ( cellvalue == 1 ) return 'Yes';
-			return 'No';
-		},
-		categoryFmatter : function(cellvalue, options, rowdata) {
-			if ( cellvalue ) return cellvalue.charAt(0).toUpperCase() + cellvalue.slice(1);
-			return '&nbsp;';
-		}
-	});
-
-	$("#list1").jqGrid({
-		// To do: run boolFmatter after update
-		// To do: Escape on cell edit sometimes does not work
-		url: 'pl/manage/bidders',
-		postData: {debug: 1},
-		mtype: 'POST',
-		datatype: 'json',
-		jsonReader: {repeatitems: false, id: "bidder_id", subgrid: {root: "rows", repeatitems: true}},
-		ajaxGridOptions: { contentType: "application/json; charset=utf-8" },
-		serializeGridData: function (postData) { return $.toJSON(postData); },
-		caption: "Bidders",
-		colModel:[
-			{name:'phone',label:'Phone',width:70,editable:true,editoptions:{dataInit:phoneMask},editrules:{required:true},formoptions:{elmsuffix:'(*)'},formatter:'phoneFmatter'},
-			{name:'bidder',label:'Bidder',width:200,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
-			{name:'address',label:'Address',width:100,search:false,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
-			{name:'city',label:'City',width:60,editable:true,editoptions:{dataInit:ac_city}},
-			{name:'state',label:'State',width:60,editable:true,hidden:true,editrules:{edithidden:true}},
-			{name:'zip',label:'Zip',width:60,editable:true,hidden:true,editrules:{edithidden:true}},
-			{name:'email',label:'Email',width:60,search:false,editable:true,hidden:true,editrules:{email:true,edithidden:true,required:false}}
-		],
-        cellEdit: true,
-        cellurl: 'pl/manage/bidders/cell',
-        beforeSubmitCell: function(rowid,celname,value,iRow,iCol){   
-            return {celname:celname};    
-        },   
-		loadComplete: formatGridCells,
-		recreateForm: true,
-		altRows: true,
-		rownumbers: true,
-		rownumWidth: 50,
-		scroll: true,
-		rowNum: 50,
-		rowList: [10, 20, 50, 100, 500, 1000, 5000, 10000],
-		pager: $('#pager1'),
-		sortname: 'bidder',
-		viewrecords: true,
-		height: "75\%",
-		autowidth: true
-	}).navGrid('#pager1',
-		{edit:true,add:true,del:true},
-		// {edit}, {add}, {del}, {search}, {view}
-		{
-			url: "pl/manage/bidders/edit",
-			editCaption: "Edit Bidder",
-			width: 700,
-			closeOnEscape: true,
-			closeAfterEdit: true,
-			afterSubmit: checkUpdate
-		},
-		{
-			url: "pl/manage/bidders/add",
-			addCaption: "Add Bidder",
-			width: 700,
-			closeOnEscape: true,
-			afterSubmit: checkUpdate
-		},
-		{
-			url: "pl/manage/bidders/del",
-			caption: "Delete Bidder",
-			msg: "Deleted selected bidder(s)?",
-			afterSubmit: checkUpdate
-		},
-		{
-			url: "pl/manage/bidders/search",
-			caption: "Search Bidder"
-		},
-		{
-			url: "pl/manage/bidders/view",
-			caption: "View Bidder"
-		}
-	).ajaxComplete(function(e, xhr, settings){
-        var json = $.parseJSON(xhr.responseText);
-        if ( json && json.error == "401" ) { window.location = "error.html?referer=bidders.html;status=401"; }
-        if ( json && json.error == "403" ) { window.location = "login.html?referer=bidders.html"; }
-    });
-
-});
-</script>
-</head> 
-<body>
-<div id="loggedin"></div>
-<a href="bookmarks.html">Back to Bookmarks</a>
-<table id="list1" class="scroll"></table> 
-<div id="pager1" class="scroll" style="text-align:center;" />
-</body> 
-</html>
+    colModel:[
+        {name:'phone',label:'Phone',width:70,editable:true,editoptions:{dataInit:function(elem){$(elem).mask("(999) 999-9999");}},editrules:{required:true},formoptions:{elmsuffix:'(*)'},formatter:'phone'},
+        {name:'name',label:'Bidder',width:200,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+        {name:'address',label:'Address',width:100,search:false,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+        {name:'city',label:'City',width:60,editable:true,editrules:{required:true},editoptions:{dataInit:ac_city},formoptions:{elmsuffix:'(*)'}},
+        {name:'state',label:'State',width:60,editable:true,hidden:true,editrules:{edithidden:true}},
+        {name:'zip',label:'Zip',width:60,editable:true,hidden:true,editrules:{edithidden:true}},
+        {name:'email',label:'Email',width:60,search:false,editable:true,hidden:true,editrules:{email:true,edithidden:true,required:false}}
+    ],
+}).navGrid('#pager1',
+    {edit:true,add:true,del:true},
+    // {edit}, {add}, {del}, {search}, {view}
+    {
+        url: "<%= url_for 'update_bidders' %>",
+        editCaption: "Edit Bidder"
+    },
+    {
+        url: "<%= url_for 'create_bidders' %>",
+        addCaption: "Add Bidder"
+    },
+    {
+        url: "<%= url_for 'delete_bidders' %>",
+        caption: "Delete Bidder",
+        msg: "Deleted selected bidder(s)?"
+    },
+    {
+        url: "<%= url_for 'search_bidders' %>",
+        caption: "Search Bidder"
+    },
+    {
+        url: "<%= url_for 'view_bidders' %>",
+        caption: "View Bidder"
+    }
+);
+% end

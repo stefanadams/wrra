@@ -1,8 +1,12 @@
 package WRRA::Schema::Result::Ads;
 
-use base 'WRRA::Schema::Result::Ad';
+use base 'WRRA::Schema::Result::Donor';
 
-sub TO_XLS { shift->arrayref(qw(name)) }
-sub TO_JSON { shift->hashref(qw(name)) }
+sub _search {
+	my ($self, $rs, $req) = @_;
+	$rs->current_year
+}
+
+sub TO_VIEW { qw/id/ }
 
 1;

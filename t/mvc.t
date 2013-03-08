@@ -61,6 +61,8 @@ SKIP : {
     ok (List::Compare->new([$schema->source('Bid')->relationships], [qw/bidder item/])->is_LequivalentR, 'Bid relationships (bidder item)');
     ok (List::Compare->new([$schema->source('Item')->relationships], [qw/donor stockitem highbid bids/])->is_LequivalentR, 'Item relationships (donor stockitem highbid bids bidders*)');
     ok (List::Compare->new([$schema->source('Leader')->relationships], [qw/rotarians/])->is_LequivalentR, 'Leader relationships (rotarians)');
+
+    #$schema->resultset('Item')->search({'item_id' => {'-in' => ['50578','50583']}})->update({'scheduled' => {\'date_add(\'2013-03-18\', interval 0 day)'},'seq' => \'FIND_IN_SET(item_id, 50578,50583)'});
 }
 
 done_testing();

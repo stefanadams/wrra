@@ -2,7 +2,7 @@
 % content grid => begin
 var categories = ":;bank:Bank;lawyer:Lawyer;realty:Realty;doctor:Doctor;cpa:CPA;personal:Personal;esq:ESQ;seq:SEQ;insurance:Insurance";
 var autocomplete = {
-    minLength: 4
+    minLength: 2
 };
 <%== autocomplete 'ac_city', [qw/label state zip/] %>
 $("#list1").jqGrid({
@@ -26,7 +26,7 @@ $("#list1").jqGrid({
         {name:'advertisement',label:'Advertisement',hidden:true,search:false,editable:true,edittype:'textarea',editrules:{edithidden:true}},
         {name:'solicit',label:'Solicit',width:25,editable:true,edittype:'select',editoptions:{multiple:false,value:'1:Yes;0:No'},formatter:'bool'},
         {name:'ly_items',label:'LY',width:25,editable:false,search:false,sortable:false,formatter:'bool'},
-        {name:'rotarian',label:'Rotarian',width:100,editable:true,edittype:'select',editoptions:{multiple:false,dataUrl:'<%= url_for 'bs_rotarians' %>'}},
+        {name:'rotarian.name',label:'Rotarian',width:100,editable:true,edittype:'select',editoptions:{multiple:false,dataUrl:'<%= url_for 'bs_rotarians' %>'}},
         {name:'comments',label:'Comments',width:100,search:false,editable:true}
     ],
     subGrid: true,
@@ -35,17 +35,21 @@ $("#list1").jqGrid({
         subgrid_table_id = subgrid_id+"_t";
         $("#"+subgrid_id).html("<table id='"+subgrid_table_id+"' class='scroll'></table>");
         $("#"+subgrid_table_id).jqGrid({
-            url:"<%= url_for %>/"+row_id,
+            url:"<%= url_for 'donor_items' %>",
+            postData: {searchField:"donor_id",searchOper:"eq",searchString:row_id},
             jsonReader: {subgrid: {root: "rows", repeatitems: true}},
             colModel: [
                 {name:"year",label:"Year",width:130},
                 {name:"sold",label:"Night Sold",width:130},
-                {name:"value",label:"Value",width:130},
-                {name:"highbid",label:"High Bid",width:130},
-                {name:"bellringer",label:"Bellringer",width:130},
+                {name:"value",label:"Value",width:130,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
+                {name:"highbid.bid",label:"High Bid",width:130,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
+                {name:"bellringer",label:"Bellringer",width:130,formatter:'bool'},
             ],
+            pager: null,
             height: '100%',
-            rowNum:20,
+            rowNum: 20,
+            sortname: 'year,sold',
+            sortorder: 'desc,asc'
         });
     },
 }).navGrid('#pager1',
@@ -73,15 +77,4 @@ $("#list1").jqGrid({
         caption: "View Donor"
     }
 );
-% end
-
-% content filter => begin
-    <%= radio_button solicit => '1', id => 'solicit' %>Show <b>Solicit</b> Records
-    <%= radio_button solicit => '0', id => 'solicit' %>Show <b>Non-Solicit</b> Records
-    <%= radio_button solicit => '', id => 'solicit' %>Show <b>Both Sets</b> of Records
-    <br />
-    <%= radio_button assigned => '1', id => 'assigned' %>Show <b>Assigned</b> Records
-    <%= radio_button assigned => '0', id => 'assigned' %>Show <b>Unassigned</b> Records
-    <%= radio_button assigned => '', id => 'assigned' %>Show <b>Both Sets</b> of Records
-    <br />
 % end
