@@ -9,7 +9,7 @@ sub FROM_JSON { qw/id chamberid phone category name contact address city state z
 #sub received { shift->SUPER::received->ymd }
 #sub sold { shift->SUPER::sold ? 1 : 0 }
 
-# These class methods are passed $rs, $request
+# These class methods are passed $r, $rs, $request
 #sub _create { $_[1] };
 #sub _search { $_[1] };
 #sub _update { $_[1] };
