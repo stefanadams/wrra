@@ -8,3 +8,4 @@ lib.old2
 lib.old3
 .gitignore
 wrra.conf
+*.sql
