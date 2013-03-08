@@ -132,10 +132,10 @@ $(document).ready(function(){
 	<div id="tabs">
 		<ul>
 			<li><a href="#tabs-0">Not Assigned : </a></li>
-			<li><a href="#tabs-1">Night 1 : </a></li>
-			<li><a href="#tabs-2">Night 2 : </a></li>
-			<li><a href="#tabs-3">Night 3 : </a></li>
-			<li><a href="#tabs-4">Night 4 : </a></li>
+			<li><a href="#tabs-1">Monday : </a></li>
+			<li><a href="#tabs-2">Tuesday : </a></li>
+			<li><a href="#tabs-3">Wednesday : </a></li>
+			<li><a href="#tabs-4">Thursday : </a></li>
 			<li><a href="#tabs-9999">All Nights : </a></li>
 		</ul>
 		<div id="tabs-0">
