@@ -71,8 +71,8 @@ sub setup_routing {
 	$admin->jqgrid([Bidders => 'Bidder']);
 	$admin->jqgrid([Bids => 'Bid']);
 	$admin->under('/seq_items')
-		->dbroute(['/' => SeqItems => 'Item'], {seq_items => 'read'}, \'get', extra_path => ':n')
-		->dbroute(['/' => SeqItems => 'Item'], {seq_items => 'update'}, \'post', extra_path => ':n');
+		->dbroute(['/' => SeqItems => 'Item'], {seq_items => 'list'}, \'get', extra_path => ':n')
+		->dbroute(['/' => SeqItems => 'Item'], {seq_items => 'sequence'}, \'post', extra_path => ':n');
 
 	my $reports = $admin->under('/reports');
 	$reports->dbroute([Postcards => 'Item'], {jqgrid => 'read'});

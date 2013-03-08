@@ -173,7 +173,7 @@ $(document).ready(function(){
 	</textarea>
 	<textarea id="full_list" style="display:none">
 		{#foreach $T as r}
-			<li id="id_{$T.r.id}" value="{$T.r.value}" class="ui-state-default">({$T.r.scheduled}) {$T.r.number} - {$T.r.name} (${$T.r.value})</li>
+			<li id="id_{$T.r.id}" value="{$T.r.value}" class="ui-state-default">({$T.r.scheduled.day_name}) {$T.r.number} - {$T.r.name} (${$T.r.value})</li>
 		{#/for}
 	</textarea>
 </body> 

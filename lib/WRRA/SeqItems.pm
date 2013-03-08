@@ -3,20 +3,25 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Mojo::Exception;
 
-sub read {
+sub list {
 	my $self = shift;
-warn Data::Dumper::Dumper($self->db->session);
-	my $start = $self->db->session->{auctions}->{$self->db->session->{year}}->[0] or Mojo::Exception->throw('Cannot determine start date of auction '.$self->session->{year});
-	my $n = $self->param('n');
+
 	my $rs = $self->db->resultset($self->param('results'));
-	my $scheduled;
-	$scheduled = {'='=>undef} if not(defined $n) || $n <= 0 || $n =~ /\D/ || $start !~ /^\d{4}-\d{2}-\d{2}$/;
-	$scheduled = {-or => [{'='=>undef},{'!='=>undef}]} if $n >= 9999;
+	my $request = ref $self->merged ? $self->merged : {$self->merged};
+
+	my $year = $rs->session->{year};
+	my $start = $rs->session->{auctions}->{$year}->[0] or Mojo::Exception->throw("Cannot determine start date of auction $year");
+	my $n = $self->param('n');
+
+	my %search;
+	$search{scheduled} = {'='=>undef} if not(defined $n) || $n <= 0 || $n =~ /\D/ || $start !~ /^\d{4}-\d{2}-\d{2}$/;
+	$search{scheduled} = [{'='=>undef},{'!='=>undef}] if $n >= 9999;
 	$n--;
-	$scheduled ||= {'='=>\"date_add('$start', interval $n day)"};
-	$rs->search($scheduled);
+	$search{scheduled} ||= {'='=>\"date_add('$start', interval $n day)"};
+	$rs = $rs->search({%search}, {order_by=>{'-asc'=>['scheduled','seq']}})->current_year;
+
 	$self->respond_to(
-		json => {json => $rs->jqgrid},
+		json => {json => [$rs->all]},
 		xls => sub { # With TO_XLS
 			$self->cookie(fileDownload => 'true');
 			$self->cookie(path => '/');
@@ -25,28 +30,28 @@ warn Data::Dumper::Dumper($self->db->session);
 	);
 }
 
-sub update {
+sub sequence {
 	my $self = shift;
-	my $start = $self->db->session->{auctions}->{$self->db->session->{year}}->[0] or Mojo::Exception->throw('Cannot determine start date of auction '.$self->session->{year});
-	my $n = $self->param('n');
+
 	my $rs = $self->db->resultset($self->param('results'));
-	my $update;
-	my @item_id = map { /_(\d+)$/; $1 } $self->merged->{id};
-	my $r;
+	my $request = ref $self->merged ? $self->merged : {$self->merged};
+	my @items = map { /_(\d+)$/; $1 } @{$request->{id}};
+
+	my $year = $rs->session->{year};
+	my $start = $rs->session->{auctions}->{$year}->[0] or Mojo::Exception->throw("Cannot determine start date of auction $year");
+	my $n = $self->param('n');
+
+	my %update;
+	$update{seq} = \join('', 'FIND_IN_SET(item_id, "', join(',', @items), '")');
 	if ( $n == 0 ) {
-		$r = $rs->update({
-			scheduled => undef,
-			seq => \join('', 'FIND_IN_SET(item_id, "', join(',', @item_id), '")'),
-		});
+		$update{scheduled} = undef;
 	} elsif ( $n > 0 and $n < 9999 ) {
 		$n--;
-		$r = $rs->update({
-			scheduled => \"date_add('$start', interval $n day)",
-			seq => \join('', 'FIND_IN_SET(item_id, "', join(',', @item_id), '")'),
-		});
+		$update{scheduled} = \"date_add('$start', interval $n day)";
 	}
+
 	$self->respond_to(
-		json => {json => {res=>($r?'ok':'err'),msg=>''}},
+		json => {json => {res=>($rs->search({item_id => {-in => [@items]}})->update({%update})?'ok':'err'),msg=>''}},
 	);
 }
 

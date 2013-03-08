@@ -3,7 +3,8 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub create {
 	my $self = shift;
-	my $r = $self->jqgrid(create => $self->db->resultset($self->param('results')));
+	$self->render_exception('Invalid create request') unless delete $self->request->{oper} eq 'add';
+	my $r = $self->jqgrid->create;
 	$self->respond_to(
 		json => {json => {res=>($r?'ok':'err'),msg=>'',number=>$r->number}},
 	);
@@ -11,9 +12,9 @@ sub create {
 
 sub read {
 	my $self = shift;
-	my $rs = $self->jqgrid(search => $self->db->resultset($self->param('results')));
+	my $rs = $self->jqgrid->search;
 	$self->respond_to(
-		json => {json => $rs->jqgrid},
+		json => {json => $rs->paged},
 		xls => sub { # With TO_XLS
 			$self->cookie(fileDownload => 'true');
 			$self->cookie(path => '/');
@@ -24,7 +25,8 @@ sub read {
 
 sub update {
 	my $self = shift;
-	my $r = $self->jqgrid(update => $self->db->resultset($self->param('results')));
+	$self->render_exception('Invalid update request') unless delete $self->request->{oper} eq 'edit';
+	my $r = $self->jqgrid->update;
 	$self->respond_to(
 		json => {json => {res=>($r?'ok':'err'),msg=>''}},
 	);
@@ -32,7 +34,8 @@ sub update {
 
 sub delete {
 	my $self = shift;
-	my $r = $self->jqgrid(delete => $self->db->resultset($self->param('results')));
+	$self->render_exception('Invalid delete request') unless delete $self->request->{oper} eq 'del';
+	my $r = $self->jqgrid->delete;
 	$self->respond_to(
 		json => {json => {res=>($r?'ok':'err'),msg=>''}},
 	);
