@@ -16,13 +16,12 @@ __PACKAGE__->load_namespaces(
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-16 09:09:02
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wM5zCfXKD5Qnd99BQCHs2w
 
-# $self->result_source->schema->myconfig
-our $config;
-sub config {
-	my $self = shift;
-	$config = shift if $_[0];
-	return $config;
-}
+__PACKAGE__->load_components(qw(Helper::Schema::ResultSet Helper::Schema::Mojolicious));
+
+our $defaults = {
+	year => ((localtime())[5])+1900,
+	recent_years => 2,
+};
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
