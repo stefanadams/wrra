@@ -4,9 +4,8 @@ use Mojo::Base 'Mojolicious::Controller';
 sub create {
 	my $self = shift;
 	$self->render_exception('Invalid create request') unless delete $self->merged->{oper} eq 'add';
-	my $r = $self->jqgrid->create;
 	$self->respond_to(
-		json => {json => {res=>($r?'ok':'err'),msg=>'',number=>$r->number}},
+		json => {json => $self->jqgrid->create},
 	);
 }
 
@@ -26,18 +25,16 @@ sub read {
 sub update {
 	my $self = shift;
 	$self->render_exception('Invalid update request') unless delete $self->merged->{oper} eq 'edit';
-	my $r = $self->jqgrid->update;
 	$self->respond_to(
-		json => {json => {res=>($r?'ok':'err'),msg=>''}},
+		json => {json => $self->jqgrid->update},
 	);
 }
 
 sub delete {
 	my $self = shift;
 	$self->render_exception('Invalid delete request') unless delete $self->merged->{oper} eq 'del';
-	my $r = $self->jqgrid->delete;
 	$self->respond_to(
-		json => {json => {res=>($r?'ok':'err'),msg=>''}},
+		json => {json => $self->jqgrid->delete},
 	);
 }
 
