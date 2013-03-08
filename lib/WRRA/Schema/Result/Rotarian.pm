@@ -128,18 +128,5 @@ sub name {
 	}
 }
 
-sub TO_JSON {
-	my $self = shift;
-
-	return {
-		name => $self->name,
-		%{$self->next::method},
-		# Override inflated accessors: Are we CERTAIN that these will ALWAYS override those set in next::method?
-#		Also available, but instead access it via Rotarian sub-classes
-#		  donors => [$self->donors],
-#		  leader => $self->leader,
-	}
-}
-
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

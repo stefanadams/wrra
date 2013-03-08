@@ -135,6 +135,7 @@ __PACKAGE__->has_many(bids => 'WRRA::Schema::Result::Bid', 'bidder_id'); # A Bid
 __PACKAGE__->many_to_many(items => 'bids', 'item'); # A Bidder bids on many Items, bridge to item via Bid's bids
 
 use overload '""' => sub { shift->name }, fallback => 1;
+sub id { shift->bidder_id }
 
 around 'phone' => sub {
 	my $orig = shift;

@@ -1,0 +1,9 @@
+{
+	year => 2013,
+	database => {
+		name => 'name',
+		host => 'host',
+		user => 'user',
+		pass => 'pass',
+	},
+}

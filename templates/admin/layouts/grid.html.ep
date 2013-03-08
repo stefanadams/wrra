@@ -13,6 +13,10 @@
 <script  src="/js/jquery.fileDownload.js" type="text/javascript"></script>
 <style>
     #loggedin {display:none}
+    body {
+	font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+	font-size: 62.5%;
+    }
     .link {cursor:pointer;color:blue;text-decoration:underline;}
 </style>
 <script type="text/javascript">
@@ -25,7 +29,8 @@ $(document).ready(function(){
 //    });
 
     $.extend($.jgrid.defaults, {
-        mtype: 'GET',
+        mtype: 'POST',
+        serializeGridData: function (postData) { return JSON.stringify(postData); },
         datatype: 'json',
         url: '<%= url_for %>',
         cellurl: '<%= url_for %>/update',
@@ -44,8 +49,8 @@ $(document).ready(function(){
         rownumbers: true,
         rownumWidth: 50,
         scroll: false,
-        rowNum: 10,
-        rowList: [10, 20, 50, 100, 500, 1000, 5000, 10000],
+        rowNum: 20,
+        rowList: [1, 10, 20, 50, 100, 500, 1000, 5000, 10000],
         sortname: 'name',
         pager: $('#pager1'),
         viewrecords: true,
@@ -65,6 +70,9 @@ $(document).ready(function(){
     $.extend($.jgrid.ajaxOptions, {
         contentType: "application/json",
         headers: { accept: "application/json" }
+    });
+    $.extend($.jgrid.search, {
+//        multipleSearch: true,
     });
     $.extend($.jgrid.edit, {
         ajaxEditOptions: { type: "POST" },
@@ -99,8 +107,8 @@ $(document).ready(function(){
             return '&nbsp;';
         },
         bool : function (cellvalue, options, rowdata) {
-            if ( cellvalue == 0 ) return 'No';
-            return 'Yes';
+            if ( cellvalue == 1 ) return 'Yes';
+            return 'No';
         },
         category : function (cellvalue, options, rowdata) {
             if ( cellvalue ) return cellvalue.charAt(0).toUpperCase() + cellvalue.slice(1);
@@ -120,19 +128,7 @@ $(document).ready(function(){
         }
     });
 
-    <%= content 'functions' %>
     <%= content 'grid' %>
-
-    $("input[name=solicit]").click(function(){
-        $.get("<%= url_for 'filter' %>", {key: "solicit", value: $('input:radio[name=solicit]:checked').val()}, function(){
-            $('#list1').trigger('reloadGrid');
-        });
-    });
-    $("input[name=assigned]").click(function(){
-        $.get("<%= url_for 'filter' %>", {key: "assigned", value: $('input:radio[name=assigned]:checked').val()}, function(){
-            $('#list1').trigger('reloadGrid');
-        });
-    });
 
     // Ajax-style file downloading
     $(document).on("click", "a.fileDownloadSimpleRichExperience", function () {
@@ -143,14 +139,20 @@ $(document).ready(function(){
         return false; //this is critical to stop the click event which will trigger a normal file download!
     });
 
+    $("#list1").jqGrid('navButtonAdd', '#pager1', {
+        caption:"Download Excel", 
+        buttonicon:"none", 
+        onClickButton: function(){
+            console.log('<%= url_for undef, {format=>'xls'} %>');
+            $.fileDownload('<%= url_for undef, {format=>'xls'} %>');
+        },
+        title: '<%= url_for undef, {format=>'xls'} %>',
+        position:"last"
+    });
 });
 </script>
 </head>  
 <body>   
-<div id="loggedin"></div>
-<a href="<%= url_for 'bookmarks' %>">Back to Bookmarks</a><br />
-<%= content 'filter' %>
-<a class="fileDownloadSimpleRichExperience" href="<%= url_for undef, format=>'xls' %>">Download as Excel</a>
 <table id="list1" class="scroll"></table> 
 <div id="pager1" class="scroll" style="text-align:center;" />
 </body>

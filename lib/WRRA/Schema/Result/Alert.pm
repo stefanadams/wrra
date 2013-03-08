@@ -46,5 +46,6 @@ __PACKAGE__->set_primary_key("alert");
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:lCTqUyPSJEV6Haiiu/Ze3Q
 
 
+
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

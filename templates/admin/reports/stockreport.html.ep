@@ -1,0 +1,15 @@
+% extends '/admin/layouts/grid', title=>'Pre-arranged Items Report';
+% content grid => begin
+$("#list1").jqGrid({
+    caption: "Pre-arranged Items Report",
+    sortname: 'name',
+    sortorder: 'asc',
+
+    colModel:[
+            {name:'name',label:'Pre-arranged Item',width:200,editable:false},
+            {name:'count',label:'Count',width:25,align:'right',editable:false},
+            {name:'value',label:'Value',width:25,align:'right',editable:false,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
+            {name:'cost',label:'Cost',width:25, align:'right',editable:false,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
+    ],
+}).navGrid('#pager1', {edit:false,add:false,del:false});
+% end
