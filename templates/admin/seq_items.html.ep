@@ -23,10 +23,11 @@ $(document).ready(function(){
 	var $tabs = $( "#tabs" ).tabs();
 
 	function tablabel (i) {
+		var Count = 0;
 		var Total = 0;
-		$("#sortable"+i).find('li').each(function() { Total += $(this).val()|0; });
+		$("#sortable"+i).find('li').each(function() { Total += $(this).val()|0; Count++; });
 		var label = $('a[href="#tabs-'+i+'"]').html();
-		$('a[href="#tabs-'+i+'"]').html(label.replace(/ : .*/, " : $"+Total));
+		$('a[href="#tabs-'+i+'"]').html(label.replace(/ : .*/, " : "+Count+" / $"+Total));
 	}
 
 	var $tab_items = $( "ul:first li", $tabs ).droppable({
