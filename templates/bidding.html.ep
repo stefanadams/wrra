@@ -496,9 +496,9 @@ $(document).ready(function(){
 							<tr>
 								<td class="ad">
 									{#if $T.ads.ad.ad_id && $T.ads.ad.img}
-										<a href="/api/ad/{$T.ads.ad.ad_id}" target="_new"><img src="ads/{$T.ads.ad.img}" border="0" /></a>
+										<a href="/api/ad/{$T.ads.ad.ad_id}" target="_new"><img src="{$T.ads.ad.img}" border="0" /></a>
 									{#else}
-										<a href="http://www.washingtonrotary.com" target="_new"><img src="ads/washrotary.jpg" border="0" /></a>
+										<a href="http://www.washingtonrotary.com" target="_new"><img src="/ads/washrotary.jpg" border="0" /></a>
 									{#/if}
 								</td>
 							</tr>

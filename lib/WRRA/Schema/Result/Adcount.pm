@@ -86,7 +86,18 @@ __PACKAGE__->set_primary_key("ad_id", "processed");
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-17 16:47:32
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nAKvkrkaxMYAG77LtDMY1A
 
+__PACKAGE__->belongs_to(ad => 'WRRA::Schema::Result::Ad', 'ad_id', {join_type=>''});       
 sub id { shift->adcount_id }
+
+sub processed {
+        my $self = shift;
+        $self->processed ? $self->processed : undef;
+}
+
+sub rotate {
+        my $self = shift;
+        $self->adcount->processed ? $self->adcount->rotate : undef;
+}
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

@@ -43,6 +43,7 @@ sub setup_routing {
 
 	my $api = $r->under('/api');
 	$api->any('/alert')->to('api#alert');
+	$api->get('/ad/:id')->to('api#ad');
 	$api->get('/header')->to('api#header');
 	my $config = $api->under('/dbconfig');
 	$config->get('/year/:year', {year=>undef})->to('api#api_dbconfig', config=>'year');
