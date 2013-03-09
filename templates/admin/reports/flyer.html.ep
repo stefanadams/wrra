@@ -1,7 +1,7 @@
-% extends '/admin/layouts/grid', title=>'Donor Mailing Label';
+% extends '/admin/layouts/grid', title=>'Items Flyer';
 % content grid => begin
 $("#list1").jqGrid({
-    caption: "Donor Mailing Label",
+    caption: "Items Flyer",
 
     colModel:[
         {name:'scheduled.day_name',label:'Night',width:100,editable:false},
