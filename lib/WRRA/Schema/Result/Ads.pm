@@ -1,12 +1,9 @@
 package WRRA::Schema::Result::Ads;
 
-use base 'WRRA::Schema::Result::Donor';
+use base 'WRRA::Schema::Result::Ad';
 
-sub _search {
-	my ($self, $rs, $req) = @_;
-	$rs->current_year
-}
+sub _colmodel { qw/name scheduled.day_name advertiser.nameid url/ }
 
-sub TO_VIEW { qw/id/ }
+sub _search { $_[1]->current_year } 
 
 1;
