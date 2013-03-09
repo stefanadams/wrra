@@ -71,7 +71,7 @@ sub setup_routing {
 		->dbroute(['/' => SeqItems => 'Item'], {seq_items => 'sequence'}, \'post', extra_path => ':n');
 
 	my $reports = $admin->under('/reports');
-	$reports->jqgrid_ro([Postcards => 'Item']);
+	$reports->jqgrid_ro([Postcards => 'Donor']);
 	$reports->jqgrid_ro([Flyer => 'Item']);
 	$reports->jqgrid_ro([Bankreport => 'Item']);
 	$reports->jqgrid_ro([Summary => 'Item']);
