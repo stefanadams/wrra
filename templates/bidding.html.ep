@@ -554,7 +554,7 @@ $(document).ready(function(){
 				</thead>
 				<tbody>
 				{#foreach $T.bidding.rows as r}
-					% if ( app->mode eq 'development' ) {
+					% if ( app->mode eq 'developmen' ) {
 					  %= include 'bidding.fakedata'
 					% }
 					<tr id="tr_{$T.r.id}" itemid="{$T.r.id}" name="item" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}">
