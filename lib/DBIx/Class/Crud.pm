@@ -128,7 +128,7 @@ sub delete {
                 my $r = $self->resultset->find($_);
                 push @err, 0 and next unless defined $r;
                 $r = $result_class->_delete($r, $request) if $result_class->can('_delete');
-                push @err, $r->delete;
+                push @err, $_ unless $r->delete;
         }
 	{res=>(@err?'err':'ok')}
 }
