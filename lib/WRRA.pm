@@ -12,7 +12,7 @@ sub startup {
 	$self->plugin('Hypnotoad');
 	$self->plugin('MergedParams');
 	$self->plugin('DBIC' => {schema => 'WRRA::Schema'});
-	$self->plugin('TitleTag' => {tag => sub { join(' - ', $_[0]->db->session->{year}, $_[0]->config('version')) }});
+	$self->plugin('TitleTag' => {tag => sub { join(' - ', $_[0]->db->session->{year}, $_[0]->config('version'), $_[0]->config('database')->{name}) }});
 	$self->plugin('LogRequests' => {tag => sub { shift->db->session->{year} }});
 	$self->plugin('WriteExcel');
 	$self->plugin('HeaderCondition');
