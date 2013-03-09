@@ -26,12 +26,28 @@ sub register {
 		$route =~ s/^\/+// if $route;
 		$route //= $name;   
 		my $extra_path = delete $_{extra_path};
+		$r->dbroute(["/$name.xls" => $result_class => $source], {jqgrid => 'read'}, \'get', format => 'xls', name => "read_$name");
 		my $r1 = $r->under("/$name");
 		$r1->dbroute(['/create' => $result_class => $source], {jqgrid => 'create'}, name => "create_$name");
 		$r1->dbroute(['/' => $result_class => $source], {jqgrid => 'read'}, name => "read_$name");
 		$r1->dbroute(['/update' => $result_class => $source], {jqgrid => 'update'}, name => "update_$name");
 		$r1->dbroute(['/delete' => $result_class => $source], {jqgrid => 'delete'}, \'delete', name => "delete_$name");
 		$r1;
+	});
+
+	$app->routes->add_shortcut(jqgrid_ro => sub {
+		my $r = shift;
+		my ($route, $result_class, $source);
+		($route, $result_class, $source) = @$_ == 1 ? (undef, @$_, @$_) : @$_ == 2 ? (undef, @$_) : (@$_) foreach grep { ref eq 'ARRAY' } @_;
+		%_ = grep { !ref } @_;
+		$_{name} =~ s/\W+//g if $_{name};
+		my $name = decamelize(delete $_{name} // $result_class);
+		$route =~ s/^\/+// if $route;
+		$route //= $name;
+		my $extra_path = delete $_{extra_path};
+		$r->dbroute(["/$name.xls" => $result_class => $source], {jqgrid => 'read'}, \'get', format => 'xls', name => "read_${name}_xls");
+		$r->dbroute(["/$name" => $result_class => $source], {jqgrid => 'read'}, name => "read_$name");
+		$r;
 	});
 
 	$app->helper(jqgrid => sub {
@@ -116,7 +132,10 @@ sub order_by {
 sub pager {
 	my $self = shift;
 	my ($page, $rows) = ($self->request->{page}, $self->request->{rows});
-	return (page => ($page||1), (defined $rows ? (rows => $rows) : ()));
+	my %pager;
+	$pager{page} = $page||1 if defined $page;
+	$pager{rows} = $rows||1 if defined $rows;
+	return (%pager);
 }
 
 sub filters {

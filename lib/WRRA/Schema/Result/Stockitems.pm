@@ -3,7 +3,7 @@ package WRRA::Schema::Result::Stockitems;
 use base 'WRRA::Schema::Result::Stockitem';
 
 # The columns to be rendered
-sub FROM_JSON { qw/id category name value cost/ }
+sub _colmodel { qw/id category name value cost/ }
 
 # The columns to be rendered as special accessor methods
 #sub received { shift->SUPER::received->ymd }

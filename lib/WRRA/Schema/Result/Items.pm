@@ -4,7 +4,7 @@ use 5.010;
 use base 'WRRA::Schema::Result::Item';
 
 # The columns to be rendered
-sub FROM_JSON { qw/id number donor.id donor.nameid donor.advertisement stockitem.id stockitem.nameid name description value category url/ }
+sub _colmodel { qw/id number donor.id donor.nameid donor.advertisement stockitem.id stockitem.nameid name description value category url/ }
 
 # The columns to be rendered as special accessor methods
 #sub received { shift->SUPER::received->ymd }

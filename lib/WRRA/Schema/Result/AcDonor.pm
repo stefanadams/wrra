@@ -2,7 +2,7 @@ package WRRA::Schema::Result::AcDonor;
 
 use base 'WRRA::Schema::Result::Donor';
 
-sub FROM_JSON { qw/label advertisement/ }
+sub _colmodel { qw/label advertisement/ }
 
 sub _search {
 	my ($self, $rs, $req) = @_;

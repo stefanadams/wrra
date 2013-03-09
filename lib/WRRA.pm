@@ -54,12 +54,8 @@ sub setup_routing {
 	$ac->auto_complete(['Bellitem']);
 	$ac->auto_complete(['Bidder']);
 	$ac->auto_complete(['Ad']);
-	#$ac->get("/$model")->xhr->to("api#auto_complete", mv=>"ac_$model")->name("ac_$model") foreach my $model ( qw/city donor item item_current stockitem advertisement advertiser item_stockitem bellitem bidder ad/ );
 	my $bs = $api->under('/bs');
 	$bs->build_select([Rotarians => 'Rotarian']);
-	#$bs->get("/$model")->xhr->to("api#build_select", mv=>"bs_$model")->name("bs_$model") foreach my $model ( qw/rotarians/ );
-	#$api->dbroute([ItemNumber => 'Item'], {api => 'item_number'});
-	#$api->get('/item_number')->xhr->to('api#item_number', mv=>'item_number')->name('item_number');
 
 	my $admin = $r->under('/admin');
 	$admin->jqgrid([Rotarians => 'Rotarian']);
@@ -75,12 +71,12 @@ sub setup_routing {
 		->dbroute(['/' => SeqItems => 'Item'], {seq_items => 'sequence'}, \'post', extra_path => ':n');
 
 	my $reports = $admin->under('/reports');
-	$reports->dbroute([Postcards => 'Item'], {jqgrid => 'read'});
-	$reports->dbroute([Flyer => 'Item'], {jqgrid => 'read'});
-	$reports->dbroute([Bankreport => 'Item'], {jqgrid => 'read'});
-	$reports->dbroute([Summary => 'Item'], {jqgrid => 'read'});
-	$reports->dbroute([Stockreport => 'Stockitem'], {jqgrid => 'read'});
-	$reports->dbroute([Winners => 'Item'], {jqgrid => 'read'});
+	$reports->jqgrid_ro([Postcards => 'Item']);
+	$reports->jqgrid_ro([Flyer => 'Item']);
+	$reports->jqgrid_ro([Bankreport => 'Item']);
+	$reports->jqgrid_ro([Summary => 'Item']);
+	$reports->jqgrid_ro([Stockreport => 'Stockitem']);
+	$reports->jqgrid_ro([Winners => 'Item']);
 
 	my $sol_aids = $admin->under('/solicitation_aids');
 	$sol_aids->get('/checklist')->xhr->to('crud#read', m=>'checklist', v=>'checklist');

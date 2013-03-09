@@ -2,7 +2,7 @@ package WRRA::Schema::Result::AcCity;
 
 use base 'WRRA::Schema::Result::Donor';
 
-sub FROM_JSON { qw/label state zip/ }
+sub _colmodel { qw/label state zip/ }
 
 sub label { shift->city }
 

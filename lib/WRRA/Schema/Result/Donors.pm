@@ -3,7 +3,7 @@ package WRRA::Schema::Result::Donors;
 use base 'WRRA::Schema::Result::Donor';
 
 # The columns to be rendered
-sub FROM_JSON { qw/id chamberid phone category name contact address city state zip email url advertisement solicit ly_items rotarian.id rotarian.name comments/ }
+sub _colmodel { qw/id chamberid phone category name contact address city state zip email url advertisement solicit ly_items rotarian.id rotarian.name comments/ }
 
 # The columns to be rendered as special accessor methods
 #sub received { shift->SUPER::received->ymd }

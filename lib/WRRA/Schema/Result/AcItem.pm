@@ -2,7 +2,7 @@ package WRRA::Schema::Result::AcItem;
 
 use base 'WRRA::Schema::Result::Item';
 
-sub FROM_JSON { qw/label description _value url category/ }
+sub _colmodel { qw/label description _value url category/ }
 
 sub _search {
 	my ($self, $rs, $req) = @_;

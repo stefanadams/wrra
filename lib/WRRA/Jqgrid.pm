@@ -14,10 +14,8 @@ sub read {
 	my $rs = $self->jqgrid->search;
 	$self->respond_to(
 		json => {json => $rs->paged},
-		xls => sub { # With TO_XLS
-			$self->cookie(fileDownload => 'true');
-			$self->cookie(path => '/');
-			$self->render_xls(result => $rs->all);
+		xls => sub {
+			$self->render_xls(result => [map { $_->TO_XLS } $rs->all]);
 		},
 	);
 }

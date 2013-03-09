@@ -2,7 +2,7 @@ package WRRA::Schema::Result::AcStockitem;
 
 use base 'WRRA::Schema::Result::Stockitem';
 
-sub FROM_JSON { qw/label name _value category/ }
+sub _colmodel { qw/label name _value category/ }
 
 sub label { shift->nameid }
 

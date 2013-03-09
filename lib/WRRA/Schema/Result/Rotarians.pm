@@ -6,7 +6,7 @@ use Lingua::EN::NameParse qw(clean case_surname);
 my $name = new Lingua::EN::NameParse(auto_clean=>1,force_case=>1,lc_prefix=>1,initials=>1,allow_reversed=>1,joint_names=>0,extended_titles=>0);
 
 # The columns to be rendered
-sub FROM_JSON { qw/id name has_submissions email phone/ }
+sub _colmodel { qw/id name has_submissions email phone/ }
 
 # The columns to be rendered as special accessor methods
 #sub received { shift->SUPER::received->ymd }
