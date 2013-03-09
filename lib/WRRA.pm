@@ -11,6 +11,7 @@ sub startup {
 	$self->plugin('Version');
 	$self->plugin('Hypnotoad');
 	$self->plugin('MergedParams');
+	$self->plugin('MergePostdata');
 	$self->plugin('DBIC' => {schema => 'WRRA::Schema'});
 	$self->plugin('TitleTag' => {tag => sub { join(' - ', $_[0]->db->session->{year}, $_[0]->config('version'), $_[0]->config('database')->{name}) }});
 	$self->plugin('LogRequests' => {tag => sub { shift->db->session->{year} }});
@@ -35,11 +36,14 @@ sub setup_routing {
 	$r->add_condition(role  => sub { $_[1]->auth_require_role($_[3]) });
 
 	# Normal route to controller
-	$r->get('/')->to('index#current_bidding');
+	$r->get('/')->to(template => '/bidding');
+	$r->dbroute(['/' => Bidding => 'Item'], {bidding => 'read'}, \'post');
 	$r->post('/' => sub { my $self = shift; $self->req->body_size ? $self->render_json($self->req->json) : $self->render_text('no_json'); });
 	$r->get('/bookmarks')->to(cb=>sub{shift->redirect_to('/admin/bookmarks')});
 
 	my $api = $r->under('/api');
+	$api->any('/alert')->to('api#alert');
+	$api->get('/header')->to('api#header');
 	my $config = $api->under('/dbconfig');
 	$config->get('/year/:year', {year=>undef})->to('api#api_dbconfig', config=>'year');
 	my $ac = $api->under('/ac');

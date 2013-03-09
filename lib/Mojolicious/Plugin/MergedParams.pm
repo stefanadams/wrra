@@ -7,6 +7,16 @@ sub register {
 	my ($self, $app, $conf) = @_;
 	my $cb = $conf->{cb};
 
+	$app->hook(before_dispatch => sub {
+		my $c = shift;
+		given ( $c->req->headers->content_type ) {
+			when ( 'application/json' ) {
+				my $postdata = $c->req->json || {};
+				$c->param($_) or $c->param($_ => $postdata->{$_}) for keys %$postdata;
+			}
+		}
+	});
+
 	$app->helper(merged => sub {
 		my $c = shift;
 		my $param = $c->req->params->to_hash;
