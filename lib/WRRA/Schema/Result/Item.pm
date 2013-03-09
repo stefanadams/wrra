@@ -260,21 +260,23 @@ __PACKAGE__->belongs_to(highbid => 'WRRA::Schema::Result::Bid', {'foreign.bid_id
 __PACKAGE__->has_many(bids => 'WRRA::Schema::Result::Bid', 'item_id', {join_type=>'left'}); # An Item has_many bids, join to Bid via item_id
 __PACKAGE__->many_to_many(bidders => 'bids', 'bidder'); # An Item is bid on by many Bidders, bridge to bidders via Bid's bidder
 
-use overload '""' => sub {shift->name}, fallback => 1;
 sub id { shift->item_id }
 
 #sub itemcat {
 #	my $self = shift;
 #	('food','gc','travel','personal care','auto','apparel','sports','event tickets','baskets','wine','misc','garden','one per','restaurant','catering','floral','spa','golf','meat','car wash','droege','kr');
 #}
+
 #sub auctioneer {
 #	my $self = shift;
 #	('a','b');
 #}
+
 #sub notify {
 #	my $self = shift;
 #	('newbid','starttimer','stoptimer','holdover','sell');
 #}
+
 sub status {
 	my $self = shift;
 	my $status = {map {$_=>ref $self->$_?1:defined $self->$_?$self->$_:undef} qw/scheduled started timer sold cleared contacted auctioneer/};
@@ -286,12 +288,14 @@ sub status {
 	return 'Not Ready' if !$status->{scheduled};# && !$status->{auctioneer}   && !$status->{started}   && !$status->{sold}   && !$status->{cleared};
 	return 'Unknown';
 }
+
 sub startbid {
 	my $self = shift;
 	return 5 if $self->value < 100;
 	return 30 if $self->value < 250;
 	return 50;
 }
+
 sub minbid {
 	my $self = shift;
 	return undef unless $self->can('highbid');
@@ -300,73 +304,31 @@ sub minbid {
 	return $self->highbid->bid+5 if $self->highbid->bid < $self->value;
 	return $self->highbid->bid+1;
 }
+
 sub cansell {
 	my $self = shift;
 	return undef if !ref $self->timer || ref $self->sold;
 	return time-$self->timer->epoch > 5*60 ? 1 : 0;
 }
+
 sub bellringer {
 	my $self = shift;
+	return undef unless $self->can('highbid') && ref $self->highbid;
 	return undef unless $self->highbid->can('bid');
 	return $self->highbid->bid >= $self->value ? 1 : undef;
-	#return undef unless $self->highbid;
-	#return $self->highbid >= $self->value ? 1 : undef;
 }
+
 sub runningtime {
 	my $self = shift;
 	return undef unless ref $self->started;
 	return time-$self->started->epoch;
 }
+
 sub timerminutes {
 	my $self = shift;
 	return undef unless ref $self->timer;
 	return time-$self->timer->epoch;
 }
-sub soldday {
-	my $self = shift;
-	return $self->sold->day_name;
-}
-sub dt_columns {
-	my $self = shift;
-	(map { $_ => ref $self->$_ ? $self->$_->datetime : undef } qw/scheduled started timer sold cleared contacted/),
-}
-
-#sub TO_JSON {
-#	my $self = shift;
-#
-#	return {
-#		#itemcat => $self->itemcat,
-#		#auctioneer => $self->auctioneer,
-#		#notify => $self->notify,
-#		status => $self->status,
-#		startbid => $self->startbid,
-#		minbid => $self->minbid,
-#		cansell => $self->cansell,
-#		bellringer => $self->bellringer,
-#		runningtime => $self->runningtime,
-#		timerminutes => $self->timerminutes,
-#		%{$self->next::method},
-#		# Override inflated accessors: Are we CERTAIN that these will ALWAYS override those set in next::method?
-#		%{$self->dt_columns},
-#		Also available, but instead access it via Bid sub-classes   
-#		  bidder => $self->bidder, 
-#		  item => $self->item,    
-#		  bids => $self->can('bids') ? [$self->bids] : undef,
-#		  bidders => [$self->bidders->hashref_array],
-#		  highbid => $self->can('highbid') ? $self->highbid : undef,
-#		  donor => {defined $self->donor ? map { $_=>$self->donor->$_ } $self->donor->columns : ()},
-#		  stockitem => $self->stockitem,
-#		  bellitem => $self->bellitem,
-#		  highbid => $self->highbid,
-#		  bids => [$self->bids],
-#		  bidders => [$self->bidders->hashref_array],
-#		  highbidbid => $self->highbidbid,
-#		  highbidder_id => $self->highbidder_id,
-#		  highbidder => defined $self->highbidder ? $self->highbidder->name : undef,
-#		  highbidtime => $self->highbidtime,
-#		  highbidage => $self->highbidage,
-#	}
-#}
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

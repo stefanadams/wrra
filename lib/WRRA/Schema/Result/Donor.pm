@@ -190,7 +190,6 @@ use Class::Method::Modifiers;
 __PACKAGE__->belongs_to(rotarian => 'WRRA::Schema::Result::Rotarian', 'rotarian_id', {join_type=>'left'});	# A Donor belongs_to a Rotarian
 __PACKAGE__->has_many(items => 'WRRA::Schema::Result::Item', 'donor_id'); # A Donor has_many Items
 
-use overload '""' => sub {shift->name}, fallback => 1;
 sub id { shift->donor_id }
 
 around 'phone' => sub {
