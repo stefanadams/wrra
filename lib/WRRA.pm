@@ -11,7 +11,7 @@ sub startup {
 	$self->plugin('Version');
 	$self->plugin('Hypnotoad');
 	$self->plugin('MergedParams');
-	$self->plugin('MergePostdata');
+	$self->plugin('MergePostdata' => {'application/json' => sub { shift->req->json }});
 	$self->plugin('DBIC' => {schema => 'WRRA::Schema'});
 	$self->plugin('TitleTag' => {tag => sub { join(' - ', $_[0]->db->session->{year}, $_[0]->config('version'), $_[0]->config('database')->{name}) }});
 	$self->plugin('LogRequests' => {tag => sub { shift->db->session->{year} }});

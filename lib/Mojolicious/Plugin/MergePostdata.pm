@@ -3,12 +3,13 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 sub register {
 	my ($self, $app, $conf) = @_;
-	my $type = shift @$conf;
 
 	$app->hook(before_dispatch => sub {
 		my $c = shift;
-		return unless $c->req->headers->content_type eq $type;
-		my $postdata = $conf; #$c->req->json || {};
+		return unless my $cb = $conf->{$c->req->headers->content_type};
+		return unless ref $cb eq 'CODE';
+		my $postdata = $cb->($c);
+		return unless ref $postdata eq 'HASH';
 		$c->param($_) or $c->param($_ => $postdata->{$_}) for keys %$postdata;
 	});
 }
