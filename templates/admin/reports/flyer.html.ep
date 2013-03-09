@@ -4,9 +4,10 @@ $("#list1").jqGrid({
     caption: "Donor Mailing Label",
 
     colModel:[
-        {name:'name',label:'Donor',width:200,editable:false},
-        {name:'value',label:'Value', width:25, align:'right',editable:false,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
-        {name:'scheduled',label:'Night',width:100,editable:false},
+        {name:'scheduled.day_name',label:'Night',width:100,editable:false},
+        {name:'name',label:'Item',width:200,editable:false},
+        {name:'donor.name',label:'Donor',width:200,editable:false},
+        {name:'value',label:'Value', width:25, align:'right',editable:false,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}}
     ],
 }).navGrid('#pager1', {edit:false,add:false,del:false});
 % end
