@@ -81,7 +81,8 @@ sub insert {
         my $r = $rs->new_result({});
         $r = $result_class->_insert($r, $rs, $request) if $result_class->can('_insert');
         $r = $result_class->_create($r, $rs, $request) if $result_class->can('_create');   
-        return $r->insert_with_related($request); # DBIx::Class::Helper::Row::WithRelated
+        $r = $r->insert_with_related($request); # DBIx::Class::Helper::Row::WithRelated
+	{res=>($r?'ok':'err'),$result_class->can('_return')?$result_class->_return($r => 'insert'):()}
 }
 *create = *insert;
 
@@ -110,7 +111,8 @@ sub update {
         my $r = $rs->find($id);
 	return $rs->throw_exception("Update error: Cannot find id $id") unless defined $r;
         $r = $result_class->_update($r, $rs, $request) if $result_class->can('_update');
-        return $r->update_with_related($request);
+        $r = $r->update_with_related($request);
+	{res=>($r?'ok':'err'),$result_class->can('_return')?$result_class->_return($r => 'update'):()}
 }
  
 sub delete {
@@ -128,7 +130,7 @@ sub delete {
                 $r = $result_class->_delete($r, $request) if $result_class->can('_delete');
                 push @err, $r->delete;
         }
-        return wantarray ? @err : scalar @err;
+	{res=>(@err?'err':'ok')}
 }
  
 sub _me {

@@ -1,5 +1,6 @@
 package WRRA::Schema::Result::Items;
 
+use 5.010;
 use base 'WRRA::Schema::Result::Item';
 
 # The columns to be rendered
@@ -8,6 +9,15 @@ sub FROM_JSON { qw/id number donor.id donor.nameid donor.advertisement stockitem
 # The columns to be rendered as special accessor methods
 #sub received { shift->SUPER::received->ymd }
 #sub sold { shift->SUPER::sold ? 1 : 0 }
+
+# This class method is passed $r and $op
+sub _return {
+	my ($class, $r, $op) = @_;
+	given ( $op ) {
+		when ( 'insert' ) { return number => $r->number }
+	}
+	return ();
+}
 
 # These class methods are passed $rs, $request
 sub _create {
