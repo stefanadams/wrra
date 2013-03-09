@@ -23,7 +23,7 @@ warn Data::Dumper::Dumper($bidding);
 sub _fakebidding {
 	my $self = shift;
 	my $row = shift;
-	return $row unless !$self->config('fakebidding');
+	return $row unless $self->app->mode eq 'development';
 	my @notify = ();
 	if ( int(rand(99)) < 25 ) {
 		$row->{status} = 'Ready'; 
