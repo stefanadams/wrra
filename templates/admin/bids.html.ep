@@ -15,6 +15,7 @@ $("#list1").jqGrid({
 
     colModel:[
         {name:'bidder.nameid',label:'Bidder',width:200,editable:true,editoptions:{size:50,dataInit:ac_bidder},editrules:{required:true,custom:true,custom_func:hasFK},formoptions:{elmsuffix:'(*)'},formatter:'hideFK'},
+        {name:'item.number',label:'Number',width:200,editable:true,editoptions:{size:50,dataInit:ac_item_current},editrules:{required:true,custom:true,custom_func:hasFK},formoptions:{elmsuffix:'(*)'},formatter:'hideFK'},
         {name:'item.nameid',label:'Item',width:200,editable:true,editoptions:{size:50,dataInit:ac_item_current},editrules:{required:true,custom:true,custom_func:hasFK},formoptions:{elmsuffix:'(*)'},formatter:'hideFK'},
         {name:'bid_r',label:'Bid Request',width:200},
         {name:'bid',label:'Bid',width:200,editable:true,editrules:{required:true},editrules:{required:true,number:true,minValue:0},formoptions:{elmsuffix:'(*)'},formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
