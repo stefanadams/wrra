@@ -6,7 +6,7 @@ package DBIx::Class::Helper::Row::Crud;
 sub TO_JSON {
         my $self = shift;
 
-        return {} unless $self->can('_colmodel');
+        return () unless $self->can('_colmodel');
 
         my %tables = ();
         foreach ( grep { /\./ } $self->_colmodel ) {
@@ -18,7 +18,7 @@ sub TO_JSON {
                                 $tables{$table}{$field} = '';
                         }
                 } elsif ( not exists $tables{$table} ) {
-                        $tables{$table} = {};
+                        $tables{$table} = undef;
                 }
         }
         warn Data::Dumper::Dumper({%tables}) if $ENV{COLMODEL_DEBUG};
@@ -45,7 +45,7 @@ sub TO_XLS {
                         	}
 	                } elsif ( not exists $tables{$table} ) {
 				push @row, undef;
-                	        $tables{$table} = {};
+                	        $tables{$table} = undef;
 	                }
 		} else {
 			push @row, $self->can($_) ? $self->$_ : undef;
