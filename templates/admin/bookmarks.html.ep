@@ -32,7 +32,7 @@ $(document).ready(function(){
     <p><%= link_to 'Manage Rotarians' => 'rotarians' %></p>
     <p><%= link_to 'Manage Donors' => 'donors' %></p>
     <h4>Save-the-Date</h4>
-    <p><%= link_to 'Donor Mailing Label' => 'postcards' %></p>
+    <p><%= link_to 'Donor Mailing Label' => 'read_postcards' %></p>
     <h4>Packets</h4>
     <p><%= link_to 'Manage Pre-arranged Items' => 'stockitems' %></p>
     <p><%= link_to 'Rotarian Solicitation Aids' => 'solicitation_aids' => (class=>'disable') %></p>
@@ -44,7 +44,7 @@ $(document).ready(function(){
     <p><%= link_to 'Manage Bellringers' => 'bellitems' %></p>
     <h4>Product Guide</h4>
     <p><%= link_to 'Sequence Items' => 'seq_items' %></p>
-    <p><%= link_to 'Items Flyer' => 'flyer' %></p>
+    <p><%= link_to 'Items Flyer' => 'read_flyer' %></p>
   </div>
   <h3>Paid Advertisements</h3>
   <div>
