@@ -19,7 +19,6 @@ __PACKAGE__->load_namespaces(
 __PACKAGE__->load_components(qw(Helper::Schema::ResultSet Helper::Schema::Mojolicious));
 
 our $defaults = {
-	year => ((localtime())[5])+1900,
 	recent_years => 2,
 };
 

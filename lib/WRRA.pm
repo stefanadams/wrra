@@ -1,26 +1,21 @@
 package WRRA;
 use Mojo::Base 'Mojolicious';
 
-use DateTime;
-
 # This method will run once at server start
 sub startup {
 	my $self = shift;
 
 	$self = $self->moniker('wrra');
 
-	my $now = $ENV{WRRA_NOW} || $self->config->{now} || $self->session->{now};
-	$now = $now || DateTime->now;
-
 	$self->plugin('Config');
-	$self->config(year => $now->year);
+	$self->plugin('DateTime');
 	$self->plugin('Version');
 	$self->plugin('Hypnotoad');
 	$self->plugin('MergedParams');
 	$self->plugin('MergePostdata' => {'application/json' => sub { shift->req->json }});
 	$self->plugin('DBIC' => {schema => 'WRRA::Schema'});
-	$self->plugin('TitleTag' => {tag => sub { join(' - ', $_[0]->db->session->{year}, $_[0]->config('version'), $_[0]->config('database')->{name}) }});
-	$self->plugin('LogRequests' => {tag => sub { shift->db->session->{year} }});
+	$self->plugin('TitleTag' => {tag => sub { join(' - ', $_[0]->datetime->year, $_[0]->config('version'), $_[0]->config('database')->{name}) }});
+	$self->plugin('LogRequests' => {tag => sub { shift->datetime->year }});
 	$self->plugin('WriteExcel');
 	$self->plugin('HeaderCondition');
 	$self->plugin('XHR');
@@ -30,24 +25,23 @@ sub startup {
 
 	$self->helper(dates => sub {
 		my $c = shift;
-		my @d1 = split /-/, $c->config->{auctions}->{$now->year}->[0];
-		my @d2 = split /-/, $c->config->{auctions}->{$now->year}->[1];
-		my $d1 = DateTime->new(month => $d1[1], day => $d1[2], year => $d1[0]);
-		my $d2 = DateTime->new(month => $d2[1], day => $d2[2], year => $d2[0]);
+		my $d0 = $c->datetime($c->config->{auctions}->{$c->datetime->year}->[0]);
+		my $d1 = $c->datetime($c->config->{auctions}->{$c->datetime->year}->[1]);
 		my @dates;
-		while ($d1 <= $d2) {
-			push @dates, $d1;
-			$d1->add(days => 1);
+		while ($d0 <= $d1) {
+			push @dates, $d0;
+			$d0->add(days => 1);
 		}
 		return @dates;
 	});
 	$self->helper(closed => sub {
 		my $c = shift;
-		my @t1 = split /:/, $c->config->{hours}->{$now->year}->[0];
-		my @t2 = split /:/, $c->config->{hours}->{$now->year}->[1];
-		my $t1 = DateTime->new(month => $now->month, day => $now->day, year => $now->year, hour => $t1[0], minute => $t1[1], second => $t1[2]);
-		my $t2 = DateTime->new(month => $now->month, day => $now->day, year => $now->year, hour => $t2[0], minute => $t2[1], second => $t2[2]);
-		return 0 if $now >= $t1 && $now <= $t2;
+		my $dt = $c->datetime;
+		my @t0 = split /:/, $c->config->{hours}->{$dt->year}->[0];
+		my @t1 = split /:/, $c->config->{hours}->{$dt->year}->[1];
+		my $t0 = DateTime->new(month => $dt->month, day => $dt->day, year => $dt->year, hour => $t0[0], minute => $t0[1], second => $t0[2]);
+		my $t1 = DateTime->new(month => $dt->month, day => $dt->day, year => $dt->year, hour => $t1[0], minute => $t1[1], second => $t1[2]);
+		return 0 if $dt >= $t0 && $dt <= $t1;
 	});
 
 	$self->setup_routing;
