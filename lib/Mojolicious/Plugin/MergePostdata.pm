@@ -6,6 +6,7 @@ sub register {
 
 	$app->hook(before_dispatch => sub {
 		my $c = shift;
+		return unless $c->req->headers->content_type;
 		return unless my $cb = $conf->{$c->req->headers->content_type};
 		return unless ref $cb eq 'CODE';
 		my $postdata = $cb->($c);
