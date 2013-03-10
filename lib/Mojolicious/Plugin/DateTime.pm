@@ -10,9 +10,12 @@ sub register {
 
 	$app->helper(datetime => sub {
 		my $c = shift;
-		my $datetime = shift || $c->session->{datetime} || $c->config->{datetime} || $ENV{"${moniker}_DATETIME"};
-		$datetime or return DateTime->now;
-		return DateTime::Format::DateParse->parse_datetime($datetime);
+		my $datetime = shift;
+		$datetime and return DateTime::Format::DateParse->parse_datetime($datetime);
+		$datetime = $c->session->{datetime} || $c->config->{datetime} || $ENV{"${moniker}_DATETIME"};
+		$datetime = $datetime ? DateTime::Format::DateParse->parse_datetime($datetime) : DateTime->now;
+		warn $datetime if $ENV{"${moniker}_DATETIME"};
+		return $datetime;
 	});
 }
 

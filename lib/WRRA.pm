@@ -29,7 +29,7 @@ sub startup {
 		my $d1 = $c->datetime($c->config->{auctions}->{$c->datetime->year}->[1]);
 		my @dates;
 		while ($d0 <= $d1) {
-			push @dates, $d0;
+			push @dates, $d0->ymd;
 			$d0->add(days => 1);
 		}
 		return @dates;
@@ -37,11 +37,12 @@ sub startup {
 	$self->helper(closed => sub {
 		my $c = shift;
 		my $dt = $c->datetime;
-		my @t0 = split /:/, $c->config->{hours}->{$dt->year}->[0];
-		my @t1 = split /:/, $c->config->{hours}->{$dt->year}->[1];
+		return 1 unless grep { $_ eq $dt->ymd } $c->dates;
+		my @t0 = split /:/, $c->config->{hours}->{$dt->year}->{$dt->ymd}->[0] ? $c->config->{hours}->{$dt->year}->{$dt->ymd}->[0] : $c->config->{default_hours}->[0];
+		my @t1 = split /:/, $c->config->{hours}->{$dt->year}->{$dt->ymd}->[1] ? $c->config->{hours}->{$dt->year}->{$dt->ymd}->[1] : $c->config->{default_hours}->[1];
 		my $t0 = DateTime->new(month => $dt->month, day => $dt->day, year => $dt->year, hour => $t0[0], minute => $t0[1], second => $t0[2]);
 		my $t1 = DateTime->new(month => $dt->month, day => $dt->day, year => $dt->year, hour => $t1[0], minute => $t1[1], second => $t1[2]);
-		return 0 if $dt >= $t0 && $dt <= $t1;
+		return $dt >= $t0 && $dt <= $t1 ? 0 : 1;
 	});
 
 	$self->setup_routing;
