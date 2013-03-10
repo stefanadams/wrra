@@ -8,14 +8,19 @@ sub register {
 	my ($self, $app, $conf) = @_;
 	my $moniker = uc($app->moniker);
 
+	$app->hook(before_dispatch => sub {
+		my $c = shift;
+		my $datetime = $c->session->{datetime} || $c->config->{datetime} || $ENV{"${moniker}_DATETIME"};
+		$self->{datetime}->{now} = DateTime::Format::DateParse->parse_datetime($datetime) if $datetime;
+		$self->{datetime}->{now} ||= DateTime->now(time_zone=>'local');
+		warn $self->{datetime}->{now} if $ENV{"${moniker}_DATETIME"};
+		return $self->{datetime}->{now};
+	});
 	$app->helper(datetime => sub {
 		my $c = shift;
 		my $datetime = shift;
-		$datetime and return DateTime::Format::DateParse->parse_datetime($datetime);
-		$datetime = $c->session->{datetime} || $c->config->{datetime} || $ENV{"${moniker}_DATETIME"};
-		$datetime = $datetime ? DateTime::Format::DateParse->parse_datetime($datetime) : DateTime->now(time_zone=>'local');
-		warn $datetime if $ENV{"${moniker}_DATETIME"};
-		return $datetime;
+		$self->{datetime}->{$datetime} ||= DateTime::Format::DateParse->parse_datetime($datetime) if $datetime;
+		return $datetime ? $self->{datetime}->{$datetime} : $self->{datetime}->{now};
 	});
 }
 

@@ -1,8 +1,6 @@
 package WRRA::Api;
 use Mojo::Base 'Mojolicious::Controller';
 
-use 5.010;
-
 sub api_dbconfig {
 	my $self = shift;
 	$self->session->{$self->param('config')} = $self->param($self->param('config')) if $self->param($self->param('config'));
@@ -28,22 +26,22 @@ sub header {
 	my $self = shift;
 	$self->respond_to(
 		json => {json => {
-			header => {
-				about => {
-					name => 'Washington Rotary Radio Auction',
-					year => $self->db->session->{year},
-					night => $self->db->session->{auctions}->{$self->db->session->{year}}->[0],
-					live => 0,
-					date_next => 'Tomorrow',
-				},
-				play => $self->config('play'),
-				alert => {
-					msg => eval { $self->db->resultset('Alert')->search({alert=>'public'})->first->msg } || '',
-				},
-			},
-			ads => {
-				ad => _display_ad($self),
-			},
+                        about => {
+                                name => 'Washington Rotary Radio Auction',
+                                year => $self->datetime->year,
+                                night => defined $self->night ? $self->night : Mojo::JSON->false,
+                                closed => $self->closed,
+                                live => $self->closed ? 0 : 1,
+                                date_next => $self->date_next ? $self->date_next->ymd : Mojo::JSON->false,
+                                datetime => $self->datetime,
+                        },
+                        play => $self->config('play'),
+                        alert => {
+                                msg => eval { $self->db->resultset('Alert')->search({alert=>'public'})->first->msg } || '',
+                        },
+                        ads => {
+                                ad => _display_ad($self),
+                        },
 		}},
 	);
 }

@@ -1,6 +1,8 @@
 package WRRA;
 use Mojo::Base 'Mojolicious';
 
+use List::MoreUtils qw(firstidx);
+
 # This method will run once at server start
 sub startup {
 	my $self = shift;
@@ -25,24 +27,70 @@ sub startup {
 
 	$self->helper(dates => sub {
 		my $c = shift;
-		my $d0 = $c->datetime($c->config->{auctions}->{$c->datetime->year}->[0]);
-		my $d1 = $c->datetime($c->config->{auctions}->{$c->datetime->year}->[1]);
+		my $range = ref $_[0] ? $_[0] : [@_] if @_;
+		$range ||= $c->config->{auctions}->{$c->datetime->year} or return ();
+		my $d0 = $c->datetime($range->[0]);
+		my $d1 = $c->datetime($range->[1]);
 		my @dates;
+		my $inc;
 		while ($d0 <= $d1) {
-			push @dates, $d0->ymd;
+			push @dates, $c->datetime($d0);
 			$d0->add(days => 1);
+			$inc++;
 		}
-		return @dates;
+		$d0->subtract(days => $inc);
+#warn Data::Dumper::Dumper({dates=>[map { $_->ymd } @dates]});
+		return wantarray ? @dates : [@dates];
+	});
+	$self->helper(years => sub {
+		my $c = shift;
+		my @years = grep { $_ >= $c->datetime->year } keys %{$c->config->{auctions}};
+#warn Data::Dumper::Dumper({years=>[@years]});
+		wantarray ? @years : [@years];
+	});
+	$self->helper(auctions => sub {
+		my ($c, $year) = @_;
+		$year ||= $c->years->[0];
+		my @auctions = ();
+		foreach my $_year ( $year || $c->years ) {
+			next unless $c->config->{auctions}->{$year};
+			@auctions = grep { $_ > $c->datetime } $c->dates($_year) and last;
+		}
+warn Data::Dumper::Dumper({auctions=>[map { $_->ymd } @auctions]});
+		wantarray ? @auctions : [@auctions];
+	});
+	$self->helper(hours => sub {
+		my ($c, $date) = @_;
+		$date ||= $c->auctions($c->years->[0])->[0];
+		my @hours = $c->config->{hours}->{$date->year}->{$date->ymd} ? @{$c->config->{hours}->{$date->year}->{$date->ymd}} : @{$c->config->{default_hours}};
+		@hours = map { $c->datetime($date->ymd." $_") } @hours;
+warn Data::Dumper::Dumper({hours=>[map { $_->datetime } @hours]});
+		wantarray ? @hours : [@hours];
+	});
+	$self->helper(night => sub {
+		my ($c, $night) = @_;
+		$night = $night ? $c->datetime($night) : $c->datetime;
+		return undef unless $night;
+		$night = firstidx { $_->ymd eq $night->ymd } $c->auctions($night->year);
+		$night = $night >= 0 ? $night : undef;
+#warn Data::Dumper::Dumper({night=>$night});
+		return $night;
+	});
+	$self->helper(date_next => sub {
+		my $c = shift;
+		my $date_next = $c->auctions($c->years->[0])->[0] || $c->auctions($c->years->[1])->[0];
+warn Data::Dumper::Dumper({date_next=>$date_next->ymd});
+		return $date_next;
 	});
 	$self->helper(closed => sub {
 		my $c = shift;
+		$c->config->{closed} and return $c->config->{closed};
+		exists $c->stash->{closed} and return $c->stash->{closed};
 		my $dt = $c->datetime;
 		return 1 unless grep { $_ eq $dt->ymd } $c->dates;
-		my @t0 = split /:/, $c->config->{hours}->{$dt->year}->{$dt->ymd}->[0] ? $c->config->{hours}->{$dt->year}->{$dt->ymd}->[0] : $c->config->{default_hours}->[0];
-		my @t1 = split /:/, $c->config->{hours}->{$dt->year}->{$dt->ymd}->[1] ? $c->config->{hours}->{$dt->year}->{$dt->ymd}->[1] : $c->config->{default_hours}->[1];
-		my $t0 = DateTime->new(month => $dt->month, day => $dt->day, year => $dt->year, hour => $t0[0], minute => $t0[1], second => $t0[2]);
-		my $t1 = DateTime->new(month => $dt->month, day => $dt->day, year => $dt->year, hour => $t1[0], minute => $t1[1], second => $t1[2]);
-		return $dt >= $t0 && $dt <= $t1 ? 0 : 1;
+		my $t0 = $c->datetime(join ' ', $dt->ymd, $c->config->{hours}->{$dt->year}->{$dt->ymd}->[0] ? $c->config->{hours}->{$dt->year}->{$dt->ymd}->[0] : $c->config->{default_hours}->[0] ? $c->config->{default_hours}->[0] : ());
+		my $t1 = $c->datetime(join ' ', $dt->ymd, $c->config->{hours}->{$dt->year}->{$dt->ymd}->[1] ? $c->config->{hours}->{$dt->year}->{$dt->ymd}->[1] : $c->config->{default_hours}->[1] ? $c->config->{default_hours}->[1] : ());
+		return $c->stash->{closed} = $dt >= $t0 && $dt <= $t1 ? 0 : 1;
 	});
 
 	$self->setup_routing;

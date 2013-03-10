@@ -438,9 +438,14 @@ $(document).ready(function(){
 				<tr>
 					<td class="mast">
 						<table class="mast">
-							{#if $T.about.bidder}
+							% if ( app->mode eq 'development' ) {
 							<tr><td class="hello">
-								<a id="unident" class="modal"><span class="hello">Hello, {$T.about.bidder}!</span></a>
+							  {$T.about.datetime}
+							</tr></td>
+							% }
+							{#if $T.about.bidder.name}
+							<tr><td class="hello">
+								<a id="unident" class="modal"><span class="hello">Hello, {$T.about.bidder.name}!</span></a>
 							</tr></td>
 							{#/if}
 							<tr><td class="title">
@@ -455,7 +460,7 @@ $(document).ready(function(){
 								<td class="play">
 									<span class="listen">Listen:
 										<span class="radio">
-											{#foreach $T.header.play.listen.radio as station}
+											{#foreach $T.play.listen.radio as station}
 												{#if $T.station.link}
 													<span class="nolive"><a class="mast" href="{$T.station.link}" target="blank">{$T.station.name}</a></span>
 												{#else}
@@ -470,7 +475,7 @@ $(document).ready(function(){
 									<img class="arrowsep" src="img/right_arrow_button.gif" />
 									<span class="bid">Bid:
 										<span class="phone">
-											{#foreach $T.header.play.bid.phone as phone}
+											{#foreach $T.play.bid.phone as phone}
 												{$T.phone}
 												{#if $T.station$last == false}
 													<span class="choicesep">/</span>
@@ -506,11 +511,11 @@ $(document).ready(function(){
 					</td>
 				</tr>
 			</table>
-			{#if $T.header.alert.msg}
+			{#if $T.alert.msg}
 			<table class="getalert">
 				<tr class="msg">
 					<td>
-						<span id="alert-get" class="msg"><a id="clearalert" class="modal">{$T.header.alert.msg}</a></span>
+						<span id="alert-get" class="msg"><a id="clearalert" class="modal">{$T.alert.msg}</a></span>
 					</td>
 				</tr>
 			</table>
