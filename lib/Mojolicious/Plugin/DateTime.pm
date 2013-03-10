@@ -13,7 +13,7 @@ sub register {
 		my $datetime = shift;
 		$datetime and return DateTime::Format::DateParse->parse_datetime($datetime);
 		$datetime = $c->session->{datetime} || $c->config->{datetime} || $ENV{"${moniker}_DATETIME"};
-		$datetime = $datetime ? DateTime::Format::DateParse->parse_datetime($datetime) : DateTime->now;
+		$datetime = $datetime ? DateTime::Format::DateParse->parse_datetime($datetime) : DateTime->now(time_zone=>'local');
 		warn $datetime if $ENV{"${moniker}_DATETIME"};
 		return $datetime;
 	});
