@@ -1,13 +1,19 @@
 package WRRA;
 use Mojo::Base 'Mojolicious';
 
+use DateTime;
+
 # This method will run once at server start
 sub startup {
 	my $self = shift;
 
 	$self = $self->moniker('wrra');
 
+	my $now = $ENV{WRRA_NOW} || $self->config->{now} || $self->session->{now};
+	$now = $now || DateTime->now;
+
 	$self->plugin('Config');
+	$self->config(year => $now->year);
 	$self->plugin('Version');
 	$self->plugin('Hypnotoad');
 	$self->plugin('MergedParams');
@@ -21,6 +27,28 @@ sub startup {
 	$self->plugin('AutoComplete');
 	$self->plugin('BuildSelect');
 	$self->plugin('Jqgrid');
+
+	$self->helper(dates => sub {
+		my $c = shift;
+		my @d1 = split /-/, $c->config->{auctions}->{$now->year}->[0];
+		my @d2 = split /-/, $c->config->{auctions}->{$now->year}->[1];
+		my $d1 = DateTime->new(month => $d1[1], day => $d1[2], year => $d1[0]);
+		my $d2 = DateTime->new(month => $d2[1], day => $d2[2], year => $d2[0]);
+		my @dates;
+		while ($d1 <= $d2) {
+			push @dates, $d1;
+			$d1->add(days => 1);
+		}
+		return @dates;
+	});
+	$self->helper(closed => sub {
+		my $c = shift;
+		my @t1 = split /:/, $c->config->{hours}->{$now->year}->[0];
+		my @t2 = split /:/, $c->config->{hours}->{$now->year}->[1];
+		my $t1 = DateTime->new(month => $now->month, day => $now->day, year => $now->year, hour => $t1[0], minute => $t1[1], second => $t1[2]);
+		my $t2 = DateTime->new(month => $now->month, day => $now->day, year => $now->year, hour => $t2[0], minute => $t2[1], second => $t2[2]);
+		return 0 if $now >= $t1 && $now <= $t2;
+	});
 
 	$self->setup_routing;
 
