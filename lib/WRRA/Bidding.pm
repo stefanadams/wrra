@@ -10,11 +10,10 @@ sub read {
 	foreach ( @$bidding ) {
 		# if((find_in_set('newbid',`items`.`notify`) > 0),1,NULL) `newbid`
 		# if((`items`.`status` = 'Sold'),1,NULL) `sold`
-		$_->{img} = (glob($self->config('photos')."2012/$_->{number}.*"))[0] if $_->{number};
+		$_->{img} = (glob($self->config('photos').'/'.$self->db->session->{year}."/$_->{number}.*"))[0] if $_->{number};
 		$_ = $self->_fakebidding($_);
 		$_->{notify} = {map { $_ => 1 } split /,/, $_->{notify}};
 	}
-warn Data::Dumper::Dumper($bidding);
 	$self->respond_to(
 		json => {json => {bidding=>{rows=>$bidding}}},
 	);
