@@ -32,7 +32,7 @@ sub header {
                                 night => defined $self->night ? $self->night : Mojo::JSON->false,
                                 closed => $self->closed,
                                 live => $self->closed ? 0 : 1,
-                                date_next => $self->date_next ? $self->date_next->ymd : Mojo::JSON->false,
+                                date_next => $self->date_next ? $self->date_next->format_cldr(q/EEE',' MMM d',' yyyy 'at' h':'mm':'ss/) : Mojo::JSON->false,
                                 datetime => $self->datetime,
                         },
                         play => $self->config('play'),
