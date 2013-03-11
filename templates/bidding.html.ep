@@ -150,14 +150,16 @@ function on_click_alert(data){
 		processHeader(0);
 		$("#dialog-alert").dialog({
 				autoOpen: false,
-				height: 320,
-				width: 380,
+				height: 240,
+				width: 520,
 				modal: true,
 				buttons: {
 					"Send Alert": function() {
 						$("#alert-set-alert").removeClass("ui-state-error");
 						$("#alert-set-msg").removeClass("ui-state-error");
 						$.post('/api/alert/'+$('input[name="alert-set-alert"]:checked').val(), {msg: $("#alert-set-msg").val()}, function(data){
+							processHeader(1);
+/*
 							if ( data.msg ) {
 								$('table.getalert').show();
 								$('#alert-get').html(data.msg);
@@ -167,6 +169,7 @@ function on_click_alert(data){
 							$('span.alert').each(function(){
 								if ($(this).hasClass('selected')){$(this).removeClass('selected');}
 							});
+*/
 						});
 						$(this).dialog("close");
 					},
@@ -201,11 +204,10 @@ function on_click_register(data) {
 				"Register": function(){
 					$(this).dialog("disable"); 
 					$(this).dialog({title: 'Register...'});
-					$.post('/api/request/newuser', {
-						value: $('#register-username').val()+":"+$('#register-bidder').val()+":"+$('#register-phone').val()
+					$.post('/api/request/newuser', {value: $('#register-username').val()+":"+$('#register-bidder').val()+":"+$('#register-phone').val()}, function(){
+						processHeader(1);
 					});
 					$(this).dialog("close");
-					processHeader(1);
 				},
 				Cancel: function(){$(this).dialog("close");}
 			},
@@ -236,21 +238,14 @@ function on_click_operator(data) {
 				"Bid": function(){
 					$(this).dialog("disable"); 
 					$(this).dialog({title: 'Bid...'});
-					$.post('/api/request/newbid', {
-						phone: $('#operator-phone').val(),
-						value: item_id+":"+$('#operator-bid').val(),
-						approve: 1,
-						success: function(data){
-							var json = $.toJSON(data);
-							$.post('/api/request/approve/'+data.request.request_id+'/1', {
-								success: function(){
-									$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
-								}
-							});
-						}
+					$.post('/api/request/newbid', {phone: $('#operator-phone').val(),value: item_id+":"+$('#operator-bid').val(),approve: 1}, function(data){
+						//var json = $.toJSON(data);
+						$.post('/api/request/approve/'+data.request.request_id+'/1', function(){
+							$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
+							processHeader(1);
+						});
+						$(this).dialog("close");
 					});
-					$(this).dialog("close");
-					processHeader(1);
 				},
 				Cancel: function(){$(this).dialog("close");}
 			},
@@ -274,14 +269,18 @@ function on_click_ident(data) {
 			},
 			buttons: {
 				"Identify": function(){
-					$(this).dialog("disable"); 
-					$(this).dialog({title: 'Identifying...'});
-					$.post('/api/ident', {
-						username: $('#ident-username').val(),
-						phone: $('#ident-phone').val()
+					var t = $(this);
+					t.dialog("disable"); 
+					t.dialog({title: 'Identifying...'});
+					$.post('/api/ident', {username: $('#ident-username').val(), phone: $('#ident-phone').val()}, function(data){
+						processHeader(1);
+						if ( data.username ) {
+							t.dialog("close");
+						} else {
+							t.dialog("disable"); 
+							t.dialog({title: 'Identify yourself'});
+						}
 					});
-					$(this).dialog("close");
-					processHeader(1);
 				},
 				Cancel: function(){$(this).dialog("close");}
 			},
@@ -295,8 +294,7 @@ function on_click_ident(data) {
 function on_click_unident(data){
 	$("#unident").click(function(){
 		processHeader(0);
-		$.get('/api/unident');
-		processHeader(1);
+		$.get('/api/unident', function(){processHeader(1);});
 	});
 }
 
@@ -319,11 +317,10 @@ function on_click_bid(data){
 				"Place Bid": function(){
 					$(this).dialog("disable"); 
 					$(this).dialog({title: 'Submitting bid...'});
-					$.post('/api/request/newbid', {
-						value: item_id+":"+$('#bid-bid').val()
+					$.post('/api/request/newbid', {value: item_id+":"+$('#bid-bid').val()}, function() {
+						processHeader(1);
 					});
 					$(this).dialog("close");
-					processHeader(1);
 				},
 				Cancel: function(){$(this).dialog("close");}
 			},
@@ -376,7 +373,7 @@ $(document).ready(function(){
 		</form>
 	</div>
 
-	<div id="dialog-operator" title="operator" class="modal">
+	<div id="dialog-operator" title="Operator" class="modal">
 		<form name="operator" action='/api/request/newbid' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-operator-title">Submit Bid</div></td></tr>
@@ -386,7 +383,7 @@ $(document).ready(function(){
 		</form>
 	</div>
 
-	<div id="dialog-register" title="register" class="modal">
+	<div id="dialog-register" title="Register" class="modal">
 		<form name="register" action='/api/request/newuser' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-register-title">Register</div></td></tr>
@@ -397,7 +394,7 @@ $(document).ready(function(){
 		</form>
 	</div>
 
-	<div id="dialog-ident" title="ident" class="modal">
+	<div id="dialog-ident" title="Identify yourself" class="modal">
 		<form name="ident" action='/api/ident' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-ident-title">Identify</div></td></tr>
@@ -407,7 +404,7 @@ $(document).ready(function(){
 		</form>
 	</div>
 
-	<div id="dialog-bid" title="bid" class="modal">
+	<div id="dialog-bid" title="Bid" class="modal">
 		<form name="bid" action='/api/request/newbid' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-bid-title">Submit Bid</div></td></tr>
@@ -418,12 +415,13 @@ $(document).ready(function(){
 
 
 	<textarea id="t_header" style="display:none">
-			{#if $T.about.bidder}
-				(<a id="unident" class="mast">Sign out</a>)*Beta
+			{#if $T.about.user}
+				<!-- (<a id="unident" class="mast">Sign out</a>)*Beta -->
+				<a id="unident" class="modal"><span class="hello">Hello, {$T.about.user.name}!</span></a>
+				{#if $T.about.user}<a href="/admin/bookmarks">Bookmarks</a>{#/if}
 			{#else}
 				(<a id="register" class="mast">Register!</a> |<a id="ident" class="mast">Sign in!</a>)*Beta
 			{#/if}
- 			{#if !$T.about.role}
 			<table class="header">
 				<tr>
 					<td class="mast">
@@ -433,11 +431,7 @@ $(document).ready(function(){
 							  {$T.about.datetime}
 							</tr></td>
 							% }
-							{#if $T.about.bidder}
-							<tr><td class="hello">
-								<a id="unident" class="modal"><span class="hello">Hello, {$T.about.bidder.name}!</span></a>
-							</tr></td>
-							{#/if}
+				 			{#if !$T.about.user || !$T.about.user.role}
 							<tr><td class="title">
 							{#if $T.about.live}
 								<span class="title">{$T.about.name} {$T.about.year} {$T.about.night?", Night " + $T.about.night:''} {$T.about.live?'':' (Offline)'}</span>
@@ -485,9 +479,11 @@ $(document).ready(function(){
 									</span>
 								</td>
 							</tr>
+							{#/if}
 						</table>
 					</td>
 				</tr>
+	 			{#if !$T.about.user || !$T.about.user.role}
 				{#if $T.about.live}
 				<tr>
 					<td class="ad">
@@ -505,8 +501,8 @@ $(document).ready(function(){
 					</td>
 				</tr>
 				{#/if}
+				{#/if}
 			</table>
-			{#/if}
 			{#if $T.alert.msg}
 			<table class="getalert">
 				<tr class="msg">
@@ -516,17 +512,17 @@ $(document).ready(function(){
 				</tr>
 			</table>
 			{#/if}
-			{#if $T.about.username=="admin"}
+			{#if $T.about.user.role=="admin"}
 			<div id="dialog-alert" title="Set Alert" class="modal">
 				<form>
 				<fieldset>
 					<label for="alert">Send Alert To</label>
-					<input type="radio" name="alert-set-alert" class="text ui-widget-content ui-corner-all" value="admin"/>Admins
-					<input type="radio" name="alert-set-alert" class="text ui-widget-content ui-corner-all" value="operator"/>Operators
-					<input type="radio" name="alert-set-alert" class="text ui-widget-content ui-corner-all" value="auctioneer"/>Auctioneers
-					<input type="radio" name="alert-set-alert" class="text ui-widget-content ui-corner-all" value="caller"/>Callers
-					<input type="radio" name="alert-set-alert" class="text ui-widget-content ui-corner-all" value="bellringer"/>Bellringers
-					<input type="radio" name="alert-set-alert" class="text ui-widget-content ui-corner-all" value="public"/>Public
+					<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="admin"/>Admins
+					<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="operator"/>Operators
+					<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="auctioneer"/>Auctioneers
+					<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="caller"/>Callers
+					<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="bellringer"/>Bellringers
+					<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="public"/>Public
 					<label for="msg">Message</label>
 					<input type="text" name="alert-set-msg" id="alert-set-msg" class="text ui-widget-content ui-corner-all" />
 				</fieldset>

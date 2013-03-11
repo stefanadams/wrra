@@ -53,7 +53,7 @@ $(document).ready(function(){
   </div>
   <h3>Auction Week</h3>
   <div>
-    <p><%= link_to 'Public View' => 'auction' => (class=>'disable') %></p>
+    <p><%= link_to 'Washington Rotary Radio Auction' => 'bidding' %></p>
     <p><%= link_to 'Sequence Items' => 'seq_items' %></p>
     <p><a class="disable" href="http://iis.radioauction.washingtonrotary.com/admin_auctioneer_a.asp">Auctioneer A</a></p>
     <p><a class="disable" href="http://iis.radioauction.washingtonrotary.com/admin_auctioneer_b.asp">Auctioneer B</a></p>

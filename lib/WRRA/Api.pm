@@ -35,23 +35,32 @@ sub register {
 
 sub ident {
 	my $self = shift;
+	warn 'Ident1: ', $self->is_user_authenticated, "\n";
+#warn Data::Dumper::Dumper([$self->session, $self->stash]);
 	$self->authenticate($self->param('username'), $self->param('phone'));
-	warn 'Ident: ', $self->is_user_authenticated, "\n";
+	warn 'Ident2: ', $self->is_user_authenticated, "\n";
+#warn Data::Dumper::Dumper([$self->session, $self->stash]);
 	$self->respond_to(
-		json => {json => {username => $self->current_user->{username}}},
+		json => {json => {username => $self->current_user?$self->current_user->{username}:Mojo::JSON->false}},
 	);
 }
 
 sub unident {
 	my $self = shift;
-	delete $self->session->{username};
+	warn 'Unident1: ', $self->is_user_authenticated, "\n";
+#warn Data::Dumper::Dumper([$self->session, $self->stash]);
+	$self->logout;
+	warn 'Unident2: ', $self->is_user_authenticated, "\n";
+#warn Data::Dumper::Dumper([$self->session, $self->stash]);
 	$self->respond_to(
-		json => {json => {username => $self->session->{username}}},
+		json => {json => {username => $self->current_user?$self->current_user->{username}:Mojo::JSON->false}},
 	);
 }
 
 sub header {
 	my $self = shift;
+	warn 'Header: ', $self->is_user_authenticated, "\n";
+#warn Data::Dumper::Dumper([$self->session, $self->stash]);
 	$self->respond_to(
 		json => {json => $self->header_data},
 	);

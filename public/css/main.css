@@ -81,6 +81,7 @@ table.body div.body_title {text-align: center; font-size: 14px; font-weight: bol
     a#paypal {color:white;text-decoration:underline;cursor:pointer;}
     a#register {color:white;text-decoration:underline;cursor:pointer;}
     a#ident {color:white;text-decoration:underline;cursor:pointer;}
+    a#unident {color:white;text-decoration:underline;cursor:pointer;}
     a#id {color:white;text-decoration:underline;cursor:pointer;}
     img.arrowsep {padding-left:15px;padding-right:15px}
 	#ad img {width:960px;height:100px}

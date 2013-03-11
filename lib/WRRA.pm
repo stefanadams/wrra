@@ -30,7 +30,6 @@ sub startup {
 		'session_key' => 'fifdhiwfiwhgfyug38g3iuhe8923oij20',
 		'load_user' => sub {
 			my ($c, $username) = @_;
-warn "Load: $username\n";
 			if ( exists $c->config->{users}->{$username} ) {
 				return {username=>$username,name=>$username};
 			} else {
@@ -41,7 +40,6 @@ warn "Load: $username\n";
 		},
 		'validate_user' => sub {
 			my ($c, $username, $password, $extradata) = @_;
-warn "Validate: $username\n";
 			return undef unless defined $username;
 			if ( exists $c->config->{users}->{$username} ) {
 				return $username if $password eq $c->config->{users}->{$username};
@@ -54,29 +52,28 @@ warn "Validate: $username\n";
 	$self->plugin('authorization', {
 		has_priv => sub {
 			my ($c, $priv, $extradata) = @_;
-warn "Has Priv: $priv\n";
-			return undef unless $c->is_user_authenticated;
+			return 0 unless $c->is_user_authenticated;
 			return 0 unless $c->config->{groups};
                         return 1 if $c->current_user->{username} eq $priv || grep { $_ eq $c->current_user->{username} } _expand_group($c->config->{groups}, $priv);
 			return 0;
 		},
 		is_role => sub {
 			my ($c, $role, $extradata) = @_;
-warn "Is Role: $role\n";
-			return undef unless $c->is_user_authenticated;
+warn 2;
+			return 0 unless $c->is_user_authenticated;
 			return 0 unless $c->config->{groups};
                         return 1 if $c->current_user->{username} eq $role || grep { $_ eq $c->current_user->{username} } _expand_group($c->config->{groups}, $role);
 			return 0;
 		},
 		user_privs => sub {
 			my ($c, $extradata) = @_;
-warn "Priv\n";
+warn 3;
 			return undef unless $c->is_user_authenticated;
 			return $c->current_user->{username};
 		},
 		user_role => sub {
 			my ($c, $extradata) = @_;
-warn "Role\n";
+warn 4;
 			return undef unless $c->is_user_authenticated;
 			return $c->current_user->{username};
 		},
@@ -114,7 +111,7 @@ sub setup_routing {
 	$api->any('/register')->to('api#register');
 	$api->any('/ident')->to('api#ident');
 	$api->any('/unident')->to('api#unident');
-	$api->any('/alert')->to('api#alert');
+	$api->any('/alert/:alert', {alert=>undef})->to('api#alert');
 	$api->get('/ad/:id')->to('api#ad');
 	$api->get('/header')->to('api#header');
 	my $config = $api->under('/dbconfig');
@@ -134,7 +131,7 @@ sub setup_routing {
 	my $bs = $api->under('/bs');
 	$bs->build_select([Rotarians => 'Rotarian']);
 
-	my $admin = $r->under('/admin');
+	my $admin = $r->under('/admin')->over(has_priv=>'admin');
 	$admin->jqgrid([Rotarians => 'Rotarian']);
 	$admin->jqgrid([Donors => 'Donor'])->dbroute(['/items' => DonorItems => 'Item'], {jqgrid => 'read'});
 	$admin->jqgrid([Stockitems => 'Stockitem']);

@@ -73,8 +73,6 @@ sub register {
 	});
 	$app->helper(header_data => sub {
 		my $c = shift;
-warn $c->is_user_authenticated;
-#warn $c->current_user->{name};
 		return {
 			about => {
 				$c->is_user_authenticated
@@ -93,7 +91,7 @@ warn $c->is_user_authenticated;
 			},
 			play => $c->config('play'),
 			alert => {
-				msg => eval { $c->db->resultset('Alert')->search({alert=>'public'})->first->msg } || '',
+				msg => eval { $c->db->resultset('Alert')->search({alert=>[$c->privileges||'public']})->first->msg } || '',
 			},
 			ads => {
 				ad => _display_ad($c),
