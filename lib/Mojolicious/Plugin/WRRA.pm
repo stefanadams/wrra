@@ -34,7 +34,7 @@ sub register {
 	$app->helper(auctions => sub {
 		my ($c, $year) = @_;   
 		my $range = $c->config->{auctions}->{$c->years($year)->[0]} or return wantarray ? () : [];
-		my @auctions = grep { $c->datetime < $c->hours($_->ymd)->[0] } $c->range($range);
+		my @auctions = grep { $c->datetime < $c->hours($_->ymd)->[1] } $c->range($range);
 		#warn Data::Dumper::Dumper({auctions=>[map { $_->ymd } @auctions]});
 		return wantarray ? @auctions : [@auctions];
 	});
@@ -67,7 +67,7 @@ sub register {
 		return 1 if $c->app->mode ne 'development' && $c->config->{closed};
 		return 1 unless @{$c->hours};
 		my $closed = $c->datetime >= $c->hours($c->auctions->[0])->[0] && $c->datetime <= $c->hours($c->auctions->[0])->[1] ? 0 : 1;
-		warn Data::Dumper::Dumper({closed=>$closed, hours=>[$c->hours->[0]->datetime, $c->hours->[1]->datetime]});
+		#warn Data::Dumper::Dumper({closed=>$closed, hours=>[$c->hours->[0]->datetime, $c->hours->[1]->datetime]});
 		return $closed;
 	});
 }

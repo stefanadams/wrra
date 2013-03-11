@@ -11,6 +11,7 @@ sub register {
 
     $app->hook(after_dispatch => sub {
             my $c = shift;
+            return if $ENV{MOJO_TEST};
             # As "defaults" values are not deep-copied, setting a hashref there
             # would just copy that hashref and stash modifications would actually
             # modify the defaults.
