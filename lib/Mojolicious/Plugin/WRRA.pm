@@ -93,9 +93,7 @@ sub register {
 			alert => {
 				msg => eval { $c->db->resultset('Alert')->search({alert=>[$c->privileges||'public']})->first->msg } || '',
 			},
-			ads => {
-				ad => _display_ad($c),
-			},
+			! $c->role ? (ads => {ad => _display_ad($c)}) : (),
 		};
 	});
 }

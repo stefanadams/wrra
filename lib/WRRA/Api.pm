@@ -41,7 +41,7 @@ sub ident {
 	warn 'Ident2: ', $self->is_user_authenticated, "\n";
 #warn Data::Dumper::Dumper([$self->session, $self->stash]);
 	$self->respond_to(
-		json => {json => {username => $self->current_user?$self->current_user->{username}:Mojo::JSON->false}},
+		json => {json => {user => {name => $self->current_user?$self->current_user->{username}:Mojo::JSON->false, role=>$self->role||Mojo::JSON->false}}},
 	);
 }
 
@@ -53,7 +53,7 @@ sub unident {
 	warn 'Unident2: ', $self->is_user_authenticated, "\n";
 #warn Data::Dumper::Dumper([$self->session, $self->stash]);
 	$self->respond_to(
-		json => {json => {username => $self->current_user?$self->current_user->{username}:Mojo::JSON->false}},
+		json => {json => {user => {name => $self->current_user?$self->current_user->{username}:Mojo::JSON->false, role=>$self->role||Mojo::JSON->false}}},
 	);
 }
 

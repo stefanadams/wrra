@@ -39,7 +39,7 @@ sub _fakebidding {
 	} elsif ( int(rand(99)) < 25 ) {
 		$row->{status} = 'OnDeck';
 		$row->{auctioneer} = int(rand(99)) < 50 ? 'a' : 'b';
-	} elsif ( int(rand(99)) < 100 ) {
+	} elsif ( int(rand(99)) < 70 ) {
 		$row->{status} = 'Bidding';
 		push @notify, 'newbid' if int(rand(99)) < 20;
 		if ( int(rand(99)) < 25 ) {
@@ -54,13 +54,21 @@ sub _fakebidding {
 		$row->{timer} = int(rand(99)) < 20 ? 1 : 0;
 	} elsif ( int(rand(99)) < 25 ) {
 		$row->{status} = 'Sold';
+		$row->{highbid}->{bid} = $row->{highbid}->{bid} =~ /\d/ ? $row->{highbid}->{bid} : $row->{value} - 10 + int(rand(15));
+		$row->{bellringer} = $row->{highbid}->{bid} >= $row->{value};
+		$row->{highbid}->{bidder}->{name} = substr($row->{donor}->{name}, 0, 18);
+		$row->{timer} = 1;
 	} elsif ( int(rand(99)) < 25 ) {
 		$row->{status} = 'Complete';
+		$row->{highbid}->{bid} = $row->{highbid}->{bid} =~ /\d/ ? $row->{highbid}->{bid} : $row->{value} - 10 + int(rand(15));
+		$row->{bellringer} = $row->{highbid}->{bid} >= $row->{value};
+		$row->{highbid}->{bidder}->{name} = substr($row->{donor}->{name}, 0, 18);
+		$row->{timer} = 1;
 	}
-	$row->{description} ||= int(rand(99)) < 20 ? 'Fuller description' : undef;
+	$row->{description} = int(rand(99)) < 40 ? 'Fuller description' : undef;
 	$row->{url} ||= int(rand(99)) < 20 ? 'http://google.com' : undef;
 	$row->{donor}->{url} ||= int(rand(99)) < 20 ? 'http://google.com' : undef;
-	$row->{img} ||= int(rand(99)) < 20 ? 'http://dev.washingtonrotary.com/rra/img/right_arrow_button.gif' : undef;
+	$row->{img} ||= int(rand(99)) < 20 ? '/img/yes.gif' : undef;
 	$row->{notify} = join ',', @notify;
 	return $row;
 }
