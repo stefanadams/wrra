@@ -4,6 +4,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 use List::MoreUtils qw(firstidx);
 #use DateTime;
 #use DateTime::Format::DateParse;
+use DateTime::Format::MySQL;
 
 sub register {
 	my ($self, $app, $conf) = @_;
@@ -72,8 +73,16 @@ sub register {
 	});
 	$app->helper(header_data => sub {
 		my $c = shift;
+warn $c->is_user_authenticated;
+#warn $c->current_user->{name};
 		return {
 			about => {
+				$c->is_user_authenticated
+					? (user => {
+						name => $c->current_user->{name} || Mojo::JSON->false,
+						role => $c->role || Mojo::JSON->false,
+					  })
+					: (),
 				name => 'Washington Rotary Radio Auction',
 				year => $c->datetime->year,
 				night => defined $c->night ? $c->night : Mojo::JSON->false,
@@ -97,25 +106,26 @@ sub _display_ad {
         my $self = shift;
         my $adsdir = join '/', $self->app->home, 'public', ($self->config('ads') || 'ads');
         my $adsurl = join '/', ($self->config('ads') || 'ads');
-        return $self->session->{ad} if $self->session->{ad_ctime} && time-$self->session->{ad_ctime}<=10;
+        return $self->session->{ad} if $self->session->{ad_ctime} && time-$self->session->{ad_ctime} <= ($self->config->{refresh}->{ad} || 30000) / 1000;
         $self->session->{ad_ctime} = time;
 
         my $ad;
         foreach my $_ad ( $self->db->resultset('Ads')->today->random->all ) {
                 $ad = {map { $_ => $_ad->$_ } qw/url year advertiser_id ad_id/};
+		next if $ad->{ad_id} == $self->session->{ad}->{ad_id};
                 my $r;
-                if ( $r = $self->db->resultset('Adcount')->find($ad->{ad_id}, \'=cast(now() as date)') ) {
-                        $r->update({rotate=>$r->rotate+1});
-                } elsif ( $r = $self->db->resultset('Adcount')->new({ad_id=>$ad->{ad_id}, processed=>\'now()', rotate=>1}) ) {
+                if ( $r = $self->db->resultset('Adcount')->find($ad->{ad_id}, $self->datetime->ymd) ) {
+                        $r->update({rotate=>($r->rotate||0)+1});
+                } elsif ( $r = $self->db->resultset('Adcount')->new({ad_id=>$ad->{ad_id}, processed=>$self->datetime->ymd, rotate=>1}) ) {
                         $r->insert;
                 }
+		next unless $r;
                 $ad->{img} = (glob("$adsdir/$ad->{year}/$ad->{advertiser_id}-$ad->{ad_id}.*"))[0] || (glob("$adsdir/$ad->{year}/$ad->{advertiser_id}.*"))[0] if $ad->{advertiser_id} && $ad->{ad_id};
                 $ad->{img} && -e $ad->{img} && -f _ && -r _ && do {
                         $ad->{img} =~ s/^$adsdir\/?// or $ad->{img} = undef;
                         $ad->{img} = join '/', '', $adsurl, $ad->{img} if $ad->{img};
-                        $ad->{refresh} = 1;
-                        $r->update({display=>$r->display+1});
-                        last;
+                        $r->update({display=>($r->display||0)+1}) and last;
+			delete $ad->{ad_id};
                 }
         }
         unless ( $ad->{ad_id} && $ad->{img} && $ad->{url} ) {
@@ -124,7 +134,9 @@ sub _display_ad {
                 $ad->{img} = $adsdir.'/'.$self->config->{default_ad}->{img};
                 $ad->{url} = $self->config->{default_ad}->{url};
         }
-        return $self->session->{ad} = $ad;
+        $self->session->{ad} = $ad;
+        $ad->{refresh} = 1;
+	return $ad;
 }
 
 1;

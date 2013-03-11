@@ -25,10 +25,75 @@ sub startup {
 	$self->plugin('BuildSelect');
 	$self->plugin('Jqgrid');
 	$self->plugin('WRRA');
+	$self->plugin('authentication' => {
+		'autoload_user' => 1,
+		'session_key' => 'fifdhiwfiwhgfyug38g3iuhe8923oij20',
+		'load_user' => sub {
+			my ($c, $username) = @_;
+warn "Load: $username\n";
+			if ( exists $c->config->{users}->{$username} ) {
+				return {username=>$username,name=>$username};
+			} else {
+				my $r = $c->db->resultset('Bidder')->current_year->find({username=>$username});
+				return {username=>$r->username, name=>$r->name};
+			}
+			return undef;
+		},
+		'validate_user' => sub {
+			my ($c, $username, $password, $extradata) = @_;
+warn "Validate: $username\n";
+			return undef unless defined $username;
+			if ( exists $c->config->{users}->{$username} ) {
+				return $username if $password eq $c->config->{users}->{$username};
+			} else {
+				return $username if $c->db->resultset('Bidder')->current_year->find({username=>$username, phone=>$password});
+			}
+			return undef;
+		},
+	});
+	$self->plugin('authorization', {
+		has_priv => sub {
+			my ($c, $priv, $extradata) = @_;
+warn "Has Priv: $priv\n";
+			return undef unless $c->is_user_authenticated;
+			return 0 unless $c->config->{groups};
+                        return 1 if $c->current_user->{username} eq $priv || grep { $_ eq $c->current_user->{username} } _expand_group($c->config->{groups}, $priv);
+			return 0;
+		},
+		is_role => sub {
+			my ($c, $role, $extradata) = @_;
+warn "Is Role: $role\n";
+			return undef unless $c->is_user_authenticated;
+			return 0 unless $c->config->{groups};
+                        return 1 if $c->current_user->{username} eq $role || grep { $_ eq $c->current_user->{username} } _expand_group($c->config->{groups}, $role);
+			return 0;
+		},
+		user_privs => sub {
+			my ($c, $extradata) = @_;
+warn "Priv\n";
+			return undef unless $c->is_user_authenticated;
+			return $c->current_user->{username};
+		},
+		user_role => sub {
+			my ($c, $extradata) = @_;
+warn "Role\n";
+			return undef unless $c->is_user_authenticated;
+			return $c->current_user->{username};
+		},
+	});
 
 	$self->setup_routing;
 
 	$self->plugin('AutoRoute', {route => $self->routes});
+}
+
+sub _expand_group {
+        my ($groups, $group) = @_;
+
+        my %groups = %$groups;
+        $group =~ s/^://;
+        push @{$groups{$group}}, _expand_group(\%groups, $_) foreach grep { /^:/ } @{$groups{$group}};
+        return grep { /^(?!:)/ } @{$groups{$group}};
 }
 
 sub setup_routing {
@@ -46,6 +111,9 @@ sub setup_routing {
 	$r->get('/bookmarks')->to(cb=>sub{shift->redirect_to('/admin/bookmarks')});
 
 	my $api = $r->under('/api');
+	$api->any('/register')->to('api#register');
+	$api->any('/ident')->to('api#ident');
+	$api->any('/unident')->to('api#unident');
 	$api->any('/alert')->to('api#alert');
 	$api->get('/ad/:id')->to('api#ad');
 	$api->get('/header')->to('api#header');

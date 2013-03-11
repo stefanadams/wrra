@@ -22,6 +22,34 @@ sub build_select {
 	$self->render(rs => [$self->bs($self->db->resultset($self->param('results')))->all]);
 }
 
+sub register {
+	my $self = shift;
+	return $self->render_json({res=>'err',msg=>'Missing username'}) unless $self->param('username');
+	return $self->render_json({res=>'err',msg=>'Missing name'}) unless $self->param('name');
+	return $self->render_json({res=>'err',msg=>'Missing phone'}) unless $self->param('phone');
+	my $r = $self->db->resultset('Bidder')->create({username_r=>$self->param('username'),name=>$self->param('name'),phone=>$self->param('phone')});
+	$self->respond_to(
+		json => {json => {res => 'ok'}},
+	);
+}
+
+sub ident {
+	my $self = shift;
+	$self->authenticate($self->param('username'), $self->param('phone'));
+	warn 'Ident: ', $self->is_user_authenticated, "\n";
+	$self->respond_to(
+		json => {json => {username => $self->current_user->{username}}},
+	);
+}
+
+sub unident {
+	my $self = shift;
+	delete $self->session->{username};
+	$self->respond_to(
+		json => {json => {username => $self->session->{username}}},
+	);
+}
+
 sub header {
 	my $self = shift;
 	$self->respond_to(

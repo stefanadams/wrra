@@ -30,7 +30,7 @@ function processHeader(value) {
 			on_success: function(data){
 				var msg=$('#alert-get').html();
 				if (msg){
-					if (msg != c_response && allowHumanMsg){$(window).humanMsg(msg, {autoHide: 3*1000});}
+					if (msg != c_response && allowHumanMsg){$(window).humanMsg(msg, {autoHide: 2.25*1000});}
 					allowHumanMsg = 1;
 					c_response = msg;
 					$('table.getalert').show();
@@ -276,7 +276,7 @@ function on_click_ident(data) {
 				"Identify": function(){
 					$(this).dialog("disable"); 
 					$(this).dialog({title: 'Identifying...'});
-					$.post('/api/identify', {
+					$.post('/api/ident', {
 						username: $('#ident-username').val(),
 						phone: $('#ident-phone').val()
 					});
@@ -295,7 +295,7 @@ function on_click_ident(data) {
 function on_click_unident(data){
 	$("#unident").click(function(){
 		processHeader(0);
-		$.post('/api/identify', {});
+		$.get('/api/unident');
 		processHeader(1);
 	});
 }
@@ -335,6 +335,10 @@ function on_click_bid(data){
 }
 
 $(document).ready(function(){
+	$.ajaxSetup({
+		headers: {Accept: 'application/json'},
+	});
+
 	$("#header").setTemplateElement("t_header", null, {runnable_functions: true});
 	processHeader(1);
 
@@ -353,7 +357,7 @@ $(document).ready(function(){
 	</div>
 	<br /><br />
 
-	<a id="register" style="color:black">.</a> <a id="ident" style="color:black">.</a>
+	<!-- <a id="register" style="color:black">.</a> <a id="ident" style="color:black">.</a> -->
 
 	<div id="footergroup">
 	</div>
@@ -394,7 +398,7 @@ $(document).ready(function(){
 	</div>
 
 	<div id="dialog-ident" title="ident" class="modal">
-		<form name="ident" action='/api/identify' method='post'>
+		<form name="ident" action='/api/ident' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-ident-title">Identify</div></td></tr>
 				<tr><td>Username</td><td><input id="ident-username" type='text' name='ident-username' maxlength='60' value='Username' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
@@ -414,7 +418,9 @@ $(document).ready(function(){
 
 
 	<textarea id="t_header" style="display:none">
-			{#if !$T.about.bidder.name}
+			{#if $T.about.bidder}
+				(<a id="unident" class="mast">Sign out</a>)*Beta
+			{#else}
 				(<a id="register" class="mast">Register!</a> |<a id="ident" class="mast">Sign in!</a>)*Beta
 			{#/if}
  			{#if !$T.about.role}
@@ -427,7 +433,7 @@ $(document).ready(function(){
 							  {$T.about.datetime}
 							</tr></td>
 							% }
-							{#if $T.about.bidder.name}
+							{#if $T.about.bidder}
 							<tr><td class="hello">
 								<a id="unident" class="modal"><span class="hello">Hello, {$T.about.bidder.name}!</span></a>
 							</tr></td>
@@ -554,10 +560,10 @@ $(document).ready(function(){
 							<div col="item">
 							<div style="float:left;width:80%">
 							{#if $T.r.auctioneer}<img src="img/{$T.r.auctioneer}.gif" />{#/if}
-							{#if $T.about.role=="operator"}
-1								<a id="bid" class="modal" item_id="{$T.r.id}" number="{$T.r.number}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+							{#if $T.header.about.role=="operator"}
+								<a id="bid" class="modal" item_id="{$T.r.id}" number="{$T.r.number}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 							{#else}
-2								<span class="item number">{$T.r.number}</span><span class="item">:</span>
+								<span class="item number">{$T.r.number}</span><span class="item">:</span>
 							{#/if}
 							{#if $T.r.url}<a href="{$T.r.url}" target="_new">{#/if}
 							<span class="item name truncate" length="70" itemid="{$T.r.id}">{$T.r.name}</span>
