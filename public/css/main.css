@@ -99,7 +99,7 @@ input.text { margin-bottom:12px; width:95%; padding: .4em; }
 fieldset { padding:0; border:0; margin-top:25px; }
 
 
-table.mast td.title span {display:block;}
+#table.mast td.title span {display:block;}
 table.closed {width:95%;border-collapse:collapse;margin-left:auto;margin-right:auto}
 table.closed tr.highlight {background-color:#bbb}
 table.closed td {border:thin solid black;padding-left:5px;padding-right:5px;padding-top:2px;padding-bottom:2px}

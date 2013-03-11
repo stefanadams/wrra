@@ -15,7 +15,7 @@ sub read {
 		$_->{notify} = {map { $_ => 1 } split /,/, $_->{notify}};
 	}
 	$self->respond_to(
-		json => {json => {bidding=>{rows=>$bidding}}},
+		json => {json => $self->closed ? {} : {bidding=>{rows=>$bidding}} },
 	);
 }
 
