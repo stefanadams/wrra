@@ -7,15 +7,25 @@ sub read {
 	my $self = shift;
 	my $rs = $self->db->resultset($self->param('results'))->current_year->not_ready;
 	my $bidding = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
+        my $photosdir = join '/', $self->app->home, 'public', ($self->config('photos') || 'photos');
+        my $photosurl = join '/', ($self->config('photos') || 'photos');
 	foreach ( @$bidding ) {
 		# if((find_in_set('newbid',`items`.`notify`) > 0),1,NULL) `newbid`
 		# if((`items`.`status` = 'Sold'),1,NULL) `sold`
-		$_->{img} = (glob($self->config('photos').'/'.$self->db->session->{year}."/$_->{number}.*"))[0] if $_->{number};
+                $_->{img} = (glob("$photosdir/$_->{year}/$_->{number}.*"))[0] if $_->{number};
+                $_->{img} && -e $_->{img} && -f _ && -r _ && do {
+                        $_->{img} =~ s/^$photosdir\/?// or $_->{img} = undef;
+                        $_->{img} = join '/', '', $photosurl, $_->{img} if $_->{img};
+                        last;
+                };
 		$_ = $self->_fakebidding($_);
 		$_->{notify} = {map { $_ => 1 } split /,/, $_->{notify}};
 	}
 	$self->respond_to(
-		json => {json => $self->closed ? {} : {bidding=>{rows=>$bidding}} },
+		json => {json => {
+			header => $self->header_data,
+			$self->closed ? () : (bidding=>{rows=>$bidding}),
+		}},
 	);
 }
 

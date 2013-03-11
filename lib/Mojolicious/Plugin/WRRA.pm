@@ -70,6 +70,61 @@ sub register {
 		#warn Data::Dumper::Dumper({closed=>$closed, hours=>[$c->hours->[0]->datetime, $c->hours->[1]->datetime]});
 		return $closed;
 	});
+	$app->helper(header_data => sub {
+		my $c = shift;
+		return {
+			about => {
+				name => 'Washington Rotary Radio Auction',
+				year => $c->datetime->year,
+				night => defined $c->night ? $c->night : Mojo::JSON->false,
+				closed => $c->closed,
+				live => $c->closed ? 0 : 1,
+				date_next => $c->date_next ? $c->date_next->format_cldr(q/EEE',' MMM d',' yyyy 'at' h':'mm':'ss/) : Mojo::JSON->false,
+				datetime => $c->datetime,
+			},
+			play => $c->config('play'),
+			alert => {
+				msg => eval { $c->db->resultset('Alert')->search({alert=>'public'})->first->msg } || '',
+			},
+			ads => {
+				ad => _display_ad($c),
+			},
+		};
+	});
+}
+
+sub _display_ad {
+        my $self = shift;
+        my $adsdir = join '/', $self->app->home, 'public', ($self->config('ads') || 'ads');
+        my $adsurl = join '/', ($self->config('ads') || 'ads');
+        return $self->session->{ad} if $self->session->{ad_ctime} && time-$self->session->{ad_ctime}<=10;
+        $self->session->{ad_ctime} = time;
+
+        my $ad;
+        foreach my $_ad ( $self->db->resultset('Ads')->today->random->all ) {
+                $ad = {map { $_ => $_ad->$_ } qw/url year advertiser_id ad_id/};
+                my $r;
+                if ( $r = $self->db->resultset('Adcount')->find($ad->{ad_id}, \'=cast(now() as date)') ) {
+                        $r->update({rotate=>$r->rotate+1});
+                } elsif ( $r = $self->db->resultset('Adcount')->new({ad_id=>$ad->{ad_id}, processed=>\'now()', rotate=>1}) ) {
+                        $r->insert;
+                }
+                $ad->{img} = (glob("$adsdir/$ad->{year}/$ad->{advertiser_id}-$ad->{ad_id}.*"))[0] || (glob("$adsdir/$ad->{year}/$ad->{advertiser_id}.*"))[0] if $ad->{advertiser_id} && $ad->{ad_id};
+                $ad->{img} && -e $ad->{img} && -f _ && -r _ && do {
+                        $ad->{img} =~ s/^$adsdir\/?// or $ad->{img} = undef;
+                        $ad->{img} = join '/', '', $adsurl, $ad->{img} if $ad->{img};
+                        $ad->{refresh} = 1;
+                        $r->update({display=>$r->display+1});
+                        last;
+                }
+        }
+        unless ( $ad->{ad_id} && $ad->{img} && $ad->{url} ) {
+                $ad->{ad_id} = $self->config->{default_ad}->{ad_id};
+                $ad->{advertiser_id} = $self->config->{default_ad}->{advertiser_id};
+                $ad->{img} = $adsdir.'/'.$self->config->{default_ad}->{img};
+                $ad->{url} = $self->config->{default_ad}->{url};
+        }
+        return $self->session->{ad} = $ad;
 }
 
 1;

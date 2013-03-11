@@ -47,6 +47,13 @@ function processHeader(value) {
 
 				on_click_livechat();
 				on_click_paypal();
+				on_click_alert();
+				on_click_clearalert();
+				on_click_register();
+				on_click_operator();
+				on_click_bid();
+				on_click_ident();
+				on_click_unident();
 
 				return true;
 			}
@@ -127,6 +134,7 @@ function on_click_paypal(data) {
 
 function on_click_clearalert(data){
 	$("#clearalert").click(function(){
+		console.log('clearalert');
 		processHeader(0);
 		$.ajax({
 			url: '/api/alert',
@@ -138,6 +146,7 @@ function on_click_clearalert(data){
 
 function on_click_alert(data){
 	$("table.setalert span.alert").click(function(){
+		console.log('alert');
 		processHeader(0);
 		$("#dialog-alert").dialog({
 				autoOpen: false,
@@ -177,6 +186,7 @@ function on_click_alert(data){
 
 function on_click_register(data) {
 	$("#register").click(function(){
+		console.log('register');
 		processHeader(0);
 		// Abort if id'd
 		$("#dialog-register").dialog({
@@ -229,15 +239,15 @@ function on_click_operator(data) {
 					$.post('/api/request/newbid', {
 						phone: $('#operator-phone').val(),
 						value: item_id+":"+$('#operator-bid').val(),
-						approve: 1
-//						success: function(data){
-//							var json = $.toJSON(data);
-//							$.post('/api/request/approve/'+data.request.request_id+'/1', {
-//								success: function(){
-//									$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
-//								}
-//							});
-//						}
+						approve: 1,
+						success: function(data){
+							var json = $.toJSON(data);
+							$.post('/api/request/approve/'+data.request.request_id+'/1', {
+								success: function(){
+									$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
+								}
+							});
+						}
 					});
 					$(this).dialog("close");
 					processHeader(1);
@@ -271,7 +281,7 @@ function on_click_ident(data) {
 						phone: $('#ident-phone').val()
 					});
 					$(this).dialog("close");
-//					processHeader(1);
+					processHeader(1);
 				},
 				Cancel: function(){$(this).dialog("close");}
 			},
@@ -342,9 +352,9 @@ $(document).ready(function(){
 		<div id="bidding"></div>
 	</div>
 	<br /><br />
-<!--
+
 	<a id="register" style="color:black">.</a> <a id="ident" style="color:black">.</a>
--->
+
 	<div id="footergroup">
 	</div>
 
@@ -362,9 +372,8 @@ $(document).ready(function(){
 		</form>
 	</div>
 
-<!--
 	<div id="dialog-operator" title="operator" class="modal">
-		<form name="operator" action='pl/request/newbid' method='post'>
+		<form name="operator" action='/api/request/newbid' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-operator-title">Submit Bid</div></td></tr>
 				<tr><td>Phone</td><td><input id="operator-phone" type='text' name='operator-phone' maxlength='60' value='Phone' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
@@ -374,7 +383,7 @@ $(document).ready(function(){
 	</div>
 
 	<div id="dialog-register" title="register" class="modal">
-		<form name="register" action='pl/request/newuser' method='post'>
+		<form name="register" action='/api/request/newuser' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-register-title">Register</div></td></tr>
 				<tr><td>Username</td><td><input id="register-username" type='text' name='register-username' maxlength='60' value='Username' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
@@ -385,7 +394,7 @@ $(document).ready(function(){
 	</div>
 
 	<div id="dialog-ident" title="ident" class="modal">
-		<form name="ident" action='pl/identify' method='post'>
+		<form name="ident" action='/api/identify' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-ident-title">Identify</div></td></tr>
 				<tr><td>Username</td><td><input id="ident-username" type='text' name='ident-username' maxlength='60' value='Username' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
@@ -395,20 +404,20 @@ $(document).ready(function(){
 	</div>
 
 	<div id="dialog-bid" title="bid" class="modal">
-		<form name="bid" action='pl/request/newbid' method='post'>
+		<form name="bid" action='/api/request/newbid' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-bid-title">Submit Bid</div></td></tr>
 				<tr><td>Amount</td><td><input id="bid-bid" type='text' name='bid-bid' maxlength='60' value='Amount' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
 			</table>
 		</form>
 	</div>
--->
-<!--
-	{#if !$T.about.bidder}
-		(<a id="register" class="mast">Register!</a> |<a id="ident" class="mast">Sign in!</a>)*Beta
-	{#/if}
--->
+
+
 	<textarea id="t_header" style="display:none">
+			{#if !$T.about.bidder.name}
+				(<a id="register" class="mast">Register!</a> |<a id="ident" class="mast">Sign in!</a>)*Beta
+			{#/if}
+ 			{#if !$T.about.role}
 			<table class="header">
 				<tr>
 					<td class="mast">
@@ -482,7 +491,7 @@ $(document).ready(function(){
 									{#if $T.ads.ad.ad_id && $T.ads.ad.img}
 										<a href="/api/ad/{$T.ads.ad.ad_id}" target="_new"><img src="{$T.ads.ad.img}" border="0" /></a>
 									{#else}
-										<a href="http://www.washingtonrotary.com" target="_new"><img src="/ads/washrotary.jpg" border="0" /></a>
+										<a href="<%= app->config->{default_ad}->{url} %>" target="_new"><img src="/ads/<%= app->config->{default_ad}->{img} %>" border="0" /></a>
 									{#/if}
 								</td>
 							</tr>
@@ -491,6 +500,7 @@ $(document).ready(function(){
 				</tr>
 				{#/if}
 			</table>
+			{#/if}
 			{#if $T.alert.msg}
 			<table class="getalert">
 				<tr class="msg">
@@ -526,9 +536,6 @@ $(document).ready(function(){
 			{#/if}
 	</textarea>
 
-<!--
-	<a id="bid" class="modal" item_id="{$T.r.item_id}" number="{$T.r.number}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
--->
 	<textarea id="t_bidding" style="display:none">
 		{#if $T.bidding}
 			<table id='itemsbidding' class="items bidding tablesorter">
@@ -547,7 +554,11 @@ $(document).ready(function(){
 							<div col="item">
 							<div style="float:left;width:80%">
 							{#if $T.r.auctioneer}<img src="img/{$T.r.auctioneer}.gif" />{#/if}
-							<span class="item number">{$T.r.number}</span><span class="item">:</span>
+							{#if $T.about.role=="operator"}
+1								<a id="bid" class="modal" item_id="{$T.r.id}" number="{$T.r.number}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+							{#else}
+2								<span class="item number">{$T.r.number}</span><span class="item">:</span>
+							{#/if}
 							{#if $T.r.url}<a href="{$T.r.url}" target="_new">{#/if}
 							<span class="item name truncate" length="70" itemid="{$T.r.id}">{$T.r.name}</span>
 							{#if $T.r.url}</a>{#/if}
