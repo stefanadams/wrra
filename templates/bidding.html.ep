@@ -22,90 +22,97 @@ var c_response = '';
 var alert;
 var alert_msg;
 
-function header_success(data){
-	var msg=$('#alert-get').html();
-	if (msg){
-		if (msg != c_response && allowHumanMsg){$(window).humanMsg(msg, {autoHide: 3*1000});}
-		allowHumanMsg = 1;
-		c_response = msg;
-		$('table.getalert').show();
-	} else {
-		$('table.getalert').hide();
-	}
-	var headergroupHeight = 0;
-	$('#header').not(':hidden').each(function(){headergroupHeight = headergroupHeight + $(this).height() + 10;});   // Add 10 for the 10px padding in #header
-	$('table.setalert tr.alert').not(':hidden').each(function(){headergroupHeight = headergroupHeight + $(this).height();});
-	$('table.setalert tr.msg').not(':hidden').each(function(){headergroupHeight = headergroupHeight + $(this).height();});
-	$('table.getalert').not(':hidden').each(function(){headergroupHeight = headergroupHeight + $(this).height();});
-	$('body').css('height', ($('body').height()-headergroupHeight-50)+'px');    // Sub 50 for the body bottom padding
-	$('body').css('padding-top', headergroupHeight+'px');
-	return true;
-}
-$(document).ready(function(){
-	$("#header").setTemplateElement("t_header", null, {runnable_functions: true});
-	$("#header").processTemplateStart("/api/header", null, 17500, null, {
-		type: 'GET',
-		headers: {Accept: 'application/json'},
-		on_success: function(data){header_success(data);}
-	});
-
-	$("#bidding").setTemplateElement("t_bidding", null, {runnable_functions: true});
-	$("#bidding").processTemplateStart("<%= url_for %>", null, 10000, null, {
-		type: 'POST',
-		headers: {Accept: 'application/json'},
-		on_success: function(data){
-			if (!!$(this).attr('item') && $(this).find('span.truncate').html().length > $(this).find('span.truncate').attr("length")){content.push($(this).attr('item'));}
-			if (!!$(this).attr('message') && $(this).find('span.truncate').html().length > $(this).find('span.truncate').attr("length")){content.push($(this).attr('message'));}
-
-			$('span.truncate').each(function(){
-				var text = $(this).html();
-				var len = $(this).attr('length') || 50;
-				text = text.length > len ? text.substring(0,len)+'... <a href="tooltip.html?item_id='+$(this).attr("itemid")+'" target="_new"><img src="img/paper1.gif" /></a>' : text;
-				$(this).html(text);
-			});
-
-			$('.currency').each(function(){
-				$(this).formatCurrency({roundToDecimalPlace:0});
-			});
-
-			$('table.items tbody tr').hover(
-				function(){
-					$(this).addClass("highlight");
-				},
-				function(){
-					$(this).removeClass("highlight");
+function processHeader(value) {
+	if ( value ) {
+		$("#header").processTemplateStart("<%= url_for 'header' %>", null, <%= app->config->{refresh}->{header} || 17500 %>, null, {
+			type: 'GET',
+			headers: {Accept: 'application/json'},
+			on_success: function(data){
+				var msg=$('#alert-get').html();
+				if (msg){
+					if (msg != c_response && allowHumanMsg){$(window).humanMsg(msg, {autoHide: 3*1000});}
+					allowHumanMsg = 1;
+					c_response = msg;
+					$('table.getalert').show();
+				} else {
+					$('table.getalert').hide();
 				}
-			);
-		}
-	});
+				var headergroupHeight = 0;
+				$('#header').not(':hidden').each(function(){headergroupHeight = headergroupHeight + $(this).height() + 10;});   // Add 10 for the 10px padding in #header
+				$('table.setalert tr.alert').not(':hidden').each(function(){headergroupHeight = headergroupHeight + $(this).height();});
+				$('table.setalert tr.msg').not(':hidden').each(function(){headergroupHeight = headergroupHeight + $(this).height();});
+				$('table.getalert').not(':hidden').each(function(){headergroupHeight = headergroupHeight + $(this).height();});
+				$('body').css('height', ($('body').height()-headergroupHeight-50)+'px');    // Sub 50 for the body bottom padding
+				$('body').css('padding-top', headergroupHeight+'px');
 
-    $("#dialog-mibew").dialog({
-        autoOpen: false,
-        height: 290,
-        width: 350,
-        modal: true
-    });
-    $("#mibew").click(function(){
-        $("#dialog-mibew").dialog("open");
-    });
+				on_click_livechat();
+				on_click_paypal();
 
-	$("#paypal").live('click', function(){
+				return true;
+			}
+		});
+	} else {
 		$("#header").processTemplateStop();
+	}
+}
+
+function processBidding(value) {
+	if ( value ) {
+		$("#bidding").processTemplateStart("<%= url_for %>", null, <%= app->config->{refresh}->{bidding} || 10000 %>, null, {
+			type: 'POST',
+			headers: {Accept: 'application/json'},
+			on_success: function(data){
+				$( document ).tooltip();
+
+				if (!!$(this).attr('item') && $(this).find('span.truncate').html().length > $(this).find('span.truncate').attr("length")){content.push($(this).attr('item'));}
+				if (!!$(this).attr('message') && $(this).find('span.truncate').html().length > $(this).find('span.truncate').attr("length")){content.push($(this).attr('message'));}
+
+				$('span.truncate').each(function(){
+					var text = $(this).html();
+					var len = $(this).attr('length') || 50;
+					//text = text.length > len ? text.substring(0,len)+'... <a href="tooltip.html?item_id='+$(this).attr("itemid")+'" target="_new"><img src="img/paper1.gif" /></a>' : text;
+					text = text.length > len ? text.substring(0,len)+'... <a href="/tooltip/item/'+$(this).attr("itemid")+'" target="_new" title="'+text+'"><img src="img/paper1.gif" /></a>' : text;
+					$(this).html(text);
+				});
+
+				$('.currency').each(function(){
+					$(this).formatCurrency({roundToDecimalPlace:0});
+				});
+
+				$('table.items tbody tr').hover(
+					function(){
+						$(this).addClass("highlight");
+					},
+					function(){
+						$(this).removeClass("highlight");
+					}
+				);
+			}
+		});
+	} else {
+		$("#bidding").processTemplateStop();
+	}
+}
+
+function on_click_livechat(data) {
+	$("#dialog-mibew").dialog({autoOpen: false, height: 290, width: 350, modal: true});
+	$("#mibew").click(function(){ $("#dialog-mibew").dialog("open"); });
+}
+
+function on_click_paypal(data) {
+	$("#paypal").click(function(){
+		console.log('paypal');
+		processHeader(0);
 		$("#dialog-paypal").dialog({
 			autoOpen: false,
 			height: 320,
 			width: 380,
 			modal: true,
-			close: function() {
-				$("#header").processTemplateStart("/api/header", null, 175000, null, {
-					type: 'GET',
-					on_success: function(data){header_success(data);}
-				});
-			}
+			close: processHeader(1)
 		});
 		$("#dialog-paypal").dialog("open");
 		$("#paypal-os0").autocomplete({
-			source: "pl/ac/pay_number",
+			source: "/api/ac/pay_number",
 			minLength: 3,
 			select: function(event, ui){
 				if (ui.item){
@@ -116,197 +123,22 @@ $(document).ready(function(){
 			}
 		});
 	});
-/*
-	$("#register").live('click', function(){
-		$("#header").processTemplateStop();
-		// Abort if id'd
-		$("#dialog-register").dialog({
-			autoOpen: false,
-			height: 218,
-			width: 350,
-			modal: true,
-			open: function() {
-				$('#register-phone').mask("(999) 999-9999");
-			},
-			buttons: {
-				"Register": function(){
-					$(this).dialog("disable"); 
-					$(this).dialog({title: 'Register...'});
-					$.post('pl/request/newuser', {
-						value: $('#register-username').val()+":"+$('#register-bidder').val()+":"+$('#register-phone').val()
-					});
-					$(this).dialog("close");
-					$("#header").processTemplateStart("/api/header", null, 175000, null, {
-						type: 'GET',
-						on_success: function(data){header_success(data);}
-					});
-				},
-				Cancel: function(){$(this).dialog("close");}
-			},
-			close: function() {
-				$("#header").processTemplateStart("/api/header", null, 175000, null, {
-					type: 'GET',
-					on_success: function(data){header_success(data);}
-				});
-			}
-		});
-		$("#dialog-register-title").html("Identify yourself.");
-		$("#dialog-register").dialog("open");
-	});
+}
 
-	$("#operator").live('click', function(){
-        var item_id=$(this).attr('item_id');
-        var number=$(this).attr('number');
-        var minbid=$(this).attr('minbid');
-        var highbid=$(this).attr('highbid');
-		$("#header").processTemplateStop();
-		$("#dialog-operator").dialog({
-			autoOpen: false,
-			height: 218,
-			width: 350,
-			modal: true,
-			open: function() {
-				$('form[name=operator] input[name=operator-bid]').val(minbid);
-				$('form[name=operator] input[name=operator-phone]').mask("(999) 999-9999");
-			},
-			buttons: {
-				"Bid": function(){
-					$(this).dialog("disable"); 
-					$(this).dialog({title: 'Bid...'});
-					$.post('pl/request/newbid', {
-						phone: $('#operator-phone').val(),
-						value: item_id+":"+$('#operator-bid').val(),
-						approve: 1
-//						success: function(data){
-//							var json = $.toJSON(data);
-//							$.post('pl/request/approve/'+data.request.request_id+'/1', {
-//								success: function(){
-//									$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
-//								}
-//							});
-//						}
-					});
-					$(this).dialog("close");
-					$("#header").processTemplateStart("/api/header", null, 175000, null, {
-						type: 'GET',
-						on_success: function(data){header_success(data);}
-					});
-				},
-				Cancel: function(){$(this).dialog("close");}
-			},
-			close: function() {
-				$("#header").processTemplateStart("/api/header", null, 175000, null, {
-					type: 'GET',
-					on_success: function(data){header_success(data);}
-				});
-			}
-		});
-		$("#dialog-operator-title").html("Bid on item "+number+" (Minimum: "+minbid+")");
-		$("#dialog-operator").dialog("open");
-	});
-
-	$("#ident").live('click', function(){
-		$("#header").processTemplateStop();
-		$("#dialog-ident").dialog({
-			autoOpen: false,
-			height: 218,
-			width: 350,
-			modal: true,
-			open: function() {
-				$('form[name=ident] input[name="ident-phone"]').mask("9999");
-			},
-			buttons: {
-				"Identify": function(){
-					$(this).dialog("disable"); 
-					$(this).dialog({title: 'Identifying...'});
-					$.post('pl/identify', {
-						username: $('#ident-username').val(),
-						phone: $('#ident-phone').val()
-					});
-					$(this).dialog("close");
-//					$("#header").processTemplateStart("/api/header", null, 175000, null, {
-//						type: 'GET',
-//						on_success: function(data){header_success(data);}
-//					});
-				},
-				Cancel: function(){$(this).dialog("close");}
-			},
-			close: function() {
-				$("#header").processTemplateStart("/api/header", null, 175000, null, {
-					type: 'GET',
-					on_success: function(data){header_success(data);}
-				});
-			}
-		});
-		$("#dialog-ident-title").html("Identify yourself.");
-		$("#dialog-ident").dialog("open");
-	});
-
-	$("#unident").live('click', function(){
-		$("#header").processTemplateStop();
-		$.post('pl/identify', {});
-		$("#header").processTemplateStart("/api/header", null, 175000, null, {
-			type: 'GET',
-			on_success: function(data){header_success(data);}
-		});
-	});
-
-	$("#clearalert").live('click', function(){
-		$("#header").processTemplateStop();
+function on_click_clearalert(data){
+	$("#clearalert").click(function(){
+		processHeader(0);
 		$.ajax({
 			url: '/api/alert',
 			type: 'DELETE',
-			success: function(data) {
-				$("#header").processTemplateStart("/api/header", null, 175000, null, {
-					type: 'GET',
-					on_success: function(data){header_success(data);}
-				});
-			}
+			success: processHeader(1)
 		});
 	});
+}
 
-	$("#bid").live('click', function(){
-		var item_id=$(this).attr('item_id');
-		var number=$(this).attr('number');
-		var minbid=$(this).attr('minbid');
-		var highbid=$(this).attr('highbid');
-		$("#header").processTemplateStop();
-		$("#dialog-bid").dialog({
-			autoOpen: false,
-			height: 320,
-			width: 380,
-			modal: true,
-			open: function() {
-				$('form[name=bid] input[name=bid-bid]').val(minbid);
-			},
-			buttons: {
-				"Place Bid": function(){
-					$(this).dialog("disable"); 
-					$(this).dialog({title: 'Submitting bid...'});
-					$.post('pl/request/newbid', {
-						value: item_id+":"+$('#bid-bid').val()
-					});
-					$(this).dialog("close");
-					$("#header").processTemplateStart("/api/header", null, 175000, null, {
-						type: 'GET',
-						on_success: function(data){header_success(data);}
-					});
-				},
-				Cancel: function(){$(this).dialog("close");}
-			},
-			close: function() {
-				$("#header").processTemplateStart("/api/header", null, 175000, null, {
-					type: 'GET',
-					on_success: function(data){header_success(data);}
-				});
-			}
-		});
-		$("#dialog-bid-title").html("Bid on item "+number+" (Minimum: "+minbid+")");
-		$("#dialog-bid").dialog("open");
-	});
-*/
-	$("table.setalert span.alert").live('click', function(){
-		$("#header").processTemplateStop();
+function on_click_alert(data){
+	$("table.setalert span.alert").click(function(){
+		processHeader(0);
 		$("#dialog-alert").dialog({
 				autoOpen: false,
 				height: 320,
@@ -336,19 +168,173 @@ $(document).ready(function(){
 				close: function() {
 					$("#alert-set-alert").removeClass("ui-state-error");
 					$("#alert-set-msg").removeClass("ui-state-error");
-					$("#header").processTemplateStart("/api/header", null, 5000, null, {
-						type: 'GET',
-						on_success: function(data){header_success(data);}
-					});
+					processHeader(1);
 				}
 		});
 		$("#dialog-alert").dialog("open");
 	});
+}
+
+function on_click_register(data) {
+	$("#register").click(function(){
+		processHeader(0);
+		// Abort if id'd
+		$("#dialog-register").dialog({
+			autoOpen: false,
+			height: 218,
+			width: 350,
+			modal: true,
+			open: function() {
+				$('#register-phone').mask("(999) 999-9999");
+			},
+			buttons: {
+				"Register": function(){
+					$(this).dialog("disable"); 
+					$(this).dialog({title: 'Register...'});
+					$.post('/api/request/newuser', {
+						value: $('#register-username').val()+":"+$('#register-bidder').val()+":"+$('#register-phone').val()
+					});
+					$(this).dialog("close");
+					processHeader(1);
+				},
+				Cancel: function(){$(this).dialog("close");}
+			},
+			close: processHeader(1)
+		});
+		$("#dialog-register-title").html("Identify yourself.");
+		$("#dialog-register").dialog("open");
+	});
+}
+
+function on_click_operator(data) {
+	$("#operator").click(function(){
+        	var item_id=$(this).attr('item_id');
+	        var number=$(this).attr('number');
+        	var minbid=$(this).attr('minbid');
+	        var highbid=$(this).attr('highbid');
+		processHeader(0);
+		$("#dialog-operator").dialog({
+			autoOpen: false,
+			height: 218,
+			width: 350,
+			modal: true,
+			open: function() {
+				$('form[name=operator] input[name=operator-bid]').val(minbid);
+				$('form[name=operator] input[name=operator-phone]').mask("(999) 999-9999");
+			},
+			buttons: {
+				"Bid": function(){
+					$(this).dialog("disable"); 
+					$(this).dialog({title: 'Bid...'});
+					$.post('/api/request/newbid', {
+						phone: $('#operator-phone').val(),
+						value: item_id+":"+$('#operator-bid').val(),
+						approve: 1
+//						success: function(data){
+//							var json = $.toJSON(data);
+//							$.post('/api/request/approve/'+data.request.request_id+'/1', {
+//								success: function(){
+//									$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
+//								}
+//							});
+//						}
+					});
+					$(this).dialog("close");
+					processHeader(1);
+				},
+				Cancel: function(){$(this).dialog("close");}
+			},
+			close: processHeader(1)
+		});
+		$("#dialog-operator-title").html("Bid on item "+number+" (Minimum: "+minbid+")");
+		$("#dialog-operator").dialog("open");
+	});
+}
+
+function on_click_ident(data) {
+	$("#ident").click(function(){
+		processHeader(0);
+		$("#dialog-ident").dialog({
+			autoOpen: false,
+			height: 218,
+			width: 350,
+			modal: true,
+			open: function() {
+				$('form[name=ident] input[name="ident-phone"]').mask("9999");
+			},
+			buttons: {
+				"Identify": function(){
+					$(this).dialog("disable"); 
+					$(this).dialog({title: 'Identifying...'});
+					$.post('/api/identify', {
+						username: $('#ident-username').val(),
+						phone: $('#ident-phone').val()
+					});
+					$(this).dialog("close");
+//					processHeader(1);
+				},
+				Cancel: function(){$(this).dialog("close");}
+			},
+			close: processHeader(1)
+		});
+		$("#dialog-ident-title").html("Identify yourself.");
+		$("#dialog-ident").dialog("open");
+	});
+}
+
+function on_click_unident(data){
+	$("#unident").click(function(){
+		processHeader(0);
+		$.post('/api/identify', {});
+		processHeader(1);
+	});
+}
+
+function on_click_bid(data){
+	$("#bid").click(function(){
+		var item_id=$(this).attr('item_id');
+		var number=$(this).attr('number');
+		var minbid=$(this).attr('minbid');
+		var highbid=$(this).attr('highbid');
+		processHeader(0);
+		$("#dialog-bid").dialog({
+			autoOpen: false,
+			height: 320,
+			width: 380,
+			modal: true,
+			open: function() {
+				$('form[name=bid] input[name=bid-bid]').val(minbid);
+			},
+			buttons: {
+				"Place Bid": function(){
+					$(this).dialog("disable"); 
+					$(this).dialog({title: 'Submitting bid...'});
+					$.post('/api/request/newbid', {
+						value: item_id+":"+$('#bid-bid').val()
+					});
+					$(this).dialog("close");
+					processHeader(1);
+				},
+				Cancel: function(){$(this).dialog("close");}
+			},
+			close: processHeader(1)
+		});
+		$("#dialog-bid-title").html("Bid on item "+number+" (Minimum: "+minbid+")");
+		$("#dialog-bid").dialog("open");
+	});
+}
+
+$(document).ready(function(){
+	$("#header").setTemplateElement("t_header", null, {runnable_functions: true});
+	processHeader(1);
+
+	$("#bidding").setTemplateElement("t_bidding", null, {runnable_functions: true});
+	processBidding(1);
+
 });
 </script>
 </head>
 <body>
-
 	<div id="headergroup">
 		<div id="header"></div>
 	</div>
@@ -418,9 +404,9 @@ $(document).ready(function(){
 	</div>
 -->
 <!--
-											{#if !$T.about.bidder}
-												(<a id="register" class="mast">Register!</a> |<a id="ident" class="mast">Sign in!</a>)*Beta
-											{#/if}
+	{#if !$T.about.bidder}
+		(<a id="register" class="mast">Register!</a> |<a id="ident" class="mast">Sign in!</a>)*Beta
+	{#/if}
 -->
 	<textarea id="t_header" style="display:none">
 			<table class="header">
@@ -541,7 +527,7 @@ $(document).ready(function(){
 	</textarea>
 
 <!--
-								<a id="bid" class="modal" item_id="{$T.r.item_id}" number="{$T.r.number}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+	<a id="bid" class="modal" item_id="{$T.r.item_id}" number="{$T.r.number}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 -->
 	<textarea id="t_bidding" style="display:none">
 		{#if $T.bidding}
@@ -567,9 +553,9 @@ $(document).ready(function(){
 							{#if $T.r.url}</a>{#/if}
 							</div>
 							<div style="float:right;width:20%;text-align:right">
-							{#if $T.r.description}<a href="tooltip.html?item_id={$T.r.id}" target="_new"><img src="img/paper1.gif" /></a>{#/if}
-							{#if $T.r.url}<a href="{$T.r.url}" target="_new"><img src="img/chain1.png" style="border-style: none" /></a>{#/if}
-							{#if $T.r.img}<a href="tooltip.html?item_id={$T.r.id}" target="_new"><img src="img/attach_image.gif" /></a>{#/if}
+							{#if $T.r.description}<a href="/tooltip/item/{$T.r.id}" target="_new" title="{$T.r.description}"><img src="img/paper1.gif" /></a>{#/if}
+							{#if $T.r.url}<a href="{$T.r.url}" target="_new" title="Visit the product website of Item #{$T.r.number}"><img src="img/chain1.png" style="border-style: none" /></a>{#/if}
+							{#if $T.r.img}<a href="/tooltip/item/{$T.r.id}" target="_new" title="See a picture of Item #{$T.r.number}"><img src="img/attach_image.gif" /></a>{#/if}
 							</div>
 							</div>
 						</td>
@@ -579,7 +565,7 @@ $(document).ready(function(){
 							<span class="currency">{$T.r.value}</span>
 							</div>
 							<div style="float:right;width:20%;text-align:right">
-							{#if $T.r.timer}<img src="img/clock3.gif" />{#/if}
+							{#if $T.r.timer}<img src="img/clock3.gif" title="Timer"/>{#/if}
 							</div>
 							</div>
 						</td>
@@ -589,8 +575,8 @@ $(document).ready(function(){
 							<span class="currency">{$T.r.highbid.bid}</span>
 							</div>
 							<div style="float:right;width:20%;text-align:right">
-							{#if $T.r.notify.newbid}<img src="img/paddle1.gif" />{#/if}
-							{#if $T.r.bellringer}<img src="img/bell2.png" />{#/if}
+							{#if $T.r.notify.newbid}<img src="img/paddle1.gif" title="New Bid"/>{#/if}
+							{#if $T.r.bellringer}<img src="img/bell2.png" title="Bell Ringer"/>{#/if}
 							</div>
 							</div>
 						</td>
@@ -601,7 +587,7 @@ $(document).ready(function(){
 							<span class="bidder">{$T.r.highbid.bidder.name}</span>
 							</div>
 							<div style="float:right;width:20%; text-align:left;">
-							{#if $T.r.status=='Sold'}<img src="img/gavel2.gif"/>{#/if}
+							{#if $T.r.status=='Sold'}<img src="img/gavel2.gif" title="Sold"/>{#/if}
 							</div>
 							</div>
 							</div>
@@ -614,13 +600,13 @@ $(document).ready(function(){
 							{#if $T.r.donor.url}</a>{#/if}
 							</div>
 							<div style="float:right;width:20%;text-align:right">
-							{#if $T.r.donor.url}<a href="{$T.r.donor.url}" target="_new"><img src="img/chain1.png" style="border-style: none" /></a>{#/if}
+							{#if $T.r.donor.url}<a href="{$T.r.donor.url}" title="Visit the website of {$T.r.donor.name}" target="_new"><img src="img/chain1.png" style="border-style: none" /></a>{#/if}
 							</div>
 							</div>
 						</td>
 						<td col="message" class="tooltip" message="{$T.r.donor.advertisement}">
 							<div col="message">
-							<span class="message truncate" length="45" itemid="{$T.r.item_id}">{$T.r.donor.advertisement}</span>
+							<span class="message truncate" length="45" itemid="{$T.r.id}">{$T.r.donor.advertisement}</span>
 							</div>
 						</td>
 					</tr>
