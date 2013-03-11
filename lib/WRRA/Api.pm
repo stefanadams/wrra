@@ -85,8 +85,7 @@ sub ad {
 		$r->insert;
 	}
 	warn $r->click;
-	warn $ad->url||'http://www.washingtonrotary.com';
-	$self->redirect_to($ad->url||'http://www.washingtonrotary.com');
+	$self->redirect_to($ad->url||$self->config->{default_ad}->{url};
 }
 
 sub _display_ad {
@@ -114,7 +113,13 @@ sub _display_ad {
                         last;
                 }
 	}
-	return $ad;
+	unless ( $ad->{ad_id} && $ad->{img} && $ad->{url} ) {
+		$ad->{ad_id} = $self->config->{default_ad}->{ad_id};
+		$ad->{advertiser_id} = $self->config->{default_ad}->{advertiser_id};
+		$ad->{img} = $adsdir.'/'.$self->config->{default_ad}->{img};
+		$ad->{url} = $self->config->{default_ad}->{url};
+	}
+	return $self->session->{ad} = $ad;
 }
 
 1;
