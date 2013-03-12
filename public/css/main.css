@@ -108,3 +108,13 @@ table.closed tr.highlight {background-color:#bbb}
 table.closed td {border:thin solid black;padding-left:5px;padding-right:5px;padding-top:2px;padding-bottom:2px}
 
 img { border: 0px; }
+
+#stats {
+	display: none;
+	position:absolute;
+	bottom:20;
+	right:20;
+	width:200px;
+	border:1px solid red;
+	height:100px;
+}

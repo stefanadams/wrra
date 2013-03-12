@@ -42,12 +42,12 @@ function contextMenu() {
 				assign_auctioneer: {
 					name: "Assign Auctioneer",
 					items: {
-						a: {name: "A", callback: function(key, opt){ console.log(key); }},
-						b: {name: "B", callback: function(key, opt){ console.log(key); }},
+						a: {name: "A", callback: function(key, opt){ processBidding(0);$.post('/api/assign/'+opt.$trigger.attr("itemid")+'/a', function(){processBidding(1);}); }},
+						b: {name: "B", callback: function(key, opt){ processBidding(0);$.post('/api/assign/'+opt.$trigger.attr("itemid")+'/b', function(){processBidding(1);}); }},
 					},
 				},
-				notify_timer: {name: "Request Timer Start", callback: function(key, opt){ console.log(key); }},
-				notify_sell: {name: "Request Item Sale", callback: function(key, opt){ console.log(key); }},
+				notify_timer: {name: "Request Timer Start", callback: function(key, opt){ processBidding(0);$.post('/api/notify/timer/'+opt.$trigger.attr("itemid")+'/1', function(){processBidding(1);}); }},
+				notify_sell: {name: "Request Item Sale", callback: function(key, opt){ processBidding(0);$.post('/api/notify/sell/'+opt.$trigger.attr("itemid")+'/1', function(){processBidding(1);}); }},
 			    }
 			    // there's more, have a look at the demos and docs...
 			};
@@ -58,7 +58,7 @@ function contextMenu() {
 				window.console && console.log(m) || alert(m); 
 			    },
 			    items: {
-				place_bid: {name: "Place Bid", callback: function(key, opt){ console.log(key); }},
+				place_bid: {name: "Place Bid", callback: on_click_operator},
 			    }
 			};
 		} else if ( localStorage['role']=="auctioneer" ) {
@@ -68,9 +68,9 @@ function contextMenu() {
 				window.console && console.log(m) || alert(m); 
 			    },
 			    items: {
-				acknowledge_newbid: {name: "Ackknowledge", callback: function(key, opt){ console.log(key); }},
-				start_timer: {name: "Start Timer", callback: function(key, opt){ console.log(key); }},
-				sell: {name: "Sell Item", callback: function(key, opt){ console.log(key); }},
+				acknowledge_newbid: {name: "Acknowledge New Bid", callback: function(key, opt){ processBidding(0);$.post('/api/notify/newbid/'+opt.$trigger.attr("itemid")+'/0', function(){processBidding(1);}); }},
+				start_timer: {name: "Start Timer", callback: function(key, opt){ processBidding(0);$.post('/api/timer/'+opt.$trigger.attr("itemid")+'/1', function(){processBidding(1);}); }},
+				sell: {name: "Sell Item", callback: function(key, opt){ processBidding(0);$.post('/api/sell/'+opt.$trigger.attr("itemid"), function(){processBidding(1);}); }},
 			    }
 			};
 		} else {
@@ -104,12 +104,15 @@ function processHeader(value) {
 				$('body').css('padding-top', headergroupHeight+'px');
 
 				on_click_livechat();
-				on_click_paypal();
+				$("#paypal").click(on_click_paypal);
 				on_click_alert();
-				on_click_clearalert();
-				on_click_register();
-				on_click_operator();
-				on_click_bid();
+				$("#clearalert").click(on_click_clearalert);
+				$("#register").click(on_click_register);
+				if ( localStorage['role']=="operator" ) {
+					$(".item-number").click(on_click_operator);
+				} else if ( localStorage['role'] ) {
+					$(".item-number").click(on_click_bid);
+				}
 				on_click_ident();
 				on_click_unident();
 
@@ -121,6 +124,26 @@ function processHeader(value) {
 	} else {
 		$("#header").processTemplateStop();
 	}
+}
+
+function processStats(value) {
+	if ( localStorage['role'] != 'admin' ) {
+		return true;
+	}
+	if ( value ) {
+		if ( localStorage['stats'] ) clearInterval(localStorage['stats']);
+		$.get("/admin/stats", function(data) {
+			$("#stats").empty().append(data);
+		});
+		localStorage['stats'] = setInterval(function(){
+			$.get("/admin/stats", function(data) {
+				$("#stats").empty().append(data);
+			});
+		},10000);
+	} else if ( localStorage['stats'] ) {
+		clearInterval(localStorage['stats']);
+	}
+	return true;
 }
 
 function processBidding(value) {
@@ -173,6 +196,8 @@ function processBidding(value) {
 				      }
 				});
 
+				$( "#stats" ).draggable().resizable();
+
 				contextMenu();
 			}
 		});
@@ -187,7 +212,6 @@ function on_click_livechat(data) {
 }
 
 function on_click_paypal(data) {
-	$("#paypal").click(function(){
 		console.log('paypal');
 		processHeader(0);
 		$("#dialog-paypal").dialog({
@@ -213,11 +237,9 @@ function on_click_paypal(data) {
 		        .append( "<a>" + item.label + " : " + item.desc + "</a>" )
 		        .appendTo( ul );
 		};
-	});
 }
 
 function on_click_clearalert(data){
-	$("#clearalert").click(function(){
 		console.log('clearalert');
 		processHeader(0);
 		$.ajax({
@@ -225,7 +247,6 @@ function on_click_clearalert(data){
 			type: 'DELETE',
 			success: processHeader(1)
 		});
-	});
 }
 
 function on_click_alert(data){
@@ -272,7 +293,6 @@ function on_click_alert(data){
 }
 
 function on_click_register(data) {
-	$("#register").click(function(){
 		console.log('register');
 		processHeader(0);
 		// Abort if id'd
@@ -299,16 +319,29 @@ function on_click_register(data) {
 		});
 		$("#dialog-register-title").html("Identify yourself.");
 		$("#dialog-register").dialog("open");
-	});
 }
 
-function on_click_operator(data) {
-	$(".item-number").click(function(){
-        	var item_id=$(this).attr('item_id');
-	        var number=$(this).attr('number');
-        	var minbid=$(this).attr('minbid');
-	        var highbid=$(this).attr('highbid');
-		processHeader(0);
+function on_click_operator(key, opt) {
+		var item_id, number, minbid, highbid, status, timer, bellringer;
+		if ( opt ) {
+			console.log(key, opt.$trigger.attr("itemid"));
+			item_id=opt.$trigger.attr('item_id');
+			number=opt.$trigger.attr('number');
+			minbid=opt.$trigger.attr('minbid');
+			highbid=opt.$trigger.attr('highbid');
+			status=opt.$trigger.attr('status');
+			timer=opt.$trigger.attr('timer');
+			bellringer=opt.$trigger.attr('bellringer');
+		} else {
+			item_id=$(this).attr('item_id');
+			number=$(this).attr('number');
+			minbid=$(this).attr('minbid');
+			highbid=$(this).attr('highbid');
+			status=$(this).attr('status');
+			timer=$(this).attr('timer');
+			bellringer=$(this).attr('bellringer');
+		}
+//		processBidding(0);
 		$("#dialog-operator").dialog({
 			autoOpen: false,
 			height: 218,
@@ -324,31 +357,34 @@ function on_click_operator(data) {
 					$(this).dialog({title: 'Bid...'});
 					$.post('/api/newbid', {phone: $('#operator-phone').val(),value: item_id+":"+$('#operator-bid').val(),approve: 1}, function(data){
 						//var json = $.toJSON(data);
-						$.post('/api/request/approve/'+data.request.request_id+'/1', function(){
+						$.post('/api/approve/'+data.request.request_id+'/1', function(){
 							$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
-							processHeader(1);
+							//processHeader(1);
 						});
 						$(this).dialog("close");
 					});
 				},
 				Cancel: function(){$(this).dialog("close");}
 			},
-			close: processHeader(1)
+//			close: processBidding(1)
 		});
 		$("#dialog-operator-title").html("Bid on item "+number+" (Minimum: "+minbid+")");
-		$("#dialog-operator").dialog("open");
-/*
-		$("#dialog-operator").autocomplete({
+		if ( status == "Bidding" ) {
+			$("#dialog-operator").dialog("open");
+		} else {
+			$.alert("Closed!", "Closed!");
+		}
+
+		$("#operator-phone").autocomplete({
 			source: "/api/ac/bidder",
-			minLength: 10,
+			minLength: 4,
 			select: function(event, ui){
 				if (ui.item){
 					$('#operator-name').val(ui.item.name);
 				}
 			}
 		});
-*/
-	});
+
 }
 
 function on_click_ident(data) {
@@ -378,6 +414,10 @@ function on_click_ident(data) {
 							localStorage['role']=data.user.role;
 							processHeader(1);
 							processBidding(1);
+							if ( localStorage['role'] == 'admin' ) {
+								processStats(1);
+								$('#stats').show();
+							}
 							t.dialog("close");
 						} else {
 							t.dialog("disable"); 
@@ -397,7 +437,7 @@ function on_click_ident(data) {
 function on_click_unident(data){
 	$("#unident").click(function(){
 		processHeader(0);
-		$.get('/api/unident', function(){localStorage['role']="";processHeader(1);});
+		$.get('/api/unident', function(){localStorage['role']="";processHeader(1);$('#stats').hide();processStats(0);});
 	});
 }
 
@@ -439,11 +479,23 @@ $(document).ready(function(){
 		headers: {Accept: 'application/json'},
 	});
 
+	$.extend({ alert: function (message, title) {
+	  $("<div></div>").dialog( {
+	    buttons: { "Ok": function () { $(this).dialog("close"); } },
+	    close: function (event, ui) { $(this).remove(); },
+	    resizable: false,
+	    title: title,
+	    modal: true
+	  }).text(message);
+	}
+	});
+
 	$("#header").setTemplateElement("t_header", null, {runnable_functions: true});
 	processHeader(1);
 
 	$("#bidding").setTemplateElement("t_bidding", null, {runnable_functions: true});
 	processBidding(1);
+
 
 });
 </script>
@@ -460,6 +512,7 @@ $(document).ready(function(){
 	<!-- <a id="register" style="color:black">.</a> <a id="ident" style="color:black">.</a> -->
 
 	<div id="footergroup">
+		<div id="stats" class="ui-widget-content"></div>
 	</div>
 
 	<div id="dialog-paypal" title="Pay by Credit Card" class="modal">
@@ -480,9 +533,9 @@ $(document).ready(function(){
 		<form name="operator" action='/api/newbid' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-operator-title">Submit Bid</div></td></tr>
-				<tr><td>Phone</td><td><input id="operator-phone" type='text' name='operator-phone' maxlength='60' value='Phone' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td>Name</td><td><input id="operator-name" type='text' name='operator-name' maxlength='60' value='Name' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td>Amount</td><td><input id="operator-bid" type='text' name='operator-bid' maxlength='60' value='Amount' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td>Phone</td><td><input id="operator-phone" type='text' name='operator-phone' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td>Name</td><td><input id="operator-name" type='text' name='operator-name' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td>Amount</td><td><input id="operator-bid" type='text' name='operator-bid' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
 			</table>
 		</form>
 	</div>
@@ -642,27 +695,36 @@ $(document).ready(function(){
 			{#/if}
 	</textarea>
 
+	<textarea id="t_stats" style="display:none">
+		{#if $T.stats}
+			Items Today: {$T.stats.items.today}
+		{#/if}
+	</textarea>
+
 	<textarea id="t_bidding" style="display:none">
+		{#if $T.stats}
+			<div id="stats" class="ui-widget-content">Items Today: {$T.stats.items.today}</div>
+		{#/if}
 		{#if $T.bidding}
 			<table id='itemsbidding' class="items bidding tablesorter">
 				<thead>
 				<tr>
-					<th>Item</th><th>Value</th><th>Last&nbsp;Bid</th><th>High Bidder</th><th>Donor</th><th>Message</th>
+					<th>Item</th><th>Value</th><th>High&nbsp;Bid</th><th>High Bidder</th><th>Donor</th><th>Message</th>
 				</tr>
 				</thead>
 				<tbody>
 				{#foreach $T.bidding.rows as r}
-					<tr id="tr_{$T.r.id}" itemid="{$T.r.id}" name="item" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" class="context-item">
+					<tr id="tr_{$T.r.id}" itemid="{$T.r.id}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" class="context-item">
 						<td col="item" class=tooltip item="{$T.r.name}" description="{$T.r.description}" img="{$T.r.img}">
 							<div col="item">
 							<div style="float:left;width:80%">
 							{#if $T.r.auctioneer}<img src="img/{$T.r.auctioneer}.gif" />{#/if}
 							{#if $T.header.about.user && $T.header.about.user.role=="operator"}
-								<a id="operator-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+								<a id="operator-{$T.r.id}" title="Place Bid" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 							{#elseif $T.header.about.user && $T.header.about.user.role=="auctioneer"}
-								<a id="auctioneer-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+								<a id="auctioneer-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 							{#elseif $T.header.about.user}
-								<a id="bid-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+								<a id="bid-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 							{#else}
 								<span class="item number">{$T.r.number}</span><span class="item">:</span>
 							{#/if}

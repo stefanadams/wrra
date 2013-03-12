@@ -23,8 +23,10 @@ sub read {
 	}
 	$self->respond_to(
 		json => {json => {
-			header => $self->header_data,
-			$self->closed ? () : (bidding=>{rows=>$bidding}),
+			(header => $self->header_data),
+			(!$self->closed
+				? (bidding=>{rows=>$bidding})
+				: ()),
 		}},
 	);
 }
@@ -49,23 +51,21 @@ sub _fakebidding {
 		}
 		$row->{auctioneer} = int(rand(99)) < 50 ? 'a' : 'b';
 		$row->{highbid}->{bid} = $row->{highbid}->{bid} =~ /\d/ ? $row->{highbid}->{bid} : $row->{value} - 10 + int(rand(15));
-		$row->{bellringer} = $row->{highbid}->{bid} >= $row->{value};
 		$row->{highbid}->{bidder}->{name} = substr($row->{donor}->{name}, 0, 18);
-		$row->{minbid} = $row->{highbid}->{bid}+5 if $row->{highbid}->{bid} < $row->{value};
 		$row->{timer} = int(rand(99)) < 20 ? 1 : 0;
 	} elsif ( int(rand(99)) < 25 ) {
 		$row->{status} = 'Sold';
 		$row->{highbid}->{bid} = $row->{highbid}->{bid} =~ /\d/ ? $row->{highbid}->{bid} : $row->{value} - 10 + int(rand(15));
-		$row->{bellringer} = $row->{highbid}->{bid} >= $row->{value};
 		$row->{highbid}->{bidder}->{name} = substr($row->{donor}->{name}, 0, 18);
 		$row->{timer} = 1;
 	} elsif ( int(rand(99)) < 25 ) {
 		$row->{status} = 'Complete';
 		$row->{highbid}->{bid} = $row->{highbid}->{bid} =~ /\d/ ? $row->{highbid}->{bid} : $row->{value} - 10 + int(rand(15));
-		$row->{bellringer} = $row->{highbid}->{bid} >= $row->{value};
 		$row->{highbid}->{bidder}->{name} = substr($row->{donor}->{name}, 0, 18);
 		$row->{timer} = 1;
 	}
+	$row->{bellringer} = $row->{highbid}->{bid} >= $row->{value};
+	$row->{minbid} = $row->{highbid}->{bid}+5 if $row->{highbid}->{bid} < $row->{value};
 	$row->{description} = int(rand(99)) < 40 ? 'Fuller description' : undef;
 	$row->{url} ||= int(rand(99)) < 20 ? 'http://google.com' : undef;
 	$row->{donor}->{url} ||= int(rand(99)) < 20 ? 'http://google.com' : undef;
