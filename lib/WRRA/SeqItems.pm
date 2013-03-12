@@ -7,10 +7,9 @@ sub list {
 	my $self = shift;
 
 	my $rs = $self->db->resultset($self->param('results'));
-	my $request = ref $self->merged ? $self->merged : {$self->merged};
 
-	my $year = $rs->session->{year};
-	my $start = $rs->session->{auctions}->{$year}->[0] or Mojo::Exception->throw("Cannot determine start date of auction $year");
+	my $year = $rs->datetime->year;
+	my $start = $rs->config->{auctions}->{$year}->[0] or Mojo::Exception->throw("Cannot determine start date of auction $year");
 	my $n = $self->param('n');
 
 	my %search;
@@ -34,11 +33,10 @@ sub sequence {
 	my $self = shift;
 
 	my $rs = $self->db->resultset($self->param('results'));
-	my $request = ref $self->merged ? $self->merged : {$self->merged};
-	my @items = map { /_(\d+)$/; $1 } @{$request->{id}};
+	my @items = map { /_(\d+)$/; $1 } $self->param('id');
 
-	my $year = $rs->session->{year};
-	my $start = $rs->session->{auctions}->{$year}->[0] or Mojo::Exception->throw("Cannot determine start date of auction $year");
+	my $year = $rs->datetime->year;
+	my $start = $rs->config->{auctions}->{$year}->[0] or Mojo::Exception->throw("Cannot determine start date of auction $year");
 	my $n = $self->param('n');
 
 	my %update;
