@@ -108,7 +108,7 @@ sub _display_ad {
         my $ad;
         foreach my $_ad ( $self->db->resultset('Ads')->today->random->all ) {
                 $ad = {map { $_ => $_ad->$_ } qw/url year advertiser_id ad_id/};
-		next if $ad->{ad_id} == $self->session->{ad}->{ad_id};
+		next if $self->session->{ad}->{ad_id} && $ad->{ad_id} == $self->session->{ad}->{ad_id};
                 my $r;
                 if ( $r = $self->db->resultset('Adcount')->find($ad->{ad_id}, $self->datetime->ymd) ) {
                         $r->update({rotate=>($r->rotate||0)+1});
@@ -128,6 +128,8 @@ sub _display_ad {
                 $ad->{ad_id} = $self->config->{default_ad}->{ad_id};
                 $ad->{advertiser_id} = $self->config->{default_ad}->{advertiser_id};
                 $ad->{img} = $adsdir.'/'.$self->config->{default_ad}->{img};
+                $ad->{img} =~ s/^$adsdir\/?// or $ad->{img} = undef;
+                $ad->{img} = join '/', '', $adsurl, $ad->{img} if $ad->{img};
                 $ad->{url} = $self->config->{default_ad}->{url};
         }
         $self->session->{ad} = $ad;

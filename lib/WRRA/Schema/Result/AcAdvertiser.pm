@@ -1,15 +1,14 @@
 package WRRA::Schema::Result::AcAdvertiser;
 
-use base 'WRRA::Schema::Result::Donor';
+use base 'WRRA::Schema::Result::Ad';
 
-sub _colmodel { qw/label ad url/ }
+sub _colmodel { qw/label value url/ }
+sub label { shift->advertiser->name }
+sub value { shift->name }
 
 sub _search {
 	my ($self, $rs, $req) = @_;
-	$rs->search({-or => [name=>{'like'=>'%'.$req->{term}.'%'}, donor_id=>$req->{term}]}, {group_by=>'donor_id', order_by=>'name'})
+	$rs->search({'-or'=>['me.name'=>{'like'=>'%'.$req->{term}.'%'}, 'advertiser.name'=>{'like'=>'%'.$req->{term}.'%'}, ad_id=>$req->{term}, 'advertiser.donor_id'=>$req->{term}]}, {join=>'advertiser', group_by=>'me.advertiser_id', order_by=>'me.name'})
 }
-
-sub label { shift->nameid }
-sub ad { shift->nameid }
 
 1;

@@ -120,7 +120,7 @@ sub setup_routing {
 	$ac->auto_complete([ItemCurrent => 'Item']);
 	$ac->auto_complete(['Stockitem']);
 	$ac->auto_complete([Advertisement => 'Donor']);
-	$ac->auto_complete([Advertiser => 'Donor']);
+	$ac->auto_complete([Advertiser => 'Ad']);
 	$ac->auto_complete([ItemStockitem => 'Item']);
 	$ac->auto_complete(['Bellitem']);
 	$ac->auto_complete(['Bidder']);
