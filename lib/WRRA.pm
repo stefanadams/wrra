@@ -59,7 +59,6 @@ sub startup {
 		},
 		is_role => sub {
 			my ($c, $role, $extradata) = @_;
-warn 2;
 			return 0 unless $c->is_user_authenticated;
 			return 0 unless $c->config->{groups};
                         return 1 if $c->current_user->{username} eq $role || grep { $_ eq $c->current_user->{username} } _expand_group($c->config->{groups}, $role);
@@ -67,13 +66,11 @@ warn 2;
 		},
 		user_privs => sub {
 			my ($c, $extradata) = @_;
-warn 3;
 			return undef unless $c->is_user_authenticated;
 			return $c->current_user->{username};
 		},
 		user_role => sub {
 			my ($c, $extradata) = @_;
-warn 4;
 			return undef unless $c->is_user_authenticated;
 			return $c->current_user->{username};
 		},

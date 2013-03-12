@@ -35,11 +35,7 @@ sub register {
 
 sub ident {
 	my $self = shift;
-	warn 'Ident1: ', $self->is_user_authenticated, "\n";
-#warn Data::Dumper::Dumper([$self->session, $self->stash]);
 	$self->authenticate($self->param('username'), $self->param('phone'));
-	warn 'Ident2: ', $self->is_user_authenticated, "\n";
-#warn Data::Dumper::Dumper([$self->session, $self->stash]);
 	$self->respond_to(
 		json => {json => {user => {name => $self->current_user?$self->current_user->{username}:Mojo::JSON->false, role=>$self->role||Mojo::JSON->false}}},
 	);
@@ -47,11 +43,7 @@ sub ident {
 
 sub unident {
 	my $self = shift;
-	warn 'Unident1: ', $self->is_user_authenticated, "\n";
-#warn Data::Dumper::Dumper([$self->session, $self->stash]);
 	$self->logout;
-	warn 'Unident2: ', $self->is_user_authenticated, "\n";
-#warn Data::Dumper::Dumper([$self->session, $self->stash]);
 	$self->respond_to(
 		json => {json => {user => {name => $self->current_user?$self->current_user->{username}:Mojo::JSON->false, role=>$self->role||Mojo::JSON->false}}},
 	);
@@ -59,8 +51,6 @@ sub unident {
 
 sub header {
 	my $self = shift;
-	warn 'Header: ', $self->is_user_authenticated, "\n";
-#warn Data::Dumper::Dumper([$self->session, $self->stash]);
 	$self->respond_to(
 		json => {json => $self->header_data},
 	);
@@ -104,7 +94,6 @@ sub ad {
 	} elsif ( $r = $self->db->resultset('Adcount')->new({ad_id=>$self->param('id'), processed=>\'now()', click=>1}) ) {
 		$r->insert;
 	}
-	warn $r->click;
 	$self->redirect_to($ad->url||$self->config->{default_ad}->{url});
 }
 
