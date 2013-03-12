@@ -147,7 +147,7 @@ sub _exception {
 
 sub _cell {
         my ($self, $celname, $value) = @_;
-        return () unless $celname && $celname ne 'id';
+        return () unless $celname; # && $celname ne 'id';
         my ($edit, $validate) = ($self->result->{edit}, $self->result->{validate});
 
         my %cells;
