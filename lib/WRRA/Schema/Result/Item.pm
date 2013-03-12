@@ -3,6 +3,7 @@ package WRRA::Schema::Result::Item;
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
+use 5.010;
 use strict;
 use warnings;
 
@@ -260,6 +261,10 @@ __PACKAGE__->belongs_to(highbid => 'WRRA::Schema::Result::Bid', {'foreign.bid_id
 __PACKAGE__->has_many(bids => 'WRRA::Schema::Result::Bid', 'item_id', {join_type=>'left'}); # An Item has_many bids, join to Bid via item_id
 __PACKAGE__->many_to_many(bidders => 'bids', 'bidder'); # An Item is bid on by many Bidders, bridge to bidders via Bid's bidder
 
+__PACKAGE__->add_columns(notify => { accessor => '_notify' });
+__PACKAGE__->add_columns(sold => { accessor => '_sold' });
+__PACKAGE__->add_columns(timer => { accessor => '_timer' });
+
 sub id { shift->item_id }
 
 #sub itemcat {
@@ -272,26 +277,52 @@ sub id { shift->item_id }
 #	('a','b');
 #}
 
-#sub notify {
-#	my $self = shift;
-#	('newbid','starttimer','stoptimer','holdover','sell');
-#}
+sub notify {
+        my $self = shift;
+        return $self->_notify unless @_;
+	my $notify = shift;
+	if ( ref $notify eq 'ARRAY' ) {
+		return $self->_notify(join ',', @$notify);
+	} else {
+		my $state = shift;
+	        if ( $state ) {
+        	        return $self->_notify(\"CONCAT_WS(',',notify,'$notify')");
+	        } elsif ( defined $state ) {
+        	        return $self->_notify(\"REPLACE(notify,'$notify','')");
+	        } else {
+			my @notify = split /,/, $self->_notify;
+			return (grep { $_ eq $notify } @notify) ? $notify : undef;
+		}
+	}
+}
+
+sub respond { # ('newbid','starttimer','stoptimer','holdover','sell');
+	my ($self, $notify) = @_;
+	given ( $self->notify($notify) ) {
+		when ( 'newbid' ) { return $self->notify('newbid' => 0) }
+		when ( 'starttimer') { return $self->timer(\'now()')->notify('starttimer'=>0) }
+		when ( 'stoptimer') { return $self->timer(undef)->notify('stoptimer'=>0) }
+		when ( 'holdover' ) { return $self->notify('holdover' => 0) }
+		when ( 'sell' ) { return $self->sold(\'now()')->notify('sell' => 0) }
+	}
+}
 
 sub status {
 	my $self = shift;
-	my $status = {map {$_=>ref $self->$_?1:defined $self->$_?$self->$_:undef} qw/scheduled started timer sold cleared contacted auctioneer/};
-	return 'Complete'  if  $status->{scheduled}   &&           1              &&  $status->{started}   &&  $status->{sold}   &&  $status->{cleared};
-	return 'Sold'      if  $status->{scheduled}   &&           1              &&  $status->{started}   &&  $status->{sold}   && !$status->{cleared};
-	return 'Bidding'   if  $status->{scheduled}   &&  $status->{auctioneer}   &&  $status->{started}   && !$status->{sold};# && !$status->{cleared};
-	return 'OnDeck'    if  $status->{scheduled}   &&  $status->{auctioneer}   && !$status->{started};# && !$status->{sold}   && !$status->{cleared};
-	return 'Ready'     if  $status->{scheduled}   && !$status->{auctioneer};# && !$status->{started}   && !$status->{sold}   && !$status->{cleared};
-	return 'Not Ready' if !$status->{scheduled};# && !$status->{auctioneer}   && !$status->{started}   && !$status->{sold}   && !$status->{cleared};
+	return 'Complete'  if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   &&  $self->cleared   &&  $self->contacted;
+	return 'Verify'    if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   &&  $self->cleared   && !$self->contacted;
+	return 'Sold'      if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   && !$self->cleared;# && !$self->contacted;
+	return 'Bidding'   if  $self->scheduled   &&  $self->auctioneer   &&  $self->started   && !$self->sold;# && !$self->cleared;  && !$self->contacted;
+	return 'OnDeck'    if  $self->scheduled   &&  $self->auctioneer   && !$self->started;# && !$self->sold   && !$self->cleared;  && !$self->contacted;
+	return 'Ready'     if  $self->scheduled   && !$self->auctioneer;# && !$self->started   && !$self->sold   && !$self->cleared;  && !$self->contacted;
+	return 'Not Ready' if !$self->scheduled;# && !$self->auctioneer   && !$self->started   && !$self->sold   && !$self->cleared;  && !$self->contacted;
 	return 'Unknown';
 }
 
 sub nstatus {
 	my $self = shift;
-	return 60 if $self->status eq 'Complete';
+	return 70 if $self->status eq 'Complete';
+	return 60 if $self->status eq 'Verify';
 	return 50 if $self->status eq 'Sold';
 	return 40 if $self->status eq 'Bidding';
 	return 30 if $self->status eq 'OnDeck';
@@ -302,24 +333,28 @@ sub nstatus {
 
 sub startbid {
 	my $self = shift;
-	return 5 if $self->value < 100;
-	return 50 if $self->value < 250;
-	return 100;
+	my $startbid = eval { $self->schema->config->{database}->{options}->{starting_bid} } || [[100 => 5], [250 => 50], 100];
+	foreach ( sort { $a->[0] <=> $b->[0] } @$startbid ) {
+		return $_->[1] if $self->value < $_->[0];
+	}
+	return ((sort { $a <=> $b } grep { !ref $_ } @$startbid)[0]) || 5;
 }
 
 sub minbid {
 	my $self = shift;
-	return undef unless $self->can('highbid');
-	return $self->startbid unless ref $self->highbid;
-	return undef unless $self->highbid->can('bid');
-	return $self->highbid->bid+5 if $self->highbid->bid < $self->value;
-	return $self->highbid->bid+1;
+	my $minbid_under = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || 5;
+	my $minbid_over = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || 1;
+	return undef unless $self->highbid;
+	return $self->startbid unless $self->highbid->bid;
+	return $self->highbid->bid+$minbid_under if $self->highbid->bid < $self->value;
+	return $self->highbid->bid+$minbid_over;
 }
 
 sub cansell {
 	my $self = shift;
+	my $mintimer = eval { $self->schema->config->{database}->{options}->{minimum_timer} } || 5*60;
 	return undef if !ref $self->timer || ref $self->sold;
-	return time-$self->timer->epoch > 5*60 ? 1 : 0;
+	return time-$self->timer->epoch > $mintimer ? 1 : 0;
 }
 
 sub bellringer {
