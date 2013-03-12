@@ -6,11 +6,19 @@ sub register {
 
 	$app->hook(before_dispatch => sub {
 		my $c = shift;
-		return unless $c->req->headers->content_type;
-		return unless my $cb = $conf->{$c->req->headers->content_type};
+		my $content_type = $c->req->headers->content_type or return;
+		my $ct;
+		foreach ( grep { ref $conf->{$_} eq 'CODE' } keys %$conf ) {
+			next unless $_ =~ /$content_type/ || $content_type =~ /$_/;
+			$c->req->headers->content_type($_);
+			$ct = $_ and last;
+		}
+		return unless $ct;
+		my $cb = $conf->{$ct};
 		return unless ref $cb eq 'CODE';
 		my $postdata = $cb->($c);
 		return unless ref $postdata eq 'HASH';
+		$c->req->headers->add('X-MergePostData' => $ct);
 		$c->param($_) or $c->param($_ => $postdata->{$_}) for keys %$postdata;
 	});
 }
