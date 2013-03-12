@@ -29,18 +29,24 @@ $(document).ready(function(){
 //    });
 
     $.extend($.jgrid.defaults, {
-        mtype: 'POST',
-        serializeGridData: function (postData) { return JSON.stringify(postData); },
+        //mtype: 'POST',
         datatype: 'json',
         url: '<%= url_for %>',
         cellurl: '<%= url_for %>/update',
         jsonReader: {repeatitems: false},
+        ajaxGridOptions: {
+            type: "POST",
+            contentType: 'application/json'
+        },
+        serializeGridData: function (postData) { return JSON.stringify(postData); },
         ajaxCellOptions: {
-            type: "POST"
+            type: "POST",
+            contentType: 'application/json'
         },
         serializeCellData: function (postData) { return JSON.stringify(postData); },
         ajaxRowOptions: {
-            type: "POST"
+            type: "POST",
+            contentType: 'application/json'
         },
         serializeRowData: function (postData) { return JSON.stringify(postData); },
         cellEdit: true,
@@ -68,7 +74,6 @@ $(document).ready(function(){
 
     });
     $.extend($.jgrid.ajaxOptions, {
-        contentType: "application/json",
         headers: { accept: "application/json" }
     });
     $.extend($.jgrid.search, {
