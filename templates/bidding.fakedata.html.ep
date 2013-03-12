@@ -1,4 +1,0 @@
-{$T.r.value = Math.floor(Math.random()*100)+25;''}
-{$T.r.highbid = new Object; $T.r.highbid.bid = Math.floor(Math.random()*100)+1;''}
-{$T.r.auctioneer = Math.floor(Math.random()*2) ? 'a' : 'b';''}
-{if Math.floor(Math.random()*2) $T.r.description="Big long description";''}

@@ -292,8 +292,8 @@ sub status {
 sub startbid {
 	my $self = shift;
 	return 5 if $self->value < 100;
-	return 30 if $self->value < 250;
-	return 50;
+	return 50 if $self->value < 250;
+	return 100;
 }
 
 sub minbid {

@@ -51,6 +51,7 @@ sub _fakebidding {
 		$row->{highbid}->{bid} = $row->{highbid}->{bid} =~ /\d/ ? $row->{highbid}->{bid} : $row->{value} - 10 + int(rand(15));
 		$row->{bellringer} = $row->{highbid}->{bid} >= $row->{value};
 		$row->{highbid}->{bidder}->{name} = substr($row->{donor}->{name}, 0, 18);
+		$row->{minbid} = $row->{highbid}->{bid}+5 if $row->{highbid}->{bid} < $row->{value};
 		$row->{timer} = int(rand(99)) < 20 ? 1 : 0;
 	} elsif ( int(rand(99)) < 25 ) {
 		$row->{status} = 'Sold';

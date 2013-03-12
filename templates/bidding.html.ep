@@ -203,12 +203,16 @@ function on_click_paypal(data) {
 			minLength: 3,
 			select: function(event, ui){
 				if (ui.item){
-					$('#paypal-name').val(ui.item.item);
+					$('#paypal-name').val(ui.item.name);
 					$('#paypal-os1').val(ui.item.address);
 					$('#paypal-os2').val(ui.item.csz);
 				}
 			}
-		});
+		}).data( "ui-autocomplete" )._renderItem = function( ul, item ) {
+		      return $( "<li>" )
+		        .append( "<a>" + item.label + " : " + item.desc + "</a>" )
+		        .appendTo( ul );
+		};
 	});
 }
 
@@ -299,7 +303,7 @@ function on_click_register(data) {
 }
 
 function on_click_operator(data) {
-	$("#operator").click(function(){
+	$(".item-number").click(function(){
         	var item_id=$(this).attr('item_id');
 	        var number=$(this).attr('number');
         	var minbid=$(this).attr('minbid');
@@ -318,7 +322,7 @@ function on_click_operator(data) {
 				"Bid": function(){
 					$(this).dialog("disable"); 
 					$(this).dialog({title: 'Bid...'});
-					$.post('/api/request/newbid', {phone: $('#operator-phone').val(),value: item_id+":"+$('#operator-bid').val(),approve: 1}, function(data){
+					$.post('/api/newbid', {phone: $('#operator-phone').val(),value: item_id+":"+$('#operator-bid').val(),approve: 1}, function(data){
 						//var json = $.toJSON(data);
 						$.post('/api/request/approve/'+data.request.request_id+'/1', function(){
 							$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
@@ -333,6 +337,17 @@ function on_click_operator(data) {
 		});
 		$("#dialog-operator-title").html("Bid on item "+number+" (Minimum: "+minbid+")");
 		$("#dialog-operator").dialog("open");
+/*
+		$("#dialog-operator").autocomplete({
+			source: "/api/ac/bidder",
+			minLength: 10,
+			select: function(event, ui){
+				if (ui.item){
+					$('#operator-name').val(ui.item.name);
+				}
+			}
+		});
+*/
 	});
 }
 
@@ -462,17 +477,18 @@ $(document).ready(function(){
 	</div>
 
 	<div id="dialog-operator" title="Operator" class="modal">
-		<form name="operator" action='/api/request/newbid' method='post'>
+		<form name="operator" action='/api/newbid' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-operator-title">Submit Bid</div></td></tr>
 				<tr><td>Phone</td><td><input id="operator-phone" type='text' name='operator-phone' maxlength='60' value='Phone' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td>Name</td><td><input id="operator-name" type='text' name='operator-name' maxlength='60' value='Name' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
 				<tr><td>Amount</td><td><input id="operator-bid" type='text' name='operator-bid' maxlength='60' value='Amount' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
 			</table>
 		</form>
 	</div>
 
 	<div id="dialog-register" title="Register" class="modal">
-		<form name="register" action='/api/request/newuser' method='post'>
+		<form name="register" action='/api/newuser' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-register-title">Register</div></td></tr>
 				<tr><td>Username</td><td><input id="register-username" type='text' name='register-username' maxlength='60' value='Username' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
@@ -493,7 +509,7 @@ $(document).ready(function(){
 	</div>
 
 	<div id="dialog-bid" title="Bid" class="modal">
-		<form name="bid" action='/api/request/newbid' method='post'>
+		<form name="bid" action='/api/newbid' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-bid-title">Submit Bid</div></td></tr>
 				<tr><td>Amount</td><td><input id="bid-bid" type='text' name='bid-bid' maxlength='60' value='Amount' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
@@ -508,7 +524,7 @@ $(document).ready(function(){
 				<a id="unident" class="modal"><span class="hello">Hello, {$T.about.user.name}!</span></a>
 				{#if $T.about.user.role=="admin"}<a href="/admin/bookmarks">Bookmarks</a>{#/if}
 			{#else}
-				(<a id="register" class="mast">Register!</a> |<a id="ident" class="mast">Sign in!</a>)*Beta
+				<!-- (<a id="register" class="mast">Register!</a> | <a id="ident" class="mast">Sign in!</a>) *Beta -->
 			{#/if}
 			<table class="header">
 				<tr>
@@ -520,7 +536,7 @@ $(document).ready(function(){
 							</tr></td>
 							% }
 				 			{#if !$T.about.user || !$T.about.user.role}
-							<tr><td class="title">
+							<tr><td class="title" id="ident">
 							{#if $T.about.live}
 								<span class="title">{$T.about.name} {$T.about.year} {$T.about.night?", Night " + $T.about.night:''} {$T.about.live?'':' (Offline)'}</span>
 							{#else}
@@ -557,7 +573,7 @@ $(document).ready(function(){
 											{#/foreach}
 										</span>
 										<span class="choicesep">/</span>
-										<span class="chat"><a href="http://dev.washingtonrotary.com/rra/mibew/client.php?locale=en&style=simplicit" id="mibew">Web Chat</a>
+										<span class="chat"><a class="mast" href="http://dev.washingtonrotary.com/rra/mibew/client.php?locale=en&style=simplicit" id="mibew">Web Chat</a>
 										</span>
 									</span>
 									<img class="arrowsep" src="img/right_arrow_button.gif" />
@@ -579,7 +595,7 @@ $(document).ready(function(){
 							<tr>
 								<td class="ad">
 									{#if $T.ads.ad.ad_id && $T.ads.ad.img}
-										<a href="/api/ad/{$T.ads.ad.ad_id}" target="_new"><img src="{$T.ads.ad.img}" border="0" /></a>
+										<a href="/api/ad/{$T.ads.ad.ad_id}" target="_new"><img src="{$T.ads.ad.img}" border="0" alt="Click here to support our sponsor -- {$T.ads.ad.advertiser.name}<br><br>{$T.ads.ad.advertiser.advertisement||''}" /></a>
 									{#else}
 										<a href="<%= app->config->{default_ad}->{url} %>" target="_new"><img src="/ads/<%= app->config->{default_ad}->{img} %>" border="0" /></a>
 									{#/if}
@@ -641,8 +657,12 @@ $(document).ready(function(){
 							<div col="item">
 							<div style="float:left;width:80%">
 							{#if $T.r.auctioneer}<img src="img/{$T.r.auctioneer}.gif" />{#/if}
-							{#if $T.header.about.user.role=="operator"}
-								<a id="bid" class="modal" item_id="{$T.r.id}" number="{$T.r.number}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+							{#if $T.header.about.user && $T.header.about.user.role=="operator"}
+								<a id="operator-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+							{#elseif $T.header.about.user && $T.header.about.user.role=="auctioneer"}
+								<a id="auctioneer-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+							{#elseif $T.header.about.user}
+								<a id="bid-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 							{#else}
 								<span class="item number">{$T.r.number}</span><span class="item">:</span>
 							{#/if}

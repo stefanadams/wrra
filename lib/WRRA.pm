@@ -125,6 +125,7 @@ sub setup_routing {
 	$ac->auto_complete(['Bellitem']);
 	$ac->auto_complete(['Bidder']);
 	$ac->auto_complete(['Ad']);
+	$ac->auto_complete([PayNumber => 'Item']);
 	my $bs = $api->under('/bs');
 	$bs->build_select([Rotarians => 'Rotarian']);
 

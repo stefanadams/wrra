@@ -108,6 +108,10 @@ sub _display_ad {
         my $ad;
         foreach my $_ad ( $self->db->resultset('Ads')->today->random->all ) {
                 $ad = {map { $_ => $_ad->$_ } qw/url year advertiser_id ad_id/};
+		if ( $_ad->advertiser ) {
+			$ad->{advertiser}->{name} = $_ad->advertiser->name;
+			$ad->{advertiser}->{advertisement} = $_ad->advertiser->advertisement;
+		}
 		next if $self->session->{ad}->{ad_id} && $ad->{ad_id} == $self->session->{ad}->{ad_id};
                 my $r;
                 if ( $r = $self->db->resultset('Adcount')->find($ad->{ad_id}, $self->datetime->ymd) ) {
