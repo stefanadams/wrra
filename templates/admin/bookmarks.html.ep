@@ -49,28 +49,30 @@ $(document).ready(function(){
   <h3>Paid Advertisements</h3>
   <div>
     <p><%= link_to 'Manage Ads' => 'ads' %></p>
-    <p><%= link_to 'Schedule Ads' => 'schedule_ads' => (class=>'disable') %></p>
+    <!-- <p><%= link_to 'Schedule Ads' => 'schedule_ads' => (class=>'disable') %></p> -->
   </div>
   <h3>Auction Week</h3>
   <div>
     <p><%= link_to 'Washington Rotary Radio Auction' => 'bidding' %></p>
     <p><%= link_to 'Sequence Items' => 'seq_items' %></p>
+    <!--
     <p><a class="disable" href="http://iis.radioauction.washingtonrotary.com/admin_auctioneer_a.asp">Auctioneer A</a></p>
     <p><a class="disable" href="http://iis.radioauction.washingtonrotary.com/admin_auctioneer_b.asp">Auctioneer B</a></p>
     <p><a class="disable" href="http://iis.radioauction.washingtonrotary.com/admin_start_auction_01.asp">Start Auctions (Assign Auctioneers)</a></p>
     <p><a class="disable" href="http://iis.radioauction.washingtonrotary.com/admin_main.asp">Control Functions (Start Timers, Sell Items)</a></p>
     <p><a class="disable" href="http://iis.radioauction.washingtonrotary.com/admin_place_bid_01.asp">Place Bids from Callers</a></p>
+    -->
     <p><%= link_to 'Manage Requests' => 'requests' => (class=>'disable') %></p>
     <p><%= link_to 'Manage Bids' => 'bids' %></p>
     <p><%= link_to 'Manage Bidders' => 'bidders' %></p>
     <p><%= link_to 'Manage Items Currently In Bidding' => 'bidding' => (class=>'disable') %></p>
-    <p><%= link_to 'Manage Winners' => 'winners' %></p>
+    <p><%= link_to 'Manage Winners' => 'winners' => (class=>'disable') %></p>
   </div>
   <h3>Live Reports</h3>
   <div>
-    <p><%= link_to 'View Current Summary' => 'summary' %></p>
-    <p><%= link_to 'Bank Report' => 'bankreport' %></p>
-    <p><%= link_to 'Pre-arranged Items Report' => 'stockreport' %></p>
+    <p><%= link_to 'View Current Summary' => 'summary' => (class=>'disable') %></p>
+    <p><%= link_to 'Bank Report' => 'bankreport' => (class=>'disable') %></p>
+    <p><%= link_to 'Pre-arranged Items Report' => 'stockreport' => (class=>'disable') %></p>
   </div>
   <h3>Notes</h3>
   <div>
