@@ -6,7 +6,7 @@ sub _colmodel { qw/id name/ }
 
 sub _create {
 	my ($class, $r, $rs, $req) = @_;
-	$r->year($rs->session->{year});
+	$r->year($rs->datetime->year);
 	return $r;
 };
 

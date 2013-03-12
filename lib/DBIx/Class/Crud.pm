@@ -109,7 +109,7 @@ sub update {
 
 	return $rs->throw_exception($self->_exception) if $self->_exception;
         my $r = $rs->find($id);
-	return $rs->throw_exception("Update error: Cannot find id $id") unless defined $r;
+	return $rs->throw_exception(__PACKAGE__." Update error: Cannot find id $id") unless defined $r;
         $r = $result_class->_update($r, $rs, $request) if $result_class->can('_update');
         $r = $r->update_with_related($request);
 	{res=>($r?'ok':'err'),$result_class->can('_return')?$result_class->_return($r => 'update'):()}
