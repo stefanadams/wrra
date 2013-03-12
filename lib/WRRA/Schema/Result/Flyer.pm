@@ -2,7 +2,7 @@ package WRRA::Schema::Result::Flyer;
 
 use base 'WRRA::Schema::Result::Item';
 
-sub _colmodel { qw/scheduled.day_name number name donor.name value/ }
+sub _colmodel { qw/scheduled.day_name number name donor.name value donor.rotarian.name/ }
 
 sub _search {
         my ($self, $rs, $req) = @_;
