@@ -111,8 +111,14 @@ sub setup_routing {
 	$api->any('/alert/:alert', {alert=>undef})->to('api#alert');
 	$api->get('/ad/:id')->to('api#ad');
 	$api->get('/header')->to('api#header');
-	my $config = $api->under('/dbconfig');
-	$config->get('/year/:year', {year=>undef})->to('api#api_dbconfig', config=>'year');
+	my $bidding_api = $r->under('/bidding/api');
+	$bidding_api->post('/assign/:id/:auctioneer')->over(has_priv=>'admin')->to('bidding_api#assign');
+	$bidding_api->post('/notify/:notify/:id/:state')->over(has_priv=>[qw/auctioneer admin/])->to('bidding_api#notify');
+	$bidding_api->post('/sell/:id')->over(has_priv=>'auctioneer')->to('bidding_api#sell');
+	$bidding_api->post('/timer/:id/:state')->over(has_priv=>'auctioneer')->to('bidding_api#timer');
+	$bidding_api->post('/bid/:id' => {id=>undef})->over(has_priv=>'operator')->to('bidding_api#bid');
+	#my $config = $api->under('/dbconfig');
+	#$config->get('/year/:year', {year=>undef})->to('api#api_dbconfig', config=>'year');
 	my $ac = $api->under('/ac');
 	$ac->auto_complete([City => 'Donor']);
 	$ac->auto_complete(['Donor']);

@@ -42,12 +42,19 @@ function contextMenu() {
 				assign_auctioneer: {
 					name: "Assign Auctioneer",
 					items: {
-						a: {name: "A", callback: function(key, opt){ processBidding(0);$.post('/api/assign/'+opt.$trigger.attr("itemid")+'/a', function(){processBidding(1);}); }},
-						b: {name: "B", callback: function(key, opt){ processBidding(0);$.post('/api/assign/'+opt.$trigger.attr("itemid")+'/b', function(){processBidding(1);}); }},
+						a: {name: "A", callback: function(key, opt){ processBidding(0);$.post('/bidding/api/assign/'+opt.$trigger.attr("itemid")+'/a', function(){processBidding(1);}); }},
+						b: {name: "B", callback: function(key, opt){ processBidding(0);$.post('/bidding/api/assign/'+opt.$trigger.attr("itemid")+'/b', function(){processBidding(1);}); }},
 					},
 				},
+				"sep1": "---------",
 				notify_timer: {name: "Request Timer Start", callback: function(key, opt){ processBidding(0);$.post('/api/notify/timer/'+opt.$trigger.attr("itemid")+'/1', function(){processBidding(1);}); }},
 				notify_sell: {name: "Request Item Sale", callback: function(key, opt){ processBidding(0);$.post('/api/notify/sell/'+opt.$trigger.attr("itemid")+'/1', function(){processBidding(1);}); }},
+				"sep2": "---------",
+				adjust_bid: {name: "Adjust Bid", callback: function(key, opt){ processBidding(0);$.post('/api/notify/timer/'+opt.$trigger.attr("itemid")+'/1', function(){processBidding(1);}); }},
+				adjust_bidder: {name: "Adjust Bidder", callback: function(key, opt){ processBidding(0);$.post('/api/notify/sell/'+opt.$trigger.attr("itemid")+'/1', function(){processBidding(1);}); }},
+				"sep3": "---------",
+				clear_last_bid: {name: "Clear Last Bid", callback: function(key, opt){ processBidding(0);$.post('/api/notify/timer/'+opt.$trigger.attr("itemid")+'/1', function(){processBidding(1);}); }},
+				reset_item: {name: "Reset Item", callback: function(key, opt){ processBidding(0);$.post('/api/notify/sell/'+opt.$trigger.attr("itemid")+'/1', function(){processBidding(1);}); }},
 			    }
 			    // there's more, have a look at the demos and docs...
 			};

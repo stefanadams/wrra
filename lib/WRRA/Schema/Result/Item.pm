@@ -289,6 +289,17 @@ sub status {
 	return 'Unknown';
 }
 
+sub nstatus {
+	my $self = shift;
+	return 60 if $self->status eq 'Complete';
+	return 50 if $self->status eq 'Sold';
+	return 40 if $self->status eq 'Bidding';
+	return 30 if $self->status eq 'OnDeck';
+	return 20 if $self->status eq 'Ready';
+	return 10 if $self->status eq 'Not Ready';
+	return undef if $self->status eq 'Unknown';
+}
+
 sub startbid {
 	my $self = shift;
 	return 5 if $self->value < 100;
