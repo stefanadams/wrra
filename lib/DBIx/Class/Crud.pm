@@ -109,7 +109,7 @@ sub update {
 
 	return $rs->throw_exception($self->_exception) if $self->_exception;
         my $r = $rs->find($id);
-	return $rs->throw_exception("Update error: Cannot find id $id") unless defined $r;
+	return $rs->throw_exception(__PACKAGE__." Update error: Cannot find id $id") unless defined $r;
         $r = $result_class->_update($r, $rs, $request) if $result_class->can('_update');
         $r = $r->update_with_related($request);
 	{res=>($r?'ok':'err'),$result_class->can('_return')?$result_class->_return($r => 'update'):()}
@@ -128,7 +128,7 @@ sub delete {
                 my $r = $self->resultset->find($_);
                 push @err, 0 and next unless defined $r;
                 $r = $result_class->_delete($r, $request) if $result_class->can('_delete');
-                push @err, $r->delete;
+                push @err, $_ unless $r->delete;
         }
 	{res=>(@err?'err':'ok')}
 }
@@ -147,7 +147,7 @@ sub _exception {
 
 sub _cell {
         my ($self, $celname, $value) = @_;
-        return () unless $celname && $celname ne 'id';
+        return () unless $celname; # && $celname ne 'id';
         my ($edit, $validate) = ($self->result->{edit}, $self->result->{validate});
 
         my %cells;

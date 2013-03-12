@@ -8,12 +8,36 @@ var autocomplete = {
 <%== autocomplete 'ac_ad', [qw/scheduled advertiser.nameid url/] %>
 <%== autocomplete 'ac_advertiser', [qw/name scheduled url/] %>
 
+function myelem (value, options) {
+  var el = document.createElement("input");
+  el.type="text";
+  el.value = value;
+  return el;
+}
+function myvalue(elem, operation, value) {
+    if(operation === 'get') {
+       return $(elem).val();
+    } else if(operation === 'set') {
+       $('input',elem).val(value);
+    }
+}
 $("#list1").jqGrid({
     caption: "Ads",
 
     colModel:[
         {name:'name',label:'Ad', width:200,editable:true,editoptions:{size:50,dataInit:ac_ad},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
-        {name:'scheduled',label:'Scheduled', width:200,editable:true,editoptions:{size:50},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+        {name:'scheduled.day_name',label:'Scheduled', width:200,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'},editoptions:{size:50,dataInit:function(el){ 
+                    $(el).datepicker({dateFormat:'yy-mm-dd'}); 
+                  }, 
+                  defaultValue: function(){ 
+                    var currentTime = new Date(); 
+                    var month = parseInt(currentTime.getMonth() + 1); 
+                    month = month <= 9 ? "0"+month : month; 
+                    var day = currentTime.getDate(); 
+                    day = day <= 9 ? "0"+day : day; 
+                    var year = currentTime.getFullYear(); 
+                    return year+"-"+month + "-"+day; 
+                  }}},
         {name:'advertiser.nameid',label:'Advertiser',width:200,editable:true,editoptions:{size:50,dataInit:ac_advertiser},editrules:{required:true,custom:true,custom_func:hasFK},formoptions:{elmsuffix:'(*)'},formatter:'hideFK'},
         {name:'url',label:'Ad URL', width:200,editable:true,editoptions:{size:50},editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
     ],

@@ -10,7 +10,11 @@ sub _colmodel { qw/id category name value cost/ }
 #sub sold { shift->SUPER::sold ? 1 : 0 }
 
 # These class methods are passed $rs, $request
-#sub _create { $_[1] };
+sub _create {
+        my ($class, $r, $rs, $req) = @_;
+        $r->year($rs->datetime->year);
+        return $r;
+};
 sub _search { $_[1]->current_year };
 #sub _update { $_[1] };
 #sub _delete { $_[1] };

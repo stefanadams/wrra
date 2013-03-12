@@ -28,7 +28,7 @@ sub _create {
 	} else {
 		$number = $req->{me}->{stockitem_id}?1000:100;
 	}
-	$r->year($rs->session->{year});
+	$r->year($rs->datetime->year);
 	$r->number($number);
 	return $r;
 };

@@ -129,7 +129,7 @@ $(document).ready(function(){
 </head> 
 <body> 
 	<div id="loggedin"></div>
-	Bugs in the item sequencer: when you drag an item to a new tab, the tab information will not recalculate and no sorting will be initiated.  You MUST reorder within the tab that you dragged the item to.  Also, when you drag an item to a new tab, the tabs don't automatically recalc; you MUST reorder a tab first.
+	Bug in the item sequencer: when you drag an item to a new tab, the tab information will not recalculate and no sorting will be initiated.  <b>You MUST reorder within <u>the tab that you dragged the item to</u>.</b>
 	<div id="tabs">
 		<ul>
 			<li><a href="#tabs-0">Not Assigned : </a></li>

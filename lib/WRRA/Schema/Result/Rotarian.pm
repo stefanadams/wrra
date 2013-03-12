@@ -98,7 +98,6 @@ use Class::Method::Modifiers;
 __PACKAGE__->has_many(donors => 'WRRA::Schema::Result::Donor', 'rotarian_id'); # A Rotarian has_many Donors that s/he solicits
 __PACKAGE__->belongs_to(leader => 'WRRA::Schema::Result::Leader', {'foreign.leader_id'=>'self.rotarian_id'});
 
-use overload '""' => sub {shift->name}, fallback => 1;
 sub id { shift->rotarian_id }
 
 around 'phone' => sub {

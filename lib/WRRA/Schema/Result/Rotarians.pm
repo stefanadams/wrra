@@ -15,7 +15,7 @@ sub _colmodel { qw/id name has_submissions email phone/ }
 # These class methods are passed $r, $rs, $request
 sub _create {
 	my ($class, $r, $rs, $req) = @_;
-	$r->rotarian_id($req->{id});
+	$r->rotarian_id($req->{me}->{id});
 	return $r;
 };
 #sub _search { $_[1] };

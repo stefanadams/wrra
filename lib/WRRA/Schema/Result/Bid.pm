@@ -91,12 +91,13 @@ __PACKAGE__->set_primary_key("bid_id");
 __PACKAGE__->belongs_to(bidder => 'WRRA::Schema::Result::Bidder', 'bidder_id');
 __PACKAGE__->belongs_to(item => 'WRRA::Schema::Result::Item', 'item_id');
 
-use overload '""' => sub { shift->bid }, fallback=>1;
 sub id { shift->bid_id }
 
+use DateTime;
 sub bidage {
 	my $self = shift;
-	return defined $self->bidtime ? $self->bidtime->can('epoch') ? time-$self->bidtime->epoch : undef : undef;
+	return 'More than a day' if time-$self->bidtime->epoch > 60*60*24;
+	return join ':', map { sprintf '%02d', $_ } DateTime->now(time_zone=>'America/Chicago')->subtract_datetime($self->bidtime)->in_units(qw/hours minutes seconds/);
 }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

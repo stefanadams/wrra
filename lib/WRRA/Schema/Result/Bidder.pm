@@ -134,7 +134,6 @@ use Class::Method::Modifiers;
 __PACKAGE__->has_many(bids => 'WRRA::Schema::Result::Bid', 'bidder_id'); # A Bidder has_many Bids, join to Bid by bidder_id
 __PACKAGE__->many_to_many(items => 'bids', 'item'); # A Bidder bids on many Items, bridge to item via Bid's bids
 
-use overload '""' => sub { shift->name }, fallback => 1;
 sub id { shift->bidder_id }
 
 around 'phone' => sub {
