@@ -1,0 +1,812 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1" />
+<title>Radio Auction</title>
+
+<link rel="stylesheet" type="text/css" media="screen" href="/css/main.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/css/jquery.contextMenu.css" />
+
+<link   href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/themes/base/jquery-ui.css" type="text/css" rel="stylesheet" media="all" />
+<script  src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+<script  src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/jquery-ui.min.js" type="text/javascript"></script>
+<script type="text/javascript" src="/js/jquery-jtemplates_uncompressed.js"></script>
+<script type="text/javascript" src="/js/jquery.jtruncate.js"></script>
+<script type="text/javascript" src="/js/jquery.formatCurrency-1.4.0.min.js"></script>
+<script type="text/javascript" src="/js/jquery.humanmsg.js"></script>
+<script type="text/javascript" src="/js/jquery.maskedinput.min.js"></script>
+<script type="text/javascript" src="/js/jquery.contextMenu.js"></script>
+
+
+<script type="text/javascript">
+var allowHumanMsg = 1;
+var c_response = '';
+var alert;
+var alert_msg;
+
+function contextMenu(auction) {
+console.log('cm');
+	if ( !auction.session.user.role ) {
+		$.contextMenu( 'destroy' );
+		return true;
+	}
+	$.contextMenu({
+	    // define which elements trigger this menu
+	    selector: ".context-item",
+	    // define the elements of the menu
+	    build: function($trigger, e) {
+		$trigger.contextMenu(true);
+		if ( auction.session.user.role=="admin" ) {
+			return {
+			    callback: function(key, options) {
+				var m = "clicked: " + key;
+				window.console && console.log(m) || alert(m); 
+			    },
+			    items: {
+				assign_auctioneer: {
+					name: "Assign Auctioneer",
+					items: {
+						a: {name: "A", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'assign' %>/'+opt.$trigger.attr("itemid")+'/a', function(){processContent(1);}); }},
+						b: {name: "B", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'assign' %>/'+opt.$trigger.attr("itemid")+'/b', function(){processContent(1);}); }},
+					},
+				},
+				"sep1": "---------",
+				notify_timer: {name: "Request Timer Start", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'notify' %>/timer/'+opt.$trigger.attr("itemid")+'/1', function(){processContent(1);}); }},
+				notify_sell: {name: "Request Item Sale", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'notify' %>/sell/'+opt.$trigger.attr("itemid")+'/1', function(){processContent(1);}); }},
+				"sep2": "---------",
+				adjust_bid: {name: "Adjust Bid", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'notify' %>/timer/'+opt.$trigger.attr("itemid")+'/1', function(){processContent(1);}); }},
+				adjust_bidder: {name: "Adjust Bidder", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'notify' %>/sell/'+opt.$trigger.attr("itemid")+'/1', function(){processContent(1);}); }},
+				"sep3": "---------",
+				clear_last_bid: {name: "Clear Last Bid", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'notify' %>/timer/'+opt.$trigger.attr("itemid")+'/1', function(){processContent(1);}); }},
+				reset_item: {name: "Reset Item", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'notify' %>/sell/'+opt.$trigger.attr("itemid")+'/1', function(){processContent(1);}); }},
+			    }
+			    // there's more, have a look at the demos and docs...
+			};
+		} else if ( auction.session.user.role=="operator" ) {
+			return {
+			    callback: function(key, options) {
+				var m = "clicked: " + key;
+				window.console && console.log(m) || alert(m); 
+			    },
+			    items: {
+				place_bid: {name: "Place Bid", callback: on_click_operator(auction)},
+			    }
+			};
+		} else if ( auction.session.user.role=="auctioneer" ) {
+			return {
+			    callback: function(key, options) {
+				var m = "clicked: " + key;
+				window.console && console.log(m) || alert(m); 
+			    },
+			    items: {
+				acknowledge_newbid: {name: "Acknowledge New Bid", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'newbid' %>/'+opt.$trigger.attr("itemid")+'/0', function(){processContent(1);}); }},
+				start_timer: {name: "Start Timer", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'starttimer' %>/'+opt.$trigger.attr("itemid"), function(){processContent(1);}); }},
+				stop_timer: {name: "Stop Timer", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'stoptimer' %>/'+opt.$trigger.attr("itemid"), function(){processContent(1);}); }},
+				sell: {name: "Sell Item", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'sell' %>/'+opt.$trigger.attr("itemid"), function(){processContent(1);}); }},
+			    }
+			};
+		} else {
+			return {
+			    callback: function(key, options) {
+				var m = "clicked: " + key;
+				window.console && console.log(m) || alert(m); 
+			    },
+			    items: {
+			    }
+			};
+		}
+	    }
+	});
+}
+
+function processContent(value) {
+	if ( value ) {
+		$("#content").processTemplateStart("<%= url_for 'auction' %>", null, <%= app->config->{refresh}->{auction}->{content} || 10000 %>, null, {
+			type: 'GET',
+			headers: {Accept: 'application/json'},
+			on_success: function(elem, d){
+				var auction = d;
+				//console.log(JSON.parse(localStorage['auction']));
+				localStorage['auction'] = auction;
+				//console.log(JSON.parse(localStorage['auction']));
+				auction = JSON.parse(localStorage['auction']);
+
+				// Header
+				var msg=$('#alert-get').html();
+				if (msg){
+					if (msg != c_response && allowHumanMsg){$(window).humanMsg(msg, {autoHide: 2.25*1000});}
+					allowHumanMsg = 1;
+					c_response = msg;
+					$('table.getalert').show();
+				} else {
+					$('table.getalert').hide();
+				}
+				var headergroupHeight = 0;
+				$('#header').not(':hidden').each(function(){headergroupHeight = headergroupHeight + $(this).height() + 10;});   // Add 10 for the 10px padding in #header
+				$('table.setalert tr.alert').not(':hidden').each(function(){headergroupHeight = headergroupHeight + $(this).height();});
+				$('table.setalert tr.msg').not(':hidden').each(function(){headergroupHeight = headergroupHeight + $(this).height();});
+				$('table.getalert').not(':hidden').each(function(){headergroupHeight = headergroupHeight + $(this).height();});
+				$('body').css('height', ($('body').height()-headergroupHeight-50)+'px');    // Sub 50 for the body bottom padding
+				$('body').css('padding-top', headergroupHeight+'px');
+
+				$("#livechat").click(function(){on_click_livechat(auction)});
+				$("#paypal").click(function(){on_click_paypal(auction)});
+				$("table.setalert span.alert").click(function(){on_click_alert(auction)});
+				$("#clearalert").click(function(){on_click_clearalert(auction)});
+				$("#register").click(function(){on_click_register(auction)});
+				if ( auction.session.user.role=="operator" ) {
+					$(".item-number").click(function(){on_click_operator(auction)});
+				} else if ( auction.session.user.role ) {
+					$(".item-number").click(function(){on_click_bid(auction)});
+				}
+				$("#login").click(function(){on_click_login(auction)});
+				$("#logout").click(function(){on_click_logout(auction)});
+
+				// Items
+				//if (!!$(this).attr('item') && $(this).find('span.truncate').html().length > $(this).find('span.truncate').attr("length")){content.push($(this).attr('item'));}
+				//if (!!$(this).attr('message') && $(this).find('span.truncate').html().length > $(this).find('span.truncate').attr("length")){content.push($(this).attr('message'));}
+
+				$('span.truncate').each(function(){
+					var text = $(this).html();
+					var len = $(this).attr('length') || 50;
+					text = text.length > len ? text.substring(0,len)+'... <img src="img/paper1.gif" alt="'+text+'"/>' : text;
+					$(this).html(text);
+				});
+
+				$('.currency').each(function(){
+					$(this).formatCurrency({roundToDecimalPlace:0});
+				});
+
+				$('table.items tbody tr').hover(
+					function(){
+						$(this).addClass("highlight");
+					},
+					function(){
+						$(this).removeClass("highlight");
+					}
+				);
+
+				$( document ).tooltip({
+				      items: "img, [pic], [title]",
+				      content: function() {
+					  var element = $( this );
+					  if ( element.is( "[pic]" ) ) {
+					      var text = element.attr('text');
+					      console.log("[pic]: <img src='"+text+"' alt='"+text+"' />");
+                                              return "<img src='"+text+"' alt='"+text+"' />";
+					  }
+					  if ( element.is( "[title]" ) ) {
+					      console.log("[title]: "+element.attr( "title" ));
+					      return element.attr( "title" );
+					  }
+					  if ( element.is( "img" ) ) {
+					      console.log("Img: "+element.attr( "alt" ));
+					      return element.attr( "alt" );
+					  }
+				      }
+				});
+
+				// Stats
+				$( "#stats" ).draggable().resizable();
+
+				contextMenu(auction);
+			}
+		});
+	} else {
+		$("#content").processTemplateStop();
+	}
+}
+
+function on_click_livechat(auction) {
+	console.log('livechat');
+	$("#dialog-livechat").dialog({autoOpen: false, height: 290, width: 350, modal: true});
+	$("#dialog-livechat").dialog("open");
+}
+
+function on_click_paypal(auction) {
+	console.log('paypal');
+	processContent(0);
+	$("#dialog-paypal").dialog({
+		autoOpen: false,
+		height: 320,
+		width: 380,
+		modal: true,
+		close: processContent(1)
+	});
+	$("#dialog-paypal").dialog("open");
+	$("#paypal-os0").autocomplete({
+		source: "<%= url_for 'ac_pay_number' %>",
+		minLength: 3,
+		select: function(event, ui){
+			if (ui.item){
+				$('#paypal-name').val(ui.item.name);
+				$('#paypal-os1').val(ui.item.address);
+				$('#paypal-os2').val(ui.item.csz);
+			}
+		}
+	}).data( "ui-autocomplete" )._renderItem = function( ul, item ) {
+	      return $( "<li>" )
+		.append( "<a>" + item.label + " : " + item.desc + "</a>" )
+		.appendTo( ul );
+	};
+}
+
+function on_click_clearalert(auction){
+	console.log('clearalert');
+	if ( auction.session.user.role ) {
+		processContent(0);
+		$.ajax({
+			url: '<%= url_for 'alert' %>',
+			type: 'DELETE',
+			success: processContent(1)
+		});
+	} else {
+		localStorage['clearalert'] = auction.header.alert.msg;
+	}
+}
+
+function on_click_alert(auction){
+	console.log('alert');
+	processContent(0);
+	$("#dialog-alert").dialog({
+		autoOpen: false,
+		height: 240,
+		width: 520,
+		modal: true,
+		buttons: {
+			"Send Alert": function() {
+				$("#alert-set-alert").removeClass("ui-state-error");
+				$("#alert-set-msg").removeClass("ui-state-error");
+				$.post('<%= url_for 'alert' %>/'+$('input[name="alert-set-alert"]:checked').val(), {msg: $("#alert-set-msg").val()}, function(data){
+					processContent(1);
+/*
+					if ( data.msg ) {
+						$('table.getalert').show();
+						$('#alert-get').html(data.msg);
+					} else {
+						$('table.getalert').hide();
+					}
+					$('span.alert').each(function(){
+						if ($(this).hasClass('selected')){$(this).removeClass('selected');}
+					});
+*/
+				});
+				$(this).dialog("close");
+			},
+			Cancel: function() {
+				$(this).dialog("close");
+			}
+		},
+		close: function() {
+			$("#alert-set-alert").removeClass("ui-state-error");
+			$("#alert-set-msg").removeClass("ui-state-error");
+			processContent(1);
+		}
+	});
+	$("#dialog-alert").dialog("open");
+}
+
+function on_click_operator(key, opt, auction) {
+	console.log('operator');
+	var item_id, number, minbid, highbid, status, timer, bellringer;
+	if ( opt ) {
+		console.log(key, opt.$trigger.attr("itemid"));
+		item_id=opt.$trigger.attr('item_id');
+		number=opt.$trigger.attr('number');
+		minbid=opt.$trigger.attr('minbid');
+		highbid=opt.$trigger.attr('highbid');
+		status=opt.$trigger.attr('status');
+		timer=opt.$trigger.attr('timer');
+		bellringer=opt.$trigger.attr('bellringer');
+	} else {
+		item_id=$(this).attr('item_id');
+		number=$(this).attr('number');
+		minbid=$(this).attr('minbid');
+		highbid=$(this).attr('highbid');
+		status=$(this).attr('status');
+		timer=$(this).attr('timer');
+		bellringer=$(this).attr('bellringer');
+	}
+	processContent(0);
+	$("#dialog-operator").dialog({
+		autoOpen: false,
+		height: 218,
+		width: 350,
+		modal: true,
+		open: function() {
+			$('form[name=operator] input[name=operator-bid]').val(minbid);
+			$('form[name=operator] input[name=operator-phone]').mask("(999) 999-9999");
+		},
+		buttons: {
+			"Bid": function(){
+				$(this).dialog("disable"); 
+				$(this).dialog({title: 'Bid...'});
+				$.post('<%= url_for 'bid' %>', {phone: $('#operator-phone').val(),value: item_id+":"+$('#operator-bid').val(),approve: 1}, function(data){
+					//var json = $.toJSON(data);
+					$.post('/api/approve/'+data.request.request_id+'/1', function(){
+						$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
+						processContent(0);
+					});
+					$(this).dialog("close");
+				});
+			},
+			Cancel: function(){$(this).dialog("close");}
+		},
+		close: processContent(1)
+	});
+	$("#dialog-operator-title").html("Bid on item "+number+" (Minimum: "+minbid+")");
+	if ( status == "Bidding" ) {
+		$("#dialog-operator").dialog("open");
+	} else {
+		$.dialog_alert("Closed!", "Closed!");
+	}
+
+	$("#operator-phone").autocomplete({
+		source: "<%= url_for 'ac_bidder' %>",
+		minLength: 4,
+		select: function(event, ui){
+			if (ui.item){
+				$('#operator-name').val(ui.item.name);
+			}
+		}
+	});
+}
+
+function on_click_register(auction) {
+	console.log('register');
+	processContent(0);
+	// Abort if id'd
+	$("#dialog-register").dialog({
+		autoOpen: false,
+		height: 218,
+		width: 350,
+		modal: true,
+		open: function() {
+			$('#register-phone').mask("(999) 999-9999");
+		},
+		buttons: {
+			"Register": function(){
+				$(this).dialog("disable"); 
+				$(this).dialog({title: 'Register...'});
+				$.post('/api/request/newuser', {value: $('#register-username').val()+":"+$('#register-bidder').val()+":"+$('#register-phone').val()}, function(){
+					processContent(1);
+				});
+				$(this).dialog("close");
+			},
+			Cancel: function(){$(this).dialog("close");}
+		},
+		close: processContent(1)
+	});
+	$("#dialog-register-title").html("Identify yourself.");
+	$("#dialog-register").dialog("open");
+}
+
+function on_click_login(auction) {
+	console.log('login');
+	processContent(0);
+	$("#dialog-login").dialog({
+		autoOpen: false,
+		height: 218,
+		width: 350,
+		modal: true,
+		open: function() {
+			$('form[name=login] input[name="login-phone"]').mask("9999");
+			$(this).keypress(function(e) {
+			    if (e.keyCode == $.ui.keyCode.ENTER) {
+				console.log('You pressed enter!');
+				$(".ui-dialog:visible").find('.ui-dialog-buttonpane').find('button:first').click();
+			    }
+			});
+		},
+		buttons: {
+			"Identify": function(){
+				var t = $(this);
+				t.dialog("disable"); 
+				t.dialog({title: 'Identifying...'});
+				$.post('<%= url_for 'login' %>', {username: $('#login-username').val(), phone: $('#login-phone').val()}, function(data){
+					if ( data.user ) {
+						processContent(1);
+						if ( data.user.role == 'admin' ) {
+							$('#stats').show();
+						} else {
+							$('#stats').hide();
+						}
+						t.dialog("close");
+					} else {
+						t.dialog("disable"); 
+						t.dialog({title: 'Identify yourself'});
+					}
+				});
+			},
+			Cancel: function(){$(this).dialog("close");}
+		},
+		close: processContent(1)
+	});
+	$("#dialog-login-title").html("Identify yourself.");
+	$("#dialog-login").dialog("open");
+}
+
+function on_click_logout(auction){
+	console.log('logout');
+	processContent(0);
+	$.get('<%= url_for 'logout' %>', function(){
+		processContent(1);
+	});
+}
+
+function on_click_bid(auction){
+	console.log('bid');
+	var item_id=$(this).attr('item_id');
+	var number=$(this).attr('number');
+	var minbid=$(this).attr('minbid');
+	var highbid=$(this).attr('highbid');
+	processContent(0);
+	$("#dialog-bid").dialog({
+		autoOpen: false,
+		height: 320,
+		width: 380,
+		modal: true,
+		open: function() {
+			$('form[name=bid] input[name=bid-bid]').val(minbid);
+		},
+		buttons: {
+			"Place Bid": function(){
+				$(this).dialog("disable"); 
+				$(this).dialog({title: 'Submitting bid...'});
+				$.post('<%= url_for 'bid' %>', {value: item_id+":"+$('#bid-bid').val()}, function() {
+					processContent(1);
+				});
+				$(this).dialog("close");
+			},
+			Cancel: function(){$(this).dialog("close");}
+		},
+		close: processContent(1)
+	});
+	$("#dialog-bid-title").html("Bid on item "+number+" (Minimum: "+minbid+")");
+	$("#dialog-bid").dialog("open");
+}
+
+$(document).ready(function(){
+	$.ajaxSetup({
+		headers: {Accept: 'application/json'},
+	});
+
+	$.extend({ dialog_alert: function (message, title) {
+	  $("<div></div>").dialog( {
+	    buttons: { "Ok": function () { $(this).dialog("close"); } },
+	    close: function (event, ui) { $(this).remove(); },
+	    resizable: false,
+	    title: title,
+	    modal: true
+	  }).text(message);
+	}
+	});
+
+	$("#content").setTemplateElement("t_content", null, {runnable_functions: true});
+	processContent(1);
+});
+</script>
+</head>
+<body>
+	<!-- There entire page contents are contained within this div -->
+	<div id="content"></div>
+
+
+	<!-- M A I N   C O N T E N T   T E M P L A T E -->
+
+
+	<textarea id="t_content" style="display:none">
+		<div id="headergroup">
+			<div id="header">
+				{#if $T.session.user.name}
+					<!-- (<a id="logout" class="mast">Sign out</a>)*Beta -->
+					<a id="logout" class="modal"><span class="hello">Hello, {$T.session.user.name}!</span></a>
+					{#if $T.session.user.role=="admin"}<a href="/admin/bookmarks">Bookmarks</a>{#/if}
+				{#else}
+					<!-- (<a id="register" class="mast">Register!</a> | <a id="signin" class="mast">Sign in!</a>) *Beta -->
+				{#/if}
+				<table class="header">
+					<tr>
+						<td class="mast">
+							<table class="mast">
+								% if ( app->mode eq 'development' ) {
+								<tr><td class="hello">
+								  {$T.header.about.datetime}
+								</tr></td>
+								% }
+								{#if !$T.session.user.role}
+								<tr><td class="title">
+								<div id="login">
+								{#if $T.header.about.live}
+									<span class="title">{$T.header.about.name} {$T.header.about.year} {$T.header.about.night?", Night " + $T.header.about.night:''} {$T.header.about.live?'':' (Offline)'}</span>
+								{#else}
+									<span class="title">{$T.header.about.name} -- Closed</span>
+									<img class="arrowsep" src="img/right_arrow_button.gif" />
+									<span class="reopens">Re-opens {$T.header.about.date_next}</span>
+								{#/if}
+								</div>
+								</td></tr>
+								<tr>
+									<td class="play">
+										{#if $T.header.about.live}
+										<span class="listen">Listen:
+											<span class="radio">
+												{#foreach $T.header.play.listen.radio as station}
+													{#if $T.station.link}
+														<span class="nolive"><a class="mast" href="{$T.station.link}" target="blank">{$T.station.name}</a></span>
+													{#else}
+														{$T.station.name}
+													{#/if}
+													{#if $T.station$last == false}
+														<span class="choicesep">/</span>
+													{#/if}
+												{#/foreach}
+											</span>
+										</span>
+										<img class="arrowsep" src="img/right_arrow_button.gif" />
+										<span class="bid">Bid:
+											<span class="phone">
+												{#foreach $T.header.play.bid.phone as phone}
+													{$T.phone}
+													{#if $T.station$last == false}
+														<span class="choicesep">/</span>
+													{#/if}
+												{#/foreach}
+											</span>
+											<span class="choicesep">/</span>
+											<span class="chat"><a class="mast" href="http://dev.washingtonrotary.com/rra/mibew/client.php?locale=en&style=simplicit" id="livechat">Web Chat</a>
+											</span>
+										</span>
+										<img class="arrowsep" src="img/right_arrow_button.gif" />
+										{#/if}
+										<span class="pay">Pay:
+											<a id="paypal" class="modal">PayPal</a>
+										</span>
+									</td>
+								</tr>
+								{#/if}
+							</table>
+						</td>
+					</tr>
+					{#if $T.header.about.live && !$T.session.user.role}
+					<tr>
+						<td class="ad">
+							<table class="ad">
+								<tr>
+									<td class="ad">
+										{#if $T.header.ads.ad.ad_id && $T.header.ads.ad.img}
+											<a href="<%= url_for 'ad' %>/{$T.header.ads.ad.ad_id}" target="_new"><img src="{$T.header.ads.ad.img}" border="0" alt="Click here to support our sponsor -- {$T.header.ads.ad.advertiser.name}<br><br>{$T.header.ads.ad.advertiser.advertisement||''}" /></a>
+										{#else}
+											<a href="<%= app->config->{default_ad}->{url} %>" target="_new"><img src="/ads/<%= app->config->{default_ad}->{img} %>" border="0" /></a>
+										{#/if}
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+					{#/if}
+				</table>
+				{#if $T.header.alert.msg}
+				<table class="getalert">
+					<tr class="msg">
+						<td>
+							<span id="alert-get" class="msg"><a id="clearalert" class="modal">{$T.header.alert.msg}</a></span>
+						</td>
+					</tr>
+				</table>
+				{#/if}
+				{#if $T.session.user.role=="admin"}
+				<div id="dialog-alert" title="Set Alert" class="modal">
+					<form>
+					<fieldset>
+						<label for="alert">Send Alert To</label>
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="admin"/>Admins
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="operator"/>Operators
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="auctioneer"/>Auctioneers
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="caller"/>Callers
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="bellringer"/>Bellringers
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="public"/>Public
+						<label for="msg">Message</label>
+						<input type="text" name="alert-set-msg" id="alert-set-msg" class="text ui-widget-content ui-corner-all" />
+					</fieldset>
+					</form>
+				</div>
+				<table class="setalert">
+					<tr class="alert">
+						<td>
+							<span class="alert">Send Alert Message</span>
+						</td>
+					</tr>
+				</table>
+				{#/if}
+			</div>
+		</div>
+		<div id="bodygroup">
+			<div id="items">
+				{#if $T.items}
+					<table id='itemsbidding' class="items bidding tablesorter">
+						<thead>
+						<tr>
+							<th>Item</th><th>Value</th><th>High&nbsp;Bid</th><th>High Bidder</th><th>Donor</th><th>Message</th>
+						</tr>
+						</thead>
+						<tbody>
+						{#foreach $T.items.rows as r}
+							<tr id="tr_{$T.r.id}" itemid="{$T.r.id}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" class="context-item">
+								<td col="item" class=tooltip item="{$T.r.name}" description="{$T.r.description}" img="{$T.r.img}">
+									<div col="item">
+									<div style="float:left;width:80%">
+									{#if $T.r.auctioneer}<img src="img/{$T.r.auctioneer}.gif" />{#/if}
+									{#if $T.session.user.role=="operator"}
+										<a id="operator-{$T.r.id}" title="Place Bid" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+									{#elseif $T.session.user.role=="auctioneer"}
+										<a id="auctioneer-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+									{#elseif $T.session.user.name}
+										<a id="bid-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+									{#else}
+										<span class="item number">{$T.r.number}</span><span class="item">:</span>
+									{#/if}
+									{#if $T.r.url}<a href="{$T.r.url}" target="_new">{#/if}
+									<span class="item name truncate" length="70" itemid="{$T.r.id}">{$T.r.name}</span>
+									{#if $T.r.url}</a>{#/if}
+									</div>
+									<div style="float:right;width:20%;text-align:right">
+									{#if $T.r.description}<img src="img/paper1.gif" alt="{$T.r.description}" /></a>{#/if}
+									{#if $T.r.url}<a href="{$T.r.url}" target="_new"><img src="img/chain1.png" style="border-style: none" title="Visit the product website of Item #{$T.r.number}"/></a>{#/if}
+									{#if $T.r.img}<a href="{$T.r.img}" target="_new"><img src="img/attach_image.gif" text="{$T.r.img}" pic="pic" /></a>{#/if}
+									</div>
+									</div>
+								</td>
+								<td col="value">
+									<div col="value">
+									<div style="float:left;width:80%">
+									<span class="currency">{$T.r.value}</span>
+									</div>
+									<div style="float:right;width:20%;text-align:right">
+									{#if $T.r.timer}<img src="img/clock3.gif" title="Timer"/>{#/if}
+									</div>
+									</div>
+								</td>
+								<td col="highbid">
+									<div col="highbid">
+									<div style="float:left;width:80%">
+									<span class="currency">{$T.r.highbid.bid}</span>
+									</div>
+									<div style="float:right;width:20%;text-align:right">
+									{#if $T.r.notify.newbid}<img src="img/paddle1.gif" title="New Bid"/>{#/if}
+									{#if $T.r.bellringer}<img src="img/bell2.png" title="Bell Ringer"/>{#/if}
+									</div>
+									</div>
+								</td>
+								<td col="bidder">
+									<div style="margin:0 auto;">
+									<div col="bidder" style="margin:0 auto; width: 141px;">
+									<div style="float: left; width: 80%;">
+									<span class="bidder">{$T.r.highbid.bidder.name}</span>
+									</div>
+									<div style="float:right;width:20%; text-align:left;">
+									{#if $T.r.status=='Sold'}<img src="img/gavel2.gif" title="Sold"/>{#/if}
+									</div>
+									</div>
+									</div>
+								</td>
+								<td col="donor">
+									<div col="donor">
+									<div style="float:left;width:80%">
+									{#if $T.r.donor.url}<a href="{$T.r.donor.url}" target="_new">{#/if}
+									<span class="donor">{$T.r.donor.name}</span>
+									{#if $T.r.donor.url}</a>{#/if}
+									</div>
+									<div style="float:right;width:20%;text-align:right">
+									{#if $T.r.donor.url}<a href="{$T.r.donor.url}" target="_new"><img src="img/chain1.png" style="border-style: none" title="Visit the website of {$T.r.donor.name}" /></a>{#/if}
+									</div>
+									</div>
+								</td>
+								<td col="message" class="tooltip" message="{$T.r.donor.advertisement}">
+									<div col="message">
+									<span class="message truncate" length="45" itemid="{$T.r.id}">{$T.r.donor.advertisement}</span>
+									</div>
+								</td>
+							</tr>
+						{#else}
+							<tr><td colspan=6><span name="tableempty">No items currently up for bid</span></td></tr>
+						{#/for}
+						</tbody>
+					</table>
+					<div id="key">
+						<span class="key">Key:
+							<img valign='middle' src='img/paddle1.gif' width='16' height='16' class="tooltip above" description="New Bid">&nbsp;= New Bid |
+							<img valign='middle' src='img/bell2.png' width='16' height='16' class="tooltip above" description="Bell Ringer">&nbsp;= Bell Ringer |
+							<img valign='middle' src='img/clock3.gif' width='16' height='16' class="tooltip above" description="Timer">&nbsp;= Timer |
+							<img valign='middle' src='img/gavel2.gif' width='16' height='16' class="tooltip above" description="Sold">&nbsp;= Sold |
+							<img valign='middle' src='img/paper1.gif' width='16' height='16' class="tooltip above" description="More description">&nbsp;= More description |
+							<img valign='middle' src='img/chain1.png' width='16' height='16' class="tooltip_fixed above" description="<a href='http://google.com' target='_new'>Link</a>">&nbsp;= External link |
+							<img valign='middle' src='img/attach_image.gif' width='16' height='16' class="tooltip above" description="<img src='img/attach_image.gif' />">&nbsp;= View image
+						</span>
+					</div>
+				{#else}
+					<table class='closed'>
+						<thead>
+						<tr>
+							<th>Closed</th>
+						</tr>
+						</thead>
+					</table>
+				{#/if}
+			</div>
+		</div>
+
+		<br /><br />
+
+		<div id="footergroup">
+			<div id="footer">
+				{#if $T.stats}
+					<div id="stats" class="ui-widget-content">
+					Items Today: {$T.stats.items.today}
+					</div>
+				{#/if}
+			</div>
+		</div>
+	</textarea>
+
+
+	<!-- D I A L O G   B O X E S -->
+
+
+	<div id="dialog-paypal" title="Pay by Credit Card" class="modal">
+		<form action='https://www.paypal.com/cgi-bin/webscr' method='post'>
+			<input type='hidden' name='cmd' value='_s-xclick'><input type='hidden' name='hosted_button_id' value='4113257'>
+			<table>
+				<tr><td colspan="2">Complete the form below to pay for your item:</td></tr>
+				<tr><td>Item #:</td><td><input type='hidden' name='on0' value='Item ID'><input id="paypal-os0" type='text' name='os0' maxlength='60' value='Item ID' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td>Item:</td><td><input type='hidden' name='on3' value='Item'><input id="paypal-name" type='text' name='item_name' maxlength='60' value='Item' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td>Street Address:</td><td><input type='hidden' name='on1' value='Street Address'><input id="paypal-os1" type='text' name='os1' maxlength='60' value='Street Address' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td>City, ST ZIP</td><td><input type='hidden' name='on2' value='City, State, Zip'><input id="paypal-os2" type='text' name='os2' maxlength='60' value='City, State, Zip' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td colspan="2" align="center"><input type='image' src='https://www.paypal.com/en_US/i/btn/btn_paynowCC_LG.gif' border='0' name='submit' alt='PayPal - The safer, easier way to pay online!'><img alt='' border='0' src='https://www.paypal.com/en_US/i/scr/pixel.gif' width='1' height='1'></td></tr>
+			</table>
+		</form>
+	</div>
+
+	<div id="dialog-operator" title="Operator" class="modal">
+		<form name="operator" action='<%= url_for 'bid' %>' method='post'>
+			<table>
+				<tr><td colspan="2"><div id="dialog-operator-title">Submit Bid</div></td></tr>
+				<tr><td>Phone</td><td><input id="operator-phone" type='text' name='operator-phone' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td>Name</td><td><input id="operator-name" type='text' name='operator-name' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td>Amount</td><td><input id="operator-bid" type='text' name='operator-bid' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+			</table>
+		</form>
+	</div>
+
+	<div id="dialog-register" title="Register" class="modal">
+		<form name="register" action='<%= url_for 'register' %>' method='post'>
+			<table>
+				<tr><td colspan="2"><div id="dialog-register-title">Register</div></td></tr>
+				<tr><td>Username</td><td><input id="register-username" type='text' name='register-username' maxlength='60' value='Username' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td>Name</td><td><input id="register-bidder" type='text' name='register-bidder' maxlength='60' value='Bidder' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td>Phone</td><td><input id="register-phone" type='text' name='register-phone' maxlength='60' value='Phone' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+			</table>
+		</form>
+	</div>
+
+	<div id="dialog-login" title="Identify yourself" class="modal">
+		<form name="login" action='<%= url_for 'login' %>' method='post'>
+			<table>
+				<tr><td colspan="2"><div id="dialog-login-title">Identify</div></td></tr>
+				<tr><td>Username</td><td><input id="login-username" type='text' name='login-username' maxlength='60' value='Username' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td>Phone</td><td><input id="login-phone" type='text' name='login-phone' maxlength='60' value='Phone' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+			</table>
+		</form>
+	</div>
+
+	<div id="dialog-bid" title="Bid" class="modal">
+		<form name="bid" action='<%= url_for 'bid' %>' method='post'>
+			<table>
+				<tr><td colspan="2"><div id="dialog-bid-title">Submit Bid</div></td></tr>
+				<tr><td>Amount</td><td><input id="bid-bid" type='text' name='bid-bid' maxlength='60' value='Amount' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+			</table>
+		</form>
+	</div>
+
+</body>
+</html>

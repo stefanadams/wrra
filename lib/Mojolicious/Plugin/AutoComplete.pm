@@ -23,7 +23,7 @@ sub register {
     my $name = decamelize(delete $_{name} // $result_class);
     $route =~ s/^\/+// if $route;
     $route //= $name;   
-    $r->dbroute(["/$route" => "Ac$result_class" => $source], {api => 'auto_complete'}, \'get', %_);
+    $r->dbroute(["/$route" => "Ac$result_class" => $source], {auto_complete => 'auto_complete'}, \'get', %_);
   });
 
   $app->helper(ac => sub {

@@ -1,17 +1,25 @@
+use utf8;
 package WRRA::Schema::Result::Item;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use 5.010;
-use strict;
-use warnings;
-
-use base 'WRRA::Schema::Result';
-
 =head1 NAME
 
 WRRA::Schema::Result::Item
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<WRRA::Schema::Result>
+
+=cut
+
+use base 'WRRA::Schema::Result';
+
+=head1 TABLE: C<items>
 
 =cut
 
@@ -36,6 +44,8 @@ __PACKAGE__->table("items");
   data_type: 'integer'
   extra: {unsigned => 1}
   is_nullable: 1
+
+Covers ALL nights; one big incremental
 
 =head2 number
 
@@ -82,7 +92,7 @@ __PACKAGE__->table("items");
   extra: {list => ["a","b"]}
   is_nullable: 1
 
-=head2 notify
+=head2 notifications
 
   data_type: 'set'
   extra: {list => ["newbid","starttimer","stoptimer","holdover","sell"]}
@@ -201,7 +211,7 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "auctioneer",
   { data_type => "enum", extra => { list => ["a", "b"] }, is_nullable => 1 },
-  "notify",
+  "notifications",
   {
     data_type => "set",
     extra => {
@@ -248,11 +258,24 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</item_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("item_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-17 16:47:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zzBrNP/WiSzWNNMfSNjxXA
+# Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-13 14:11:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+riHy43WHIUGqRWS4gjM1g
+
+use 5.010;
 
 #belongs to means the fk is in your own table, and might have/has_many/has_one means the fk points to you, and is in the other table
 __PACKAGE__->belongs_to(donor => 'WRRA::Schema::Result::Donor', 'donor_id', {join_type=>'left'}); # An Item belongs_to a Donor, join to Donor via donor_id
@@ -306,6 +329,18 @@ sub status {
 	return UNKNOWN;
 }
 
+sub nstatus {
+	my $self = shift;
+	return 'Completed' if $self->status == COMPLETED;
+	return 'Verifying' if $self->status == VERIFY;
+	return 'Sold' if $self->status == SOLD;
+	return 'Bidding' if $self->status == BIDDING;
+	return 'On Deck' if $self->status == ON_DECK;
+	return 'Ready' if $self->status == READY;
+	return 'Not Ready' if $self->status == NOT_READY;
+	return 'Unknown';
+}
+
 sub startbid {
 	my $self = shift;
 	my $startbid = eval { $self->schema->config->{database}->{options}->{starting_bid} } || [[100 * DOLLARS => 5 * DOLLARS], [250 * DOLLARS => 50 * DOLLARS], 100 * DOLLARS];
@@ -345,14 +380,14 @@ sub runningtime {
 	my $self = shift;
 	return undef unless $self->started;
 	my $datetime = eval { $self->schema->controller->datetime->epoch } || time;
-	return ($datetime - $self->started->epoch) * ONE_MINUTE;
+	return ($datetime - $self->started->epoch) * MINUTES;
 }
 
 sub timertime {
 	my $self = shift;
 	return undef unless $self->timer;
 	my $datetime = eval { $self->schema->controller->datetime->epoch } || time;
-	return ($datetime - $self->timer->epoch) * ONE_MINUTE;
+	return ($datetime - $self->timer->epoch) * MINUTES;
 }
 
 #$r->notify;				returns list of set tags

@@ -1,16 +1,25 @@
+use utf8;
 package WRRA::Schema::Result::Rotarian;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'WRRA::Schema::Result';
-
 =head1 NAME
 
 WRRA::Schema::Result::Rotarian
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<WRRA::Schema::Result>
+
+=cut
+
+use base 'WRRA::Schema::Result';
+
+=head1 TABLE: C<rotarians>
 
 =cut
 
@@ -43,7 +52,6 @@ __PACKAGE__->table("rotarians");
 
 =head2 has_submissions
 
-  accessor: '_has_submissions'
   data_type: 'tinyint'
   is_nullable: 1
 
@@ -77,10 +85,7 @@ __PACKAGE__->add_columns(
   "firstname",
   { data_type => "varchar", is_nullable => 0, size => 255 },
   "has_submissions",
-  {
-    data_type   => "tinyint",
-    is_nullable => 1,
-  },
+  { data_type => "tinyint", is_nullable => 1 },
   "leader_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "phone",
@@ -88,11 +93,22 @@ __PACKAGE__->add_columns(
   "email",
   { data_type => "varchar", is_nullable => 1, size => 255 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</rotarian_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("rotarian_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-17 16:47:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1zU/03XgJD476ZgsRgaw0g
+# Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-13 14:11:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9WS/+ByDdYMe+3XFZDjoKg
 
 use Class::Method::Modifiers;
 __PACKAGE__->has_many(donors => 'WRRA::Schema::Result::Donor', 'rotarian_id'); # A Rotarian has_many Donors that s/he solicits

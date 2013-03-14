@@ -1294,7 +1294,7 @@ if (window.jQuery && !window.jQuery.createTemplate) {(function (jQuery) {
 				try {
 					var r = jQuery(that.objs).processTemplate(d, that._param, {StrToJSON:true});
 					if(that._options.on_success) {
-						that._options.on_success(r); //callback
+						that._options.on_success(r, d); //callback
 					}
 				} catch(ex) {}
 			}

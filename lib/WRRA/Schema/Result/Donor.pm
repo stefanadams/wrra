@@ -1,16 +1,25 @@
+use utf8;
 package WRRA::Schema::Result::Donor;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'WRRA::Schema::Result';
-
 =head1 NAME
 
 WRRA::Schema::Result::Donor
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<WRRA::Schema::Result>
+
+=cut
+
+use base 'WRRA::Schema::Result';
+
+=head1 TABLE: C<donors>
 
 =cut
 
@@ -180,11 +189,22 @@ __PACKAGE__->add_columns(
   "rotarian_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</donor_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("donor_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-17 16:47:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mlHqXeu6uTlU0UdnJ2j4Tg
+# Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-13 14:11:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:W2ko850noJ76CAWfooHJPg
 
 use Class::Method::Modifiers;
 __PACKAGE__->belongs_to(rotarian => 'WRRA::Schema::Result::Rotarian', 'rotarian_id', {join_type=>'left'});	# A Donor belongs_to a Rotarian

@@ -94,31 +94,31 @@ sub setup_routing {
 	my $self = shift;
 	my $r = $self->routes;
 
-	# Authentication conditions
-	$r->add_condition(login => sub { $_[1]->auth_require_login });
-	$r->add_condition(role  => sub { $_[1]->auth_require_role($_[3]) });
-
 	# Normal route to controller
-	$r->get('/')->to(template => '/bidding');
-	$r->dbroute(['/' => Bidding => 'Item'], {bidding => 'read'}, \'post');
-	$r->post('/' => sub { my $self = shift; $self->req->body_size ? $self->render_json($self->req->json) : $self->render_text('no_json'); });
-	$r->get('/bookmarks')->to(cb=>sub{shift->redirect_to('/admin/bookmarks')});
+	$r->get('/')->xhr(0)->to(template => '/auction')->name('index');
+	my $auction = $r->under('/auction')->xhr;
+	$auction->get('/')->to('auction#items', Status=>'Bidding')->name('auction');
+	$auction->post('/assign/:id/:auctioneer')->over(has_priv=>'admin')->to('auction#assign');
+	$auction->post('/notify/:notify/:id', notify=>[qw/starttimer stoptimer holdover sell/])->over(has_priv=>'admin')->to('auction#notify');
+	$auction->post('/sell/:id')->over(has_priv=>'auctioneer')->to('auction#sell');
+	$auction->post('/starttimer/:id')->over(has_priv=>'auctioneer')->to('auction#timer', timer=>1);
+	$auction->post('/stoptimer/:id')->over(has_priv=>'auctioneer')->to('auction#timer', timer=>0);
+	$auction->post('/bid/:id' => {id=>undef})->over(has_priv=>'operator')->to('auction#bid');
+	$auction->get("/$_")->name($_) for qw/assign notify sell starttimer stoptimer bid/;
+
+	$r->any('/register')->to('auth#register');
+	$r->any('/login')->to('auth#Login');
+	$r->any('/logout')->to('auth#Logout');
+
+	$r->get('/ad/:id')->to('ad#ad');
+	$r->get('/ad')->name('ad');
+
+	$r->get('/alert/:alert', {alert=>undef})->to('alert#alert')->name('alert');
+	$r->post('/alert/:alert', {alert=>undef})->over(has_priv=>'admin')->to('alert#alert');
+	$r->delete('/alert/:alert', {alert=>undef})->over(has_priv=>'admin')->to('alert#alert');
+	$r->get('/alert')->name('alert');
 
 	my $api = $r->under('/api');
-	$api->any('/register')->to('api#register');
-	$api->any('/ident')->to('api#ident');
-	$api->any('/unident')->to('api#unident');
-	$api->any('/alert/:alert', {alert=>undef})->to('api#alert');
-	$api->get('/ad/:id')->to('api#ad');
-	$api->get('/header')->to('api#header');
-	my $bidding_api = $r->under('/bidding/api');
-	$bidding_api->post('/assign/:id/:auctioneer')->over(has_priv=>'admin')->to('bidding_api#assign');
-	$bidding_api->post('/notify/:notify/:id/:state')->over(has_priv=>[qw/auctioneer admin/])->to('bidding_api#notify');
-	$bidding_api->post('/sell/:id')->over(has_priv=>'auctioneer')->to('bidding_api#sell');
-	$bidding_api->post('/timer/:id/:state')->over(has_priv=>'auctioneer')->to('bidding_api#timer');
-	$bidding_api->post('/bid/:id' => {id=>undef})->over(has_priv=>'operator')->to('bidding_api#bid');
-	#my $config = $api->under('/dbconfig');
-	#$config->get('/year/:year', {year=>undef})->to('api#api_dbconfig', config=>'year');
 	my $ac = $api->under('/ac');
 	$ac->auto_complete([City => 'Donor']);
 	$ac->auto_complete(['Donor']);
@@ -135,6 +135,7 @@ sub setup_routing {
 	my $bs = $api->under('/bs');
 	$bs->build_select([Rotarians => 'Rotarian']);
 
+	$r->get('/bookmarks')->to(cb=>sub{shift->redirect_to('/admin/bookmarks')});
 	my $admin = $r->under('/admin')->over(has_priv=>'admin');
 	$admin->jqgrid([Rotarians => 'Rotarian']);
 	$admin->jqgrid([Donors => 'Donor'])->dbroute(['/items' => DonorItems => 'Item'], {jqgrid => 'read'});
@@ -156,10 +157,10 @@ sub setup_routing {
 	$reports->jqgrid_ro([Stockreport => 'Stockitem']);
 	$reports->jqgrid_ro([Winners => 'Item']);
 
-	my $sol_aids = $admin->under('/solicitation_aids');
-	$sol_aids->get('/checklist')->xhr->to('crud#read', m=>'checklist', v=>'checklist');
-	$sol_aids->get('/packets')->xhr->to('crud#read', m=>'packets', v=>'packets');
-	$sol_aids->get('/packet/:id', id=>qr/\d+/)->xhr->to('crud#read', m=>'packet', v=>'packet');
+	#my $sol_aids = $admin->under('/solicitation_aids');
+	#$sol_aids->get('/checklist')->xhr->to('crud#read', m=>'checklist', v=>'checklist');
+	#$sol_aids->get('/packets')->xhr->to('crud#read', m=>'packets', v=>'packets');
+	#$sol_aids->get('/packet/:id', id=>qr/\d+/)->xhr->to('crud#read', m=>'packet', v=>'packet');
 }
 
 1;

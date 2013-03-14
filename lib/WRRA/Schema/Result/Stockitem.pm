@@ -1,16 +1,25 @@
+use utf8;
 package WRRA::Schema::Result::Stockitem;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'WRRA::Schema::Result';
-
 =head1 NAME
 
 WRRA::Schema::Result::Stockitem
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<WRRA::Schema::Result>
+
+=cut
+
+use base 'WRRA::Schema::Result';
+
+=head1 TABLE: C<stockitems>
 
 =cut
 
@@ -103,11 +112,22 @@ __PACKAGE__->add_columns(
   "cost",
   { data_type => "decimal", is_nullable => 0, size => [10, 2] },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</stockitem_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("stockitem_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-17 16:47:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Go27bSSHdTSYkFdGPp2zhA
+# Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-13 14:11:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:N9+eXe3Erqfrq0LTL+ePeg
 
 __PACKAGE__->has_many(items => 'WRRA::Schema::Result::Item', 'stockitem_id', {join_type=>''});
 sub id { shift->stockitem_id }

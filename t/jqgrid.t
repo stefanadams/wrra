@@ -19,7 +19,7 @@ my $id;
 my $headers = {'Accept' => 'application/json', 'Content-Type' => 'application/json', 'X-Requested-With' => 'XMLHttpRequest'};
 
 # login
-$t->post_ok('/api/ident' => $headers => form => {username=>"admin",phone=>4138})->status_is(200)->json_is('/user/role' => 'admin');
+$t->post_ok('/login' => $headers => form => {username=>"admin",phone=>4138})->status_is(200)->json_is('/user/role' => 'admin');
 
 # rotarians
 $t->post_ok('/admin/rotarians/create' => $headers => q'{"id":5465464,"name":"Testing Man","email":"","phone":"","oper":"add"}')->status_is(200)->json_is('/res' => 'ok');
@@ -70,7 +70,7 @@ $t->post_ok('/admin/reports/flyer' => $headers => q'{"_search":true,"nd":1363061
 # bidding
 
 # logout
-$t->get_ok('/api/unident' => $headers)->status_is(200)->json_is('/user/role' => Mojo::JSON->false);
+$t->get_ok('/logout' => $headers)->status_is(200)->json_is('/user/role' => Mojo::JSON->false);
 
 
 

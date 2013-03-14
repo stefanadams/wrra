@@ -1,16 +1,25 @@
+use utf8;
 package WRRA::Schema::Result::Bidder;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'WRRA::Schema::Result';
-
 =head1 NAME
 
 WRRA::Schema::Result::Bidder
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<WRRA::Schema::Result>
+
+=cut
+
+use base 'WRRA::Schema::Result';
+
+=head1 TABLE: C<bidders>
 
 =cut
 
@@ -123,12 +132,38 @@ __PACKAGE__->add_columns(
   "email",
   { data_type => "varchar", is_nullable => 1, size => 255 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</bidder_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("bidder_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<year_phone>
+
+=over 4
+
+=item * L</year>
+
+=item * L</phone>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("year_phone", ["year", "phone"]);
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-17 16:47:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2t8acyejbEASJya1gtfVnA
+# Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-13 14:11:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/MvU1594RkYHwQyfNCr/Ew
 
 use Class::Method::Modifiers;
 __PACKAGE__->has_many(bids => 'WRRA::Schema::Result::Bid', 'bidder_id'); # A Bidder has_many Bids, join to Bid by bidder_id

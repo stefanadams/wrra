@@ -1,3 +1,4 @@
+use utf8;
 package WRRA::Schema;
 
 # Created by DBIx::Class::Schema::Loader
@@ -9,12 +10,12 @@ use warnings;
 use base 'DBIx::Class::Schema';
 
 __PACKAGE__->load_namespaces(
-    default_resultset_class => 'ResultSet',
+    default_resultset_class => "ResultSet",
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-16 09:09:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wM5zCfXKD5Qnd99BQCHs2w
+# Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-13 14:14:47
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HYB4fWjD846xhsZd5rN3gg
 
 __PACKAGE__->load_components(qw(Helper::Schema::ResultSet Helper::Schema::Mojolicious));
 
