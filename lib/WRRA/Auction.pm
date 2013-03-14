@@ -46,11 +46,12 @@ sub _items {
 	my $photosdir = join '/', $self->app->home, 'public', ($self->config('photos') || 'photos');
 	my $photosurl = join '/', ($self->config('photos') || 'photos');
 	my $rs = $self->db->resultset(Item => 'Bidding');
+	my $items;
 	given ( $self->param('Status') ) {
 		when ( 'Bidding' ) {
 			$rs = $rs->current_year->not_ready;
-			my $bidding = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
-			foreach ( @$bidding ) {
+			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
+			foreach ( @$items ) {
 				# if((find_in_set('newbid',`items`.`notify`) > 0),1,NULL) `newbid`
 				# if((`items`.`status` = 'Sold'),1,NULL) `sold`
 				$_->{img} = (glob("$photosdir/$_->{year}/$_->{number}.*"))[0] if $_->{number};
@@ -60,11 +61,19 @@ sub _items {
 					last;
 				};
 				$_ = $self->_fakebidding($_);
+				$_->{bellringer} = $_->{bellringer} ? Mojo::JSON->true : Mojo::JSON->false;
+				$_->{timer} = $_->{timer} ? Mojo::JSON->true : Mojo::JSON->false;
+				$_->{cansell} = $_->{cansel} ? Mojo::JSON->true : Mojo::JSON->false;
+				$_->{scheduled} = $_->{scheduled} ? Mojo::JSON->true : Mojo::JSON->false;
+				$_->{started} = $_->{started} ? Mojo::JSON->true : Mojo::JSON->false;
+				$_->{sold} = $_->{sold} ? Mojo::JSON->true : Mojo::JSON->false;
+				$_->{contacted} = $_->{contacted} ? Mojo::JSON->true : Mojo::JSON->false;
+				$_->{cleared} = $_->{cleared} ? Mojo::JSON->true : Mojo::JSON->false;
 			}
-			return $bidding;
 		}
 		default { return {} }
 	}
+	return $items;
 }
 
 sub _display_ad {
@@ -130,18 +139,32 @@ sub _fakebidding {
 		}
 		#$row->{auctioneer} = int(rand(99)) < 50 ? 'a' : 'b';
 		$row->{highbid}->{bid} = $row->{highbid}->{bid} =~ /\d/ ? $row->{highbid}->{bid} : $row->{value} - 10 + int(rand(15));
+		$row->{highbid}->{id} = int(rand(100000));
 		$row->{highbid}->{bidder}->{name} = substr($row->{donor}->{name}, 0, 18);
+		$row->{highbid}->{bidder}->{id} = int(rand(100000));
 		$row->{timer} = int(rand(99)) < 20 ? 1 : 0;
+		$row->{runningtime} = int(rand(10));
+		$row->{timertime} = int(rand(5));
 	} elsif ( int(rand(99)) < 25 ) {
 		$row->{nstatus} = 'Sold';
+		$row->{sold} = 1;
+		$row->{highbid}->{id} = int(rand(100000));
 		$row->{highbid}->{bid} = $row->{highbid}->{bid} =~ /\d/ ? $row->{highbid}->{bid} : $row->{value} - 10 + int(rand(15));
+		$row->{highbid}->{bidder}->{id} = int(rand(100000));
 		$row->{highbid}->{bidder}->{name} = substr($row->{donor}->{name}, 0, 18);
 		$row->{timer} = 1;
+		$row->{runningtime} = int(rand(10));
+		$row->{timertime} = int(rand(5));
 	} elsif ( int(rand(99)) < 25 ) {
 		$row->{nstatus} = 'Complete';
+		$row->{sold} = 1;
+		$row->{highbid}->{id} = int(rand(100000));
 		$row->{highbid}->{bid} = $row->{highbid}->{bid} =~ /\d/ ? $row->{highbid}->{bid} : $row->{value} - 10 + int(rand(15));
+		$row->{highbid}->{bidder}->{id} = int(rand(100000));
 		$row->{highbid}->{bidder}->{name} = substr($row->{donor}->{name}, 0, 18);
 		$row->{timer} = 1;
+		$row->{runningtime} = int(rand(10));
+		$row->{timertime} = int(rand(5));
 	}
 	$row->{bellringer} = $row->{highbid}->{bid} >= $row->{value};
 	$row->{minbid} = $row->{highbid}->{bid}+5 if $row->{highbid}->{bid} < $row->{value};

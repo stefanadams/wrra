@@ -343,36 +343,36 @@ sub nstatus {
 
 sub startbid {
 	my $self = shift;
-	my $startbid = eval { $self->schema->config->{database}->{options}->{starting_bid} } || [[100 * DOLLARS => 5 * DOLLARS], [250 * DOLLARS => 50 * DOLLARS], 100 * DOLLARS];
+	my $startbid = eval { $self->schema->config->{database}->{options}->{starting_bid} } || [[(100 * DOLLARS) => (5 * DOLLARS)], [(250 * DOLLARS) => (50 * DOLLARS)], (100 * DOLLARS)];
 	foreach my $range ( sort { $a->[0] <=> $b->[0] } grep { ref eq 'ARRAY' } @$startbid ) {
-		return $range->[1] if $self->value * DOLLARS < $range->[0] * DOLLARS;
+		return $range->[1] if ($self->value * DOLLARS) < ($range->[0] * DOLLARS);
 	}
-	return ((sort { $a <=> $b } grep { !ref } @$startbid)[0]) || 5 * DOLLARS;
+	return ((sort { $a <=> $b } grep { !ref } @$startbid)[0]) || (5 * DOLLARS);
 }
 
 sub minbid {
 	my $self = shift;
-	my $minbid_under = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || 5 * DOLLARS;
-	my $minbid_over = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || 1 * DOLLARS;
+	my $minbid_under = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || (5 * DOLLARS);
+	my $minbid_over = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || (1 * DOLLARS);
 	return undef unless $self->highbid;
 	return $self->startbid unless $self->highbid->bid;
-	return $self->highbid->bid+$minbid_under * DOLLARS if $self->highbid->bid * DOLLARS < $self->value * DOLLARS;
-	return $self->highbid->bid+$minbid_over * DOLLARS;
+	return ($self->highbid->bid + ($minbid_under * DOLLARS)) if ($self->highbid->bid * DOLLARS) < ($self->value * DOLLARS);
+	return ($self->highbid->bid + ($minbid_over * DOLLARS));
 }
 
 sub cansell {
 	my $self = shift;
 	return 0 if $self->sold;
 	return 0 unless $self->timer;
-	my $mintimer = eval { $self->schema->config->{database}->{options}->{minimum_timer} } || 5 * MINUTES;
+	my $mintimer = eval { $self->schema->config->{database}->{options}->{minimum_timer} } || (5 * MINUTES);
 	my $datetime = eval { $self->schema->controller->datetime->epoch } || time;
 	return $datetime - $self->timer->epoch > $mintimer ? TRUE : FALSE;
 }
 
 sub bellringer {
 	my $self = shift;
-	return undef unless $self->highbid;
-	return undef unless $self->highbid->bid;
+	return FALSE unless $self->highbid;
+	return FALSE unless $self->highbid->bid;
 	return $self->highbid->bid >= $self->value ? TRUE : FALSE;
 }
 

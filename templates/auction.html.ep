@@ -38,56 +38,83 @@ console.log('cm');
 		$trigger.contextMenu(true);
 		if ( auction.session.user.role=="admin" ) {
 			return {
-			    callback: function(key, options) {
-				var m = "clicked: " + key;
-				window.console && console.log(m) || alert(m); 
+			    callback: function(key, opt) {
+				var id = opt.$trigger.attr("itemid");
+				var pc = function(){processContent(1);};
+				processContent(0);
+				switch ( key ) {
+					case 'a':			$.post('<%= url_for 'assign' %>/'+id+'/a', pc); break;
+					case 'b':			$.post('<%= url_for 'assign' %>/'+id+'/b', pc); break;
+					case 'notify_starttimer':	$.post('<%= url_for 'notify' %>/timer/'+id+'/1', pc); break;
+					case 'notify_sell':		$.post('<%= url_for 'notify' %>/sell/'+id+'/1', pc); break;
+					case 'adjust_bid':		$.post('<%= url_for 'update_bid' %>', { celname:"bid","bid":"1","id":id}, pc); break;
+					case 'adjust_bidder':		$.post('<%= url_for 'update_bidder' %>', { celname:"bidder.name","bidder.name":"A","id":id}, pc); break;
+					case 'place_bid':		on_click_operator(auction); break;
+					case 'retract_bid':		$.post('<%= url_for 'retract' %>/bid/'+id, pc); break;
+					case 'retract_item':		$.post('<%= url_for 'retract' %>/item/'+id, pc); break;
+				}
 			    },
 			    items: {
 				assign_auctioneer: {
-					name: "Assign Auctioneer",
+					name: "Re-assign Auctioneer",
 					items: {
-						a: {name: "A", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'assign' %>/'+opt.$trigger.attr("itemid")+'/a', function(){processContent(1);}); }},
-						b: {name: "B", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'assign' %>/'+opt.$trigger.attr("itemid")+'/b', function(){processContent(1);}); }},
+						a: {name: "A"},
+						b: {name: "B"},
 					},
 				},
 				"sep1": "---------",
-				notify_timer: {name: "Request Timer Start", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'notify' %>/timer/'+opt.$trigger.attr("itemid")+'/1', function(){processContent(1);}); }},
-				notify_sell: {name: "Request Item Sale", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'notify' %>/sell/'+opt.$trigger.attr("itemid")+'/1', function(){processContent(1);}); }},
+				notify_starttimer: {name: "Request Timer Start", disabled: function(key, opt){ return opt.$trigger.attr("timer") ? false : true; }},
+				stoptimer: {name: "Stop Timer", disabled: true},
+				notify_sell: {name: "Request Item Sale", disabled: function(key, opt){ return opt.$trigger.attr("cansell") ? true : false; }},
 				"sep2": "---------",
-				adjust_bid: {name: "Adjust Bid", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'notify' %>/timer/'+opt.$trigger.attr("itemid")+'/1', function(){processContent(1);}); }},
-				adjust_bidder: {name: "Adjust Bidder", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'notify' %>/sell/'+opt.$trigger.attr("itemid")+'/1', function(){processContent(1);}); }},
+				adjust_bid: {name: "Adjust Bid"},
+				adjust_bidder: {name: "Adjust Bidder"},
 				"sep3": "---------",
-				clear_last_bid: {name: "Clear Last Bid", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'notify' %>/timer/'+opt.$trigger.attr("itemid")+'/1', function(){processContent(1);}); }},
-				reset_item: {name: "Reset Item", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'notify' %>/sell/'+opt.$trigger.attr("itemid")+'/1', function(){processContent(1);}); }},
+				place_bid: {name: "Place Bid"},
+				retract_bid: {name: "Clear Last Bid"},
+				retract_item: {name: "Retract Item Now"},
 			    }
 			    // there's more, have a look at the demos and docs...
 			};
 		} else if ( auction.session.user.role=="operator" ) {
 			return {
-			    callback: function(key, options) {
-				var m = "clicked: " + key;
-				window.console && console.log(m) || alert(m); 
+			    callback: function(key, opt) {
+				var id = opt.$trigger.attr("itemid");
+				var pc = function(){processContent(1);};
+				processContent(0);
+				switch ( key ) {
+					case 'place_bid':	on_click_operator(auction); break;
+				}
 			    },
 			    items: {
-				place_bid: {name: "Place Bid", callback: on_click_operator(auction)},
+				place_bid: {name: "Place Bid"},
 			    }
 			};
 		} else if ( auction.session.user.role=="auctioneer" ) {
 			return {
-			    callback: function(key, options) {
-				var m = "clicked: " + key;
-				window.console && console.log(m) || alert(m); 
+			    callback: function(key, opt) {
+				var id = opt.$trigger.attr("itemid");
+				var pc = function(){processContent(1);};
+				processContent(0);
+				switch ( key ) {
+					case 'ack_newbid':	$.post('<%= url_for 'newbid' %>/'+id+'/0', pc); break;
+					case 'starttimer':	$.post('<%= url_for 'starttimer' %>/'+id, pc); break;
+					case 'stoptimer':	$.post('<%= url_for 'stoptimer' %>/'+id, pc); break;
+					case 'sell':		$.post('<%= url_for 'sell' %>/'+id, pc); break;
+					case 'clear':	$.post('<%= url_for 'clear' %>/'+id+'/0', pc); break;
+				}
 			    },
 			    items: {
-				acknowledge_newbid: {name: "Acknowledge New Bid", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'newbid' %>/'+opt.$trigger.attr("itemid")+'/0', function(){processContent(1);}); }},
-				start_timer: {name: "Start Timer", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'starttimer' %>/'+opt.$trigger.attr("itemid"), function(){processContent(1);}); }},
-				stop_timer: {name: "Stop Timer", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'stoptimer' %>/'+opt.$trigger.attr("itemid"), function(){processContent(1);}); }},
-				sell: {name: "Sell Item", callback: function(key, opt){ processContent(0);$.post('<%= url_for 'sell' %>/'+opt.$trigger.attr("itemid"), function(){processContent(1);}); }},
+				acknowledge_newbid: {name: "Acknowledge New Bid"},
+				start_timer: {name: "Start Timer"},
+				stop_timer: {name: "Stop Timer"},
+				sell: {name: "Sell Item"},
+				clear: {name: "Clear Item"},
 			    }
 			};
 		} else {
 			return {
-			    callback: function(key, options) {
+			    callback: function(key, opt) {
 				var m = "clicked: " + key;
 				window.console && console.log(m) || alert(m); 
 			    },
@@ -149,7 +176,15 @@ function processContent(value) {
 				$('span.truncate').each(function(){
 					var text = $(this).html();
 					var len = $(this).attr('length') || 50;
-					text = text.length > len ? text.substring(0,len)+'... <img src="img/paper1.gif" alt="'+text+'"/>' : text;
+					if ( text.length > len ) {
+						var more = text;
+						$(this).click(function(){$.dialog_alert(more, 'More...');});
+						if ( len > 0 ) {
+							text = text.substring(0,len)+'... <img src="img/paper1.gif" alt="'+text+'"/>';
+						} else {
+							text = '<img src="img/paper1.gif" alt="'+text+'"/>';
+						}
+					}
 					$(this).html(text);
 				});
 
@@ -165,6 +200,12 @@ function processContent(value) {
 						$(this).removeClass("highlight");
 					}
 				);
+
+				$('#items tbody tr[timer="true"]').css('background-color', 'yellow');
+				$('#items tbody tr[sold="true"]').css('background-color', '#414794');
+//				$('#items tbody img[notify="timer"]').each(function(){processContent(0);$(this).click(function(){$.post('<%= url_for 'starttimer' %>'+$(this).attr('title'), function(){processContent(1);});});});
+//				$('#items tbody img[notify="sell"]').each(function(){processContent(0);$(this).click(function(){$.post('<%= url_for 'sell' %>'+$(this).attr('title'), function(){processContent(1);});});});
+//				$('#items tbody img[ack="sold"]').each(function(){processContent(0);$(this).click(function(){$.post('<%= url_for 'clear' %>'+$(this).attr('title'), function(){processContent(1);});});});
 
 				$( document ).tooltip({
 				      items: "img, [pic], [title]",
@@ -632,7 +673,7 @@ $(document).ready(function(){
 						</thead>
 						<tbody>
 						{#foreach $T.items.rows as r}
-							<tr id="tr_{$T.r.id}" itemid="{$T.r.id}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" class="context-item">
+							<tr id="tr_{$T.r.id}" itemid="{$T.r.id}" sold="{$T.r.sold}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" class="context-item">
 								<td col="item" class=tooltip item="{$T.r.name}" description="{$T.r.description}" img="{$T.r.img}">
 									<div col="item">
 									<div style="float:left;width:80%">
@@ -642,16 +683,16 @@ $(document).ready(function(){
 									{#elseif $T.session.user.role=="auctioneer"}
 										<a id="auctioneer-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#elseif $T.session.user.name}
-										<a id="bid-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+										<a id="bid-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#else}
 										<span class="item number">{$T.r.number}</span><span class="item">:</span>
 									{#/if}
-									{#if $T.r.url}<a href="{$T.r.url}" target="_new">{#/if}
-									<span class="item name truncate" length="70" itemid="{$T.r.id}">{$T.r.name}</span>
-									{#if $T.r.url}</a>{#/if}
+									{#if 0 && $T.r.url}<a class="itemurl" href="{$T.r.url}" target="_new">{#/if}
+									<span class="truncate" length="70">{$T.r.name}</span>
+									{#if 0 && $T.r.url}</a>{#/if}
 									</div>
 									<div style="float:right;width:20%;text-align:right">
-									{#if $T.r.description}<img src="img/paper1.gif" alt="{$T.r.description}" /></a>{#/if}
+									{#if $T.r.description}<span class="truncate" length="0">{$T.r.description}</span>{#/if}
 									{#if $T.r.url}<a href="{$T.r.url}" target="_new"><img src="img/chain1.png" style="border-style: none" title="Visit the product website of Item #{$T.r.number}"/></a>{#/if}
 									{#if $T.r.img}<a href="{$T.r.img}" target="_new"><img src="img/attach_image.gif" text="{$T.r.img}" pic="pic" /></a>{#/if}
 									</div>
@@ -663,7 +704,17 @@ $(document).ready(function(){
 									<span class="currency">{$T.r.value}</span>
 									</div>
 									<div style="float:right;width:20%;text-align:right">
-									{#if $T.r.timer}<img src="img/clock3.gif" title="Timer"/>{#/if}
+									{#if !$T.r.sold}
+									{#if $T.session.user.role=="admin" || $T.session.user.role=="auctioneer"}
+										{#if $T.r.timer}
+											<img src="img/timer-on.gif" title="Running Time: {$T.r.runningtime}<br>Timer Time: {$T.r.timertime}"/>
+										{#elseif $T.r.notifications.starttimer}
+											<img src="img/timer-request.gif" title="Running Time: {$T.r.runningtime}"/>
+										{#/if}
+									{#else}
+										{#if $T.r.timer}<img src="img/timer-on.gif" title="Running Time: {$T.r.runningtime}<br>Timer Time: {$T.r.timertime}"/>{#/if}
+									{#/if}
+									{#/if}
 									</div>
 									</div>
 								</td>
@@ -685,7 +736,15 @@ $(document).ready(function(){
 									<span class="bidder">{$T.r.highbid.bidder.name}</span>
 									</div>
 									<div style="float:right;width:20%; text-align:left;">
-									{#if $T.r.status=='Sold'}<img src="img/gavel2.gif" title="Sold"/>{#/if}
+									{#if $T.session.user.role=="admin" || $T.session.user.role=="auctioneer"}
+										{#if $T.r.sold}
+											<img src="img/sold.gif" ack="sold"/>
+										{#elseif $T.r.notifications.sell}
+											<img src="img/sell.gif" />
+										{#/if}
+									{#else}
+										{#if $T.r.timer}<img src="img/sold.gif" />{#/if}
+									{#/if}
 									</div>
 									</div>
 									</div>
@@ -693,9 +752,9 @@ $(document).ready(function(){
 								<td col="donor">
 									<div col="donor">
 									<div style="float:left;width:80%">
-									{#if $T.r.donor.url}<a href="{$T.r.donor.url}" target="_new">{#/if}
+									{#if 0 && $T.r.donor.url}<a class="donorurl" href="{$T.r.donor.url}" target="_new">{#/if}
 									<span class="donor">{$T.r.donor.name}</span>
-									{#if $T.r.donor.url}</a>{#/if}
+									{#if 0 && $T.r.donor.url}</a>{#/if}
 									</div>
 									<div style="float:right;width:20%;text-align:right">
 									{#if $T.r.donor.url}<a href="{$T.r.donor.url}" target="_new"><img src="img/chain1.png" style="border-style: none" title="Visit the website of {$T.r.donor.name}" /></a>{#/if}
@@ -717,8 +776,8 @@ $(document).ready(function(){
 						<span class="key">Key:
 							<img valign='middle' src='img/paddle1.gif' width='16' height='16' class="tooltip above" description="New Bid">&nbsp;= New Bid |
 							<img valign='middle' src='img/bell2.png' width='16' height='16' class="tooltip above" description="Bell Ringer">&nbsp;= Bell Ringer |
-							<img valign='middle' src='img/clock3.gif' width='16' height='16' class="tooltip above" description="Timer">&nbsp;= Timer |
-							<img valign='middle' src='img/gavel2.gif' width='16' height='16' class="tooltip above" description="Sold">&nbsp;= Sold |
+							<img valign='middle' src='img/timer-on.gif' width='16' height='16' class="tooltip above" description="Timer">&nbsp;= Timer |
+							<img valign='middle' src='img/sold.gif' width='16' height='16' class="tooltip above" description="Sold">&nbsp;= Sold |
 							<img valign='middle' src='img/paper1.gif' width='16' height='16' class="tooltip above" description="More description">&nbsp;= More description |
 							<img valign='middle' src='img/chain1.png' width='16' height='16' class="tooltip_fixed above" description="<a href='http://google.com' target='_new'>Link</a>">&nbsp;= External link |
 							<img valign='middle' src='img/attach_image.gif' width='16' height='16' class="tooltip above" description="<img src='img/attach_image.gif' />">&nbsp;= View image
