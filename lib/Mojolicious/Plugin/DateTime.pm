@@ -3,6 +3,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use DateTime;
 use DateTime::Format::DateParse;
+use DateTime::Format::MySQL;
 
 sub register {
 	my ($self, $app, $conf) = @_;
@@ -23,6 +24,10 @@ sub register {
 		my $datetime = shift;
 		$self->{datetime}->{$datetime} ||= DateTime::Format::DateParse->parse_datetime($datetime) if $datetime;
 		return $datetime ? $self->{datetime}->{$datetime} : $self->{datetime}->{now};
+	});
+	$app->helper(datetime_mysql => sub {
+		my $c = shift;
+		DateTime::Format::MySQL->format_datetime($self->{datetime}->{now});
 	});
 }
 
