@@ -4,6 +4,8 @@
 <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1" />
 <title>Radio Auction</title>
 
+<!-- <META HTTP-EQUIV="refresh" content="120;URL=<%= url_for %>"> -->
+
 <link rel="stylesheet" type="text/css" media="screen" href="/css/main.css" />
 <link rel="stylesheet" type="text/css" media="screen" href="/css/jquery.contextMenu.css" />
 
@@ -25,11 +27,11 @@ var alert;
 var alert_msg;
 
 function contextMenu(auction) {
-console.log('cm');
 	if ( !auction.session.user.role ) {
 		$.contextMenu( 'destroy' );
 		return true;
 	}
+	console.log('cm', auction.session.user.role);
 	$.contextMenu({
 	    // define which elements trigger this menu
 	    selector: ".context-item",
@@ -49,7 +51,7 @@ console.log('cm');
 					case 'notify_sell':		$.post('<%= url_for 'notify' %>/sell/'+id+'/1', pc); break;
 					case 'adjust_bid':		$.post('<%= url_for 'update_bid' %>', { celname:"bid","bid":"1","id":id}, pc); break;
 					case 'adjust_bidder':		$.post('<%= url_for 'update_bidder' %>', { celname:"bidder.name","bidder.name":"A","id":id}, pc); break;
-					case 'place_bid':		on_click_operator(auction); break;
+					case 'place_bid':		on_click_operator(key,opt,auction); break;
 					case 'retract_bid':		$.post('<%= url_for 'retract' %>/bid/'+id, pc); break;
 					case 'retract_item':		$.post('<%= url_for 'retract' %>/item/'+id, pc); break;
 				}
@@ -83,7 +85,7 @@ console.log('cm');
 				var pc = function(){processContent(1);};
 				processContent(0);
 				switch ( key ) {
-					case 'place_bid':	on_click_operator(auction); break;
+					case 'place_bid':	on_click_operator(key,opt,auction); break;
 				}
 			    },
 			    items: {
@@ -101,7 +103,7 @@ console.log('cm');
 					case 'starttimer':	$.post('<%= url_for 'starttimer' %>/'+id, pc); break;
 					case 'stoptimer':	$.post('<%= url_for 'stoptimer' %>/'+id, pc); break;
 					case 'sell':		$.post('<%= url_for 'sell' %>/'+id, pc); break;
-					case 'clear':	$.post('<%= url_for 'clear' %>/'+id+'/0', pc); break;
+					case 'clear':		$.post('<%= url_for 'clear' %>/'+id+'/0', pc); break;
 				}
 			    },
 			    items: {
@@ -162,7 +164,7 @@ function processContent(value) {
 				$("#clearalert").click(function(){on_click_clearalert(auction)});
 				$("#register").click(function(){on_click_register(auction)});
 				if ( auction.session.user.role=="operator" ) {
-					$(".item-number").click(function(){on_click_operator(auction)});
+					$(".item-number").click(function(){on_click_operator('', $(this), auction)});
 				} else if ( auction.session.user.role ) {
 					$(".item-number").click(function(){on_click_bid(auction)});
 				}
@@ -201,8 +203,8 @@ function processContent(value) {
 					}
 				);
 
-				$('#items tbody tr[timer="true"]').css('background-color', 'yellow');
-				$('#items tbody tr[sold="true"]').css('background-color', '#414794');
+//				$('#items tbody tr[timer="true"]').css('background-color', 'yellow');
+//				$('#items tbody tr[sold="true"]').css('background-color', '#414794');
 //				$('#items tbody img[notify="timer"]').each(function(){processContent(0);$(this).click(function(){$.post('<%= url_for 'starttimer' %>'+$(this).attr('title'), function(){processContent(1);});});});
 //				$('#items tbody img[notify="sell"]').each(function(){processContent(0);$(this).click(function(){$.post('<%= url_for 'sell' %>'+$(this).attr('title'), function(){processContent(1);});});});
 //				$('#items tbody img[ack="sold"]').each(function(){processContent(0);$(this).click(function(){$.post('<%= url_for 'clear' %>'+$(this).attr('title'), function(){processContent(1);});});});
@@ -226,6 +228,8 @@ function processContent(value) {
 					  }
 				      }
 				});
+
+				$('body > div[role="tooltip"].ui-tooltip').remove();
 
 				// Stats
 				$( "#stats" ).draggable().resizable();
@@ -328,27 +332,28 @@ function on_click_alert(auction){
 }
 
 function on_click_operator(key, opt, auction) {
-	console.log('operator');
-	var item_id, number, minbid, highbid, status, timer, bellringer;
-	if ( opt ) {
+	var item_id, number, minbid, highbid, status, nstatus, timer, bellringer;
+	if ( key ) {
 		console.log(key, opt.$trigger.attr("itemid"));
-		item_id=opt.$trigger.attr('item_id');
+		item_id=opt.$trigger.attr('itemid');
 		number=opt.$trigger.attr('number');
 		minbid=opt.$trigger.attr('minbid');
 		highbid=opt.$trigger.attr('highbid');
-		status=opt.$trigger.attr('status');
+		nstatus=opt.$trigger.attr('nstatus');
 		timer=opt.$trigger.attr('timer');
 		bellringer=opt.$trigger.attr('bellringer');
 	} else {
-		item_id=$(this).attr('item_id');
-		number=$(this).attr('number');
-		minbid=$(this).attr('minbid');
-		highbid=$(this).attr('highbid');
-		status=$(this).attr('status');
-		timer=$(this).attr('timer');
-		bellringer=$(this).attr('bellringer');
+		console.log(opt.attr('itemid'));
+		item_id=opt.attr('itemid');
+		number=opt.attr('number');
+		minbid=opt.attr('minbid');
+		highbid=opt.attr('highbid');
+		nstatus=opt.attr('nstatus');
+		timer=opt.attr('timer');
+		bellringer=opt.attr('bellringer');
 	}
-	processContent(0);
+	console.log('operator', nstatus, status);
+	refreshTimer(0);
 	$("#dialog-operator").dialog({
 		autoOpen: false,
 		height: 218,
@@ -357,40 +362,56 @@ function on_click_operator(key, opt, auction) {
 		open: function() {
 			$('form[name=operator] input[name=operator-bid]').val(minbid);
 			$('form[name=operator] input[name=operator-phone]').mask("(999) 999-9999");
+			$(this).keypress(function(e) {
+			    if (e.keyCode == $.ui.keyCode.ENTER) {
+				console.log('You pressed enter!');
+				$(".ui-dialog:visible").find('.ui-dialog-buttonpane').find('button:first').click();
+			    }
+			});
 		},
 		buttons: {
 			"Bid": function(){
 				$(this).dialog("disable"); 
 				$(this).dialog({title: 'Bid...'});
-				$.post('<%= url_for 'bid' %>', {phone: $('#operator-phone').val(),value: item_id+":"+$('#operator-bid').val(),approve: 1}, function(data){
-					//var json = $.toJSON(data);
-					$.post('/api/approve/'+data.request.request_id+'/1', function(){
-						$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
+				$.post('<%= url_for 'bid' %>/'+item_id, {phone: $('#operator-phone').val(), name: $('#operator-name').val(), bid: $('#operator-bid').val(), approve: 1}, function(data){
+					//$.post('/api/approve/'+data.request.request_id+'/1', function(){
+					//	$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
+					//	processContent(0);
+					//});
+					if ( data.res == 'ok' ) {
+						$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000});
 						processContent(0);
-					});
-					$(this).dialog("close");
+						processContent(1);
+					}
 				});
+				$(this).dialog("close");
 			},
 			Cancel: function(){$(this).dialog("close");}
 		},
-		close: processContent(1)
+		close: refreshTimer(0)
 	});
 	$("#dialog-operator-title").html("Bid on item "+number+" (Minimum: "+minbid+")");
-	if ( status == "Bidding" ) {
+	if ( nstatus == "Bidding" ) {
 		$("#dialog-operator").dialog("open");
 	} else {
-		$.dialog_alert("Closed!", "Closed!");
+		$.dialog_alert(nstatus, "Closed!");
 	}
 
-	$("#operator-phone").autocomplete({
+	$("#operator-name").autocomplete({
 		source: "<%= url_for 'ac_bidder' %>",
-		minLength: 4,
+		minLength: 3,
 		select: function(event, ui){
+			event.preventDefault;
 			if (ui.item){
-				$('#operator-name').val(ui.item.name);
+				$('#operator-phone').val(ui.item.phone);
+				$('#operator-bidderid').val(ui.item.id);
 			}
 		}
-	});
+        }).data( "ui-autocomplete" )._renderItem = function( ul, item ) {
+              return $( "<li>" )
+                .append( "<a>" + item.label + " : " + item.phone + "</a>" )
+                .appendTo( ul );
+        };
 }
 
 function on_click_register(auction) {
@@ -507,7 +528,17 @@ function on_click_bid(auction){
 	$("#dialog-bid").dialog("open");
 }
 
+function refreshTimer (value) {
+	if ( value ) {
+		localStorage['refresh_timer'] = setTimeout(function(){location.reload(true);}, <%= app->config->{refresh}->{page} || 120000 %>);
+	} else {
+		window.clearInterval(localStorage['refresh_timer']);
+	}
+}
+
 $(document).ready(function(){
+	refreshTimer(1);
+
 	$.ajaxSetup({
 		headers: {Accept: 'application/json'},
 	});
@@ -673,22 +704,22 @@ $(document).ready(function(){
 						</thead>
 						<tbody>
 						{#foreach $T.items.rows as r}
-							<tr id="tr_{$T.r.id}" itemid="{$T.r.id}" sold="{$T.r.sold}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" class="context-item">
+							<tr id="tr_{$T.r.id}" class="context-item {#if $T.r.timer && !$T.r.sold}timer{#/if} {#if $T.r.sold}sold{#/if}" itemid="{$T.r.id}" sold="{$T.r.sold}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}">
 								<td col="item" class=tooltip item="{$T.r.name}" description="{$T.r.description}" img="{$T.r.img}">
 									<div col="item">
 									<div style="float:left;width:80%">
 									{#if $T.r.auctioneer}<img src="img/{$T.r.auctioneer}.gif" />{#/if}
 									{#if $T.session.user.role=="operator"}
-										<a id="operator-{$T.r.id}" title="Place Bid" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+										<a id="operator-{$T.r.id}" title="Place Bid" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#elseif $T.session.user.role=="auctioneer"}
-										<a id="auctioneer-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+										<a id="auctioneer-{$T.r.id}" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#elseif $T.session.user.name}
-										<a id="bid-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+										<a id="bid-{$T.r.id}" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#else}
 										<span class="item number">{$T.r.number}</span><span class="item">:</span>
 									{#/if}
 									{#if 0 && $T.r.url}<a class="itemurl" href="{$T.r.url}" target="_new">{#/if}
-									<span class="truncate" length="70">{$T.r.name}</span>
+									<span class="truncate" length="70">{$T.r.nstatus} {$T.r.name}</span>
 									{#if 0 && $T.r.url}</a>{#/if}
 									</div>
 									<div style="float:right;width:20%;text-align:right">
@@ -830,8 +861,8 @@ $(document).ready(function(){
 		<form name="operator" action='<%= url_for 'bid' %>' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-operator-title">Submit Bid</div></td></tr>
+				<tr><td>Bidder</td><td><input id="operator-name" type='text' name='operator-name' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"><input id="operator-bidderid" type='hidden' name='operator-bidderid' maxlength='60' value=''></td></tr>
 				<tr><td>Phone</td><td><input id="operator-phone" type='text' name='operator-phone' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td>Name</td><td><input id="operator-name" type='text' name='operator-name' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
 				<tr><td>Amount</td><td><input id="operator-bid" type='text' name='operator-bid' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
 			</table>
 		</form>

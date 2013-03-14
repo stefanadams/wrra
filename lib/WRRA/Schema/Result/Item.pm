@@ -354,7 +354,7 @@ sub minbid {
 	my $self = shift;
 	my $minbid_under = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || (5 * DOLLARS);
 	my $minbid_over = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || (1 * DOLLARS);
-	return undef unless $self->highbid;
+	return $self->startbid unless $self->highbid;
 	return $self->startbid unless $self->highbid->bid;
 	return ($self->highbid->bid + ($minbid_under * DOLLARS)) if ($self->highbid->bid * DOLLARS) < ($self->value * DOLLARS);
 	return ($self->highbid->bid + ($minbid_over * DOLLARS));

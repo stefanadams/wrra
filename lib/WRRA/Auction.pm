@@ -49,7 +49,7 @@ sub _items {
 	my $items;
 	given ( $self->param('Status') ) {
 		when ( 'Bidding' ) {
-			$rs = $rs->current_year->not_ready;
+			$rs = $rs->current_year->bidding;
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 			foreach ( @$items ) {
 				# if((find_in_set('newbid',`items`.`notify`) > 0),1,NULL) `newbid`
@@ -123,7 +123,7 @@ sub _display_ad {
 sub _fakebidding {
 	my $self = shift;
 	my $row = shift;
-	return $row unless $self->app->mode eq 'development';
+	return $row unless $self->app->mode eq 'developmen';
 	if ( int(rand(99)) < 25 ) {
 		$row->{nstatus} = 'Ready'; 
 	} elsif ( int(rand(99)) < 25 ) {
@@ -240,8 +240,18 @@ sub timer {
 
 sub bid {
 	my $self = shift;
-	my ($id, $bidder, $bid) = ($self->param('id'), $self->param('bidder_id'), $self->param('bid'));
-	my $r = $self->db->resultset('Item')->find($id)->update({sold=>\'now()'});
+	my $item_id = $self->param('id') or return return $self->render_json({res=>'err'});
+	my $phone = $self->param('phone') or return return $self->render_json({res=>'err'});
+	my $bidder_id = $self->param('bidder_id');
+	my $name = $self->param('name') or return return $self->render_json({res=>'err'});
+	my $bid = $self->param('bid') or return return $self->render_json({res=>'err'});
+	my $r;
+	unless ( $bidder_id ) {
+		my $new_bidder = $self->db->resultset('Bidder')->create({name=>$name,phone=>$phone});
+		return $self->render_json({res=>'err'}) unless $bidder_id = $new_bidder->id;
+	}
+	my $bid = $self->db->resultset('Bid')->create({item_id=>$item_id,bidder_id=>$bidder_id,bid=>$bid,bidtime=>$self->datetime_mysql}) or return return $self->render_json({res=>'err'});
+	$r = $self->db->resultset('Item')->find($item_id)->update({highbid_id=>$bid->id});
 	$self->respond_to(
 		json => {json => {res=>$r?'ok':'err'}},
 	);
