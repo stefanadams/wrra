@@ -13,7 +13,9 @@ sub register {
 		my $datetime = $c->session->{datetime} || $c->config->{datetime} || $ENV{"${moniker}_DATETIME"};
 		$self->{datetime}->{now} = DateTime::Format::DateParse->parse_datetime($datetime) if $datetime;
 		$self->{datetime}->{now} ||= DateTime->now(time_zone=>'local');
+		$self->{datetime}->{now}->add(seconds=>time-$self->{datetime}->{start}) if $self->{datetime}->{start};
 		warn $self->{datetime}->{now} if $ENV{"${moniker}_DATETIME"} && !$ENV{MOJO_TEST};
+		$self->{datetime}->{start} = time if $datetime && !$self->{datetime}->{start};
 		return $self->{datetime}->{now};
 	});
 	$app->helper(datetime => sub {
