@@ -51,7 +51,7 @@ $t->get_ok('/api/ac/stockitem?term=will' => $headers)->status_is(200)->json_is('
 
 # bidding
 $t->get_ok('/api/ac/pay_number?term=963' => $headers)->status_is(200)->json_is('/0/label' => '963');
-#$t->get_ok('/api/ac/bidder?term=adams' => $headers)->status_is(200)->json_is('/0/label' => 'Stefan Adams');
+$t->get_ok('/api/ac/bidder?term=adams' => $headers)->status_is(200)->json_is('/0/label' => 'Stefan Adams');
 
 
 
