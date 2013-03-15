@@ -17,10 +17,10 @@ sub register {
 	$app->helper(db => sub {
 		my $c = shift;
 
-		#if ( $self->db ) {
-		#	$self->db->controller($c);
-		#	return $self->db;
-		#}
+		if ( $self->db ) {
+			$self->db->controller($c);
+			return $self->db;
+		}
 
 		my %connect = (
 			type => 'mysql',
