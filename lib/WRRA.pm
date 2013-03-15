@@ -60,13 +60,13 @@ sub startup {
         #        backend => [qw/:admins :auctioneers :operators/],
         #},
 	$self->plugin('authorization', {
-		has_priv => sub { # ->has_priviledge('priviledge')
+		has_priv => sub { # ->has_priviledge('priviledge')  =>  t/f if supplied priv is in list of user's privs
 			my ($c, $priv, $extradata) = @_;
 			return 0 unless $c->is_user_authenticated;
 			return 0 unless $c->config->{groups};
 			return grep { $_ eq $priv } $c->priviledges;
 		},
-		is_role => sub { # ->is('role')
+		is_role => sub { # ->is('role')  =>  t/f if supplied role is user's role
 			my ($c, $role, $extradata) = @_;
 			return 0 unless $c->is_user_authenticated;
 			return 1 if $c->current_user->{username} eq $role;
@@ -75,7 +75,7 @@ sub startup {
 			}
 			return 0;
 		},
-		user_privs => sub { # ->priviledges;
+		user_privs => sub { # ->priviledges;  =>  (admins, auctioneers, ...)
 			my ($c, $extradata) = @_;
 			return undef unless $c->is_user_authenticated;
 			return undef unless $c->config->{groups};
@@ -85,7 +85,7 @@ sub startup {
 			}
 			return wantarray ? keys %groups : {%groups};
 		},
-		user_role => sub { # ->role;
+		user_role => sub { # ->role;  =>  admins or auctioneers or ...
 			my ($c, $extradata) = @_;
 			return undef unless $c->is_user_authenticated;
 			return undef unless $c->config->{groups};

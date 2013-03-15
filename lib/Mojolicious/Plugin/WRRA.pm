@@ -49,7 +49,7 @@ sub register {
 	});
 	$app->helper(date_next => sub {
 		my $c = shift;
-		my $date_next = $c->hours($c->auctions->[0])->[0] || $c->hours($c->auctions($c->years->[1])->[0])->[0];
+		my $date_next = $c->hours($c->auctions->[0])->[0] || $c->hours($c->auctions($c->years->[1])->[0])->[0] || $c->datetime($c->datetime)->add(years=>1);
 		#warn Data::Dumper::Dumper({date_next=>defined $date_next ? $date_next->ymd : ''});
 		return $date_next;
 	});
@@ -65,7 +65,7 @@ sub register {
 	});
 	$app->helper(closed => sub {
 		my $c = shift;
-		return 1 if $c->app->mode ne 'development' && $c->config->{closed};
+		return 1 if $c->config->{closed}; #&& $c->app->mode ne 'development';
 		return 1 unless @{$c->hours};
 		my $closed = $c->datetime >= $c->hours($c->auctions->[0])->[0] && $c->datetime <= $c->hours($c->auctions->[0])->[1] ? 0 : 1;
 		#warn Data::Dumper::Dumper({closed=>$closed, hours=>[$c->hours->[0]->datetime, $c->hours->[1]->datetime]});
