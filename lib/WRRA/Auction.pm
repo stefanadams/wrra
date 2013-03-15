@@ -250,7 +250,7 @@ sub bid {
 		my $new_bidder = $self->db->resultset('Bidder')->create({name=>$name,phone=>$phone});
 		return $self->render_json({res=>'err'}) unless $bidder_id = $new_bidder->id;
 	}
-	my $bid = $self->db->resultset('Bid')->create({item_id=>$item_id,bidder_id=>$bidder_id,bid=>$bid,bidtime=>$self->datetime_mysql}) or return return $self->render_json({res=>'err'});
+	$bid = $self->db->resultset('Bid')->create({item_id=>$item_id,bidder_id=>$bidder_id,bid=>$bid,bidtime=>$self->datetime_mysql}) or return return $self->render_json({res=>'err'});
 	$r = $self->db->resultset('Item')->find($item_id)->update({highbid_id=>$bid->id});
 	$self->respond_to(
 		json => {json => {res=>$r?'ok':'err'}},

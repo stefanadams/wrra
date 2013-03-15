@@ -16,7 +16,13 @@ sub Login {
 	my $self = shift;
 	$self->authenticate($self->param('username'), $self->param('phone'));
 	$self->respond_to(
-		json => {json => {user => {name => $self->current_user?$self->current_user->{username}:Mojo::JSON->false, role=>$self->role||Mojo::JSON->false}}},
+		json => {json => {
+			res => $self->current_user?'ok':'err',
+			user => {
+				name => $self->current_user?$self->current_user->{username}:Mojo::JSON->false,
+				role=>$self->role||Mojo::JSON->false
+			}
+		}},
 	);
 }
 

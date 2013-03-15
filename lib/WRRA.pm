@@ -49,29 +49,49 @@ sub startup {
 			return undef;
 		},
 	});
+        #groups => {
+        #        #group => [qw/user names/],
+        #        admins => [qw/admin/],
+        #        adsales => [qw/adsales :admins/],
+        #        callers => [qw/caller :admins/],
+        #        bellringers => [qw/bellringer :admins/],
+        #        auctioneers => [qw/a b auctioneer :admins/],
+        #        operators => [qw/operator :admins/],
+        #        backend => [qw/:admins :auctioneers :operators/],
+        #},
 	$self->plugin('authorization', {
-		has_priv => sub {
+		has_priv => sub { # ->has_priviledge('priviledge')
 			my ($c, $priv, $extradata) = @_;
 			return 0 unless $c->is_user_authenticated;
 			return 0 unless $c->config->{groups};
-                        return 1 if $c->current_user->{username} eq $priv || grep { $_ eq $c->current_user->{username} } _expand_group($c->config->{groups}, $priv);
-			return 0;
+			return grep { $_ eq $priv } $c->priviledges;
 		},
-		is_role => sub {
+		is_role => sub { # ->is('role')
 			my ($c, $role, $extradata) = @_;
 			return 0 unless $c->is_user_authenticated;
-			return 0 unless $c->config->{groups};
-                        return 1 if $c->current_user->{username} eq $role || grep { $_ eq $c->current_user->{username} } _expand_group($c->config->{groups}, $role);
+			return 1 if $c->current_user->{username} eq $role;
+			foreach ( keys %{$c->config->{groups}} ) {
+				return 1 if grep { $c->role eq $_ && $c->current_user->{username} eq $_ } @{$c->config->{groups}->{$_}};
+			}
 			return 0;
 		},
-		user_privs => sub {
+		user_privs => sub { # ->priviledges;
 			my ($c, $extradata) = @_;
 			return undef unless $c->is_user_authenticated;
-			return $c->current_user->{username};
+			return undef unless $c->config->{groups};
+			my %groups;
+			foreach ( keys %{$c->config->{groups}} ) {
+				$groups{$_}=1 if grep { $c->current_user->{username} eq $_ } _expand_group($c->config->{groups}, $_);
+			}
+			return wantarray ? keys %groups : {%groups};
 		},
-		user_role => sub {
+		user_role => sub { # ->role;
 			my ($c, $extradata) = @_;
 			return undef unless $c->is_user_authenticated;
+			return undef unless $c->config->{groups};
+			foreach ( keys %{$c->config->{groups}} ) {
+				return $_ if grep { $c->current_user->{username} eq $_ } @{$c->config->{groups}->{$_}};
+			}
 			return $c->current_user->{username};
 		},
 	});
@@ -113,7 +133,7 @@ sub setup_routing {
 	$r->get('/ad/:id')->to('ad#ad');
 	$r->get('/ad')->name('ad');
 
-	$r->get('/alert/:alert', {alert=>undef})->to('alert#alert')->name('alert');
+	$r->get('/alert/:alert', {alert=>undef})->to('alert#alert');
 	$r->post('/alert/:alert', {alert=>undef})->over(has_priv=>'admin')->to('alert#alert');
 	$r->delete('/alert/:alert', {alert=>undef})->over(has_priv=>'admin')->to('alert#alert');
 	$r->get('/alert')->name('alert');

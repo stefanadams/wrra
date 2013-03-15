@@ -18,11 +18,11 @@
 <script type="text/javascript" src="/js/jquery.humanmsg.js"></script>
 <script type="text/javascript" src="/js/jquery.maskedinput.min.js"></script>
 <script type="text/javascript" src="/js/jquery.contextMenu.js"></script>
+<script type="text/javascript" src="/js/jquery.validate.js"></script>
 
 
 <script type="text/javascript">
-var allowHumanMsg = 1;
-var c_response = '';
+localStorage['allowHumanMsg'] = 1;
 var alert;
 var alert_msg;
 
@@ -129,6 +129,9 @@ function contextMenu(auction) {
 }
 
 function processContent(value) {
+	if ( value == 2 ) {
+		$("#content").processTemplateStop();
+	}
 	if ( value ) {
 		$("#content").processTemplateStart("<%= url_for 'auction' %>", null, <%= app->config->{refresh}->{auction}->{content} || 10000 %>, null, {
 			type: 'GET',
@@ -143,9 +146,8 @@ function processContent(value) {
 				// Header
 				var msg=$('#alert-get').html();
 				if (msg){
-					if (msg != c_response && allowHumanMsg){$(window).humanMsg(msg, {autoHide: 2.25*1000});}
-					allowHumanMsg = 1;
-					c_response = msg;
+					if (msg != localStorage['HumanMsg']){$(window).humanMsg(msg, {autoHide: 2.25*1000});}
+					localStorage['HumanMsg'] = msg;
 					$('table.getalert').show();
 				} else {
 					$('table.getalert').hide();
@@ -215,15 +217,15 @@ function processContent(value) {
 					  var element = $( this );
 					  if ( element.is( "[pic]" ) ) {
 					      var text = element.attr('text');
-					      console.log("[pic]: <img src='"+text+"' alt='"+text+"' />");
+					      //console.log("[pic]: <img src='"+text+"' alt='"+text+"' />");
                                               return "<img src='"+text+"' alt='"+text+"' />";
 					  }
 					  if ( element.is( "[title]" ) ) {
-					      console.log("[title]: "+element.attr( "title" ));
+					      //console.log("[title]: "+element.attr( "title" ));
 					      return element.attr( "title" );
 					  }
 					  if ( element.is( "img" ) ) {
-					      console.log("Img: "+element.attr( "alt" ));
+					      //console.log("Img: "+element.attr( "alt" ));
 					      return element.attr( "alt" );
 					  }
 				      }
@@ -250,13 +252,13 @@ function on_click_livechat(auction) {
 
 function on_click_paypal(auction) {
 	console.log('paypal');
-	processContent(0);
+	refreshTimer(0);
 	$("#dialog-paypal").dialog({
 		autoOpen: false,
 		height: 320,
 		width: 380,
 		modal: true,
-		close: processContent(1)
+		close: refreshTimer(1)
 	});
 	$("#dialog-paypal").dialog("open");
 	$("#paypal-os0").autocomplete({
@@ -292,7 +294,7 @@ function on_click_clearalert(auction){
 
 function on_click_alert(auction){
 	console.log('alert');
-	processContent(0);
+	refreshTimer(0);
 	$("#dialog-alert").dialog({
 		autoOpen: false,
 		height: 240,
@@ -303,7 +305,7 @@ function on_click_alert(auction){
 				$("#alert-set-alert").removeClass("ui-state-error");
 				$("#alert-set-msg").removeClass("ui-state-error");
 				$.post('<%= url_for 'alert' %>/'+$('input[name="alert-set-alert"]:checked').val(), {msg: $("#alert-set-msg").val()}, function(data){
-					processContent(1);
+					processContent(2);
 /*
 					if ( data.msg ) {
 						$('table.getalert').show();
@@ -325,7 +327,7 @@ function on_click_alert(auction){
 		close: function() {
 			$("#alert-set-alert").removeClass("ui-state-error");
 			$("#alert-set-msg").removeClass("ui-state-error");
-			processContent(1);
+			refreshTimer(1);
 		}
 	});
 	$("#dialog-alert").dialog("open");
@@ -360,8 +362,8 @@ function on_click_operator(key, opt, auction) {
 		width: 350,
 		modal: true,
 		open: function() {
-			$('form[name=operator] input[name=operator-bid]').val(minbid);
-			$('form[name=operator] input[name=operator-phone]').mask("(999) 999-9999");
+			$('#dialog-operator-form input[name=operator-bid]').val(minbid);
+			$('#dialog-operator-form input[name=operator-phone]').mask("(999) 999-9999");
 			$(this).keypress(function(e) {
 			    if (e.keyCode == $.ui.keyCode.ENTER) {
 				console.log('You pressed enter!');
@@ -371,24 +373,33 @@ function on_click_operator(key, opt, auction) {
 		},
 		buttons: {
 			"Bid": function(){
-				$(this).dialog("disable"); 
-				$(this).dialog({title: 'Bid...'});
-				$.post('<%= url_for 'bid' %>/'+item_id, {phone: $('#operator-phone').val(), name: $('#operator-name').val(), bid: $('#operator-bid').val(), approve: 1}, function(data){
-					//$.post('/api/approve/'+data.request.request_id+'/1', function(){
-					//	$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
-					//	processContent(0);
-					//});
-					if ( data.res == 'ok' ) {
-						$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000});
-						processContent(0);
-						processContent(1);
-					}
-				});
-				$(this).dialog("close");
+				var this_bid = $(this);
+				this_bid.dialog("disable"); 
+				this_bid.dialog({title: 'Bid...'});
+				if ( $('#dialog-operator-form').valid() ) {
+					console.log('AAA');
+                                        $.post('<%= url_for 'bid' %>/'+item_id, {phone: $('#operator-phone').val(), name: $('#operator-name').val(), bid: $('#operator-bid').val(), approve: 1}, function(data){
+                                                //$.post('/api/approve/'+data.request.request_id+'/1', function(){
+                                                //	$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
+                                                //	processContent(0);
+                                                //});
+                                                if ( data.res == 'ok' ) {
+                                                        this_bid.dialog("close");
+                                                        processContent(0);
+                                                        $(window).humanMsg("Bid placed! :D", {autoHide: 3*1000});
+                                                        processContent(1);
+                                                } else {
+                                                        $.dialog_alert("Problem placing bid!  D:", "Bid not placed!");
+                                                }
+                                        });
+				}
 			},
 			Cancel: function(){$(this).dialog("close");}
 		},
-		close: refreshTimer(0)
+		close: function(){
+			$('#dialog-operator-form input').val('');
+			refreshTimer(0);
+		}
 	});
 	$("#dialog-operator-title").html("Bid on item "+number+" (Minimum: "+minbid+")");
 	if ( nstatus == "Bidding" ) {
@@ -445,7 +456,7 @@ function on_click_register(auction) {
 
 function on_click_login(auction) {
 	console.log('login');
-	processContent(0);
+	refreshTimer(0);
 	$("#dialog-login").dialog({
 		autoOpen: false,
 		height: 218,
@@ -455,7 +466,7 @@ function on_click_login(auction) {
 			$('form[name=login] input[name="login-phone"]').mask("9999");
 			$(this).keypress(function(e) {
 			    if (e.keyCode == $.ui.keyCode.ENTER) {
-				console.log('You pressed enter!');
+				//console.log('You pressed enter!');
 				$(".ui-dialog:visible").find('.ui-dialog-buttonpane').find('button:first').click();
 			    }
 			});
@@ -466,8 +477,8 @@ function on_click_login(auction) {
 				t.dialog("disable"); 
 				t.dialog({title: 'Identifying...'});
 				$.post('<%= url_for 'login' %>', {username: $('#login-username').val(), phone: $('#login-phone').val()}, function(data){
-					if ( data.user ) {
-						processContent(1);
+					if ( data.res == 'ok' ) {
+						processContent(2);
 						if ( data.user.role == 'admin' ) {
 							$('#stats').show();
 						} else {
@@ -482,7 +493,10 @@ function on_click_login(auction) {
 			},
 			Cancel: function(){$(this).dialog("close");}
 		},
-		close: processContent(1)
+		close: function(){
+			$('form[name=login] input').val('');
+			refreshTimer(1);
+		}
 	});
 	$("#dialog-login-title").html("Identify yourself.");
 	$("#dialog-login").dialog("open");
@@ -848,22 +862,22 @@ $(document).ready(function(){
 			<input type='hidden' name='cmd' value='_s-xclick'><input type='hidden' name='hosted_button_id' value='4113257'>
 			<table>
 				<tr><td colspan="2">Complete the form below to pay for your item:</td></tr>
-				<tr><td>Item #:</td><td><input type='hidden' name='on0' value='Item ID'><input id="paypal-os0" type='text' name='os0' maxlength='60' value='Item ID' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td>Item:</td><td><input type='hidden' name='on3' value='Item'><input id="paypal-name" type='text' name='item_name' maxlength='60' value='Item' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td>Street Address:</td><td><input type='hidden' name='on1' value='Street Address'><input id="paypal-os1" type='text' name='os1' maxlength='60' value='Street Address' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td>City, ST ZIP</td><td><input type='hidden' name='on2' value='City, State, Zip'><input id="paypal-os2" type='text' name='os2' maxlength='60' value='City, State, Zip' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Item #:</td><td><input type='hidden' name='on0' value='Item ID'><input class="required" id="paypal-os0" type='text' name='os0' maxlength='60' value='Item ID' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Item:</td><td><input type='hidden' name='on3' value='Item'><input class="required" id="paypal-name" type='text' name='item_name' maxlength='60' value='Item' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Street Address:</td><td><input type='hidden' name='on1' value='Street Address'><input class="required" id="paypal-os1" type='text' name='os1' maxlength='60' value='Street Address' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>City, ST ZIP</td><td><input type='hidden' name='on2' value='City, State, Zip'><input class="required" id="paypal-os2" type='text' name='os2' maxlength='60' value='City, State, Zip' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
 				<tr><td colspan="2" align="center"><input type='image' src='https://www.paypal.com/en_US/i/btn/btn_paynowCC_LG.gif' border='0' name='submit' alt='PayPal - The safer, easier way to pay online!'><img alt='' border='0' src='https://www.paypal.com/en_US/i/scr/pixel.gif' width='1' height='1'></td></tr>
 			</table>
 		</form>
 	</div>
 
 	<div id="dialog-operator" title="Operator" class="modal">
-		<form name="operator" action='<%= url_for 'bid' %>' method='post'>
+		<form id="dialog-operator-form" name="operator" action='<%= url_for 'bid' %>' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-operator-title">Submit Bid</div></td></tr>
-				<tr><td>Bidder</td><td><input id="operator-name" type='text' name='operator-name' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"><input id="operator-bidderid" type='hidden' name='operator-bidderid' maxlength='60' value=''></td></tr>
-				<tr><td>Phone</td><td><input id="operator-phone" type='text' name='operator-phone' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td>Amount</td><td><input id="operator-bid" type='text' name='operator-bid' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Bidder</td><td><input class="required" id="operator-name" type='text' name='operator-name' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"><input id="operator-bidderid" type='hidden' name='operator-bidderid' maxlength='60' value=''></td></tr>
+				<tr><td><em>*</em>Phone</td><td><input class="required" id="operator-phone" type='text' name='operator-phone' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Amount</td><td><input class="required" id="operator-bid" type='text' name='operator-bid' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
 			</table>
 		</form>
 	</div>

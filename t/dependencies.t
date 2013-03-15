@@ -1,1 +1,2 @@
 # DBIx::Class::Helper::ResultSet::Shortcut Data::Walk Mojolicious::Plugin::WriteExcel Mojolicious::Plugin::I18N Mojolicious::Plugin::AutoRoute DBIx::Class
+# mysql-server mysql-client libdbd-mysql-perl libdbix-class-perl libwww-perl curl wget make gcc git
