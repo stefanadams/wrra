@@ -96,6 +96,7 @@ table.body div.body_title {text-align: center; font-size: 14px; font-weight: bol
 	#ad img {width:960px;height:100px}
     tr.timer{background-color:yellow}
     tr.sold{background-color:#414794}
+    #paypal-empty-message {color:#414794}
 
 table.getalert {width:100%;text-align:center;background-color:#FF6666;}
 table.setalert {width:100%;text-align:center;background-color:#FF6666;}

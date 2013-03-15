@@ -239,11 +239,11 @@ sub timer {
 
 sub bid {
 	my $self = shift;
-	my $item_id = $self->param('id') or return return $self->render_json({res=>'err'});
-	my $phone = $self->param('phone') or return return $self->render_json({res=>'err'});
+	my $item_id = $self->param('id') or return $self->render_json({res=>'err'});
+	my $phone = $self->param('phone') or return $self->render_json({res=>'err'});
 	my $bidder_id = $self->param('bidder_id');
-	my $name = $self->param('name') or return return $self->render_json({res=>'err'});
-	my $bid = $self->param('bid') or return return $self->render_json({res=>'err'});
+	my $name = $self->param('name') or return $self->render_json({res=>'err'});
+	my $bid = $self->param('bid') or return $self->render_json({res=>'err'});
 	my $r;
 	unless ( $bidder_id ) {
 		my $new_bidder = $self->db->resultset('Bidder')->create({name=>$name,phone=>$phone});
@@ -251,6 +251,22 @@ sub bid {
 	}
 	$bid = $self->db->resultset('Bid')->create({item_id=>$item_id,bidder_id=>$bidder_id,bid=>$bid,bidtime=>$self->datetime_mysql}) or return return $self->render_json({res=>'err'});
 	$r = $self->db->resultset('Item')->find($item_id)->update({highbid_id=>$bid->id});
+	$self->respond_to(
+		json => {json => {res=>$r?'ok':'err'}},
+	);
+}
+
+sub bidder {
+	my $self = shift;
+	my $bidder_id = $self->param('id') or return $self->render_json({res=>'err'});
+	my $bidder = {
+		address => $self->param('address') || '',
+		city => $self->param('city') || '',
+		state => $self->param('state') || '',
+		zip => $self->param('zip') || '',
+	};
+	my $r;
+	$r = $self->db->resultset('Item')->find($self->param('item_id'))->update({paid=>\'now()'}) && $self->db->resultset('Bidder')->find($bidder_id)->update($bidder);
 	$self->respond_to(
 		json => {json => {res=>$r?'ok':'err'}},
 	);

@@ -258,24 +258,87 @@ function on_click_paypal(auction) {
 		height: 320,
 		width: 380,
 		modal: true,
-		close: refreshTimer(1)
+		open: function() {
+			$('#dialog-paypal-form input').val('');
+			$('#dialog-paypal-form input[name="os0"]').mask("999?9");
+			$('#dialog-paypal-form input[name="os5"]').mask("99999?-9999");
+			$(this).keypress(function(e) {
+			    if (e.keyCode == $.ui.keyCode.ENTER) {
+				//console.log('You pressed enter!');
+				$(".ui-dialog:visible").find('.ui-dialog-buttonpane').find('button:first').click();
+			    }
+			});
+		},
+		buttons: {
+			"Pay Now": function(){
+				var t = $(this);
+				t.dialog("disable"); 
+				t.dialog({title: 'Connecting to Paypal...'});
+				if ( $('#dialog-paypal-form').valid() ) {
+					$.post('<%= url_for 'bidder' %>/'+$('#paypal-bidder_id').val(), {
+						item_id: $('#paypal-item_id').val(),
+						address: $('#paypal-os1').val(),
+						city: $('#paypal-os2').val(),
+						state: $('#paypal-os4').val(),
+						zip: $('#paypal-os5').val()
+					}, function(data){
+						if ( data.res == 'ok' ) {
+							$('#dialog-paypal-form').submit();
+						} else {
+							t.dialog("disable"); 
+							t.dialog({title: 'Identify yourself'});
+						}
+					});
+				}
+			},
+			Cancel: function(){$(this).dialog("close");}
+		},
+		close: function(){
+			$('#dialog-paypal-form input').val('');
+			refreshTimer(1);
+		}
 	});
+	//$("#dialog-login-title").html("Identify yourself.");
 	$("#dialog-paypal").dialog("open");
 	$("#paypal-os0").autocomplete({
 		source: "<%= url_for 'ac_pay_number' %>",
 		minLength: 3,
 		select: function(event, ui){
 			if (ui.item){
+				$('#paypal-bidder_id').val(ui.item.highbid.bidder.id);
+				$('#paypal-item_id').val(ui.item.id);
 				$('#paypal-name').val(ui.item.name);
-				$('#paypal-os1').val(ui.item.address);
-				$('#paypal-os2').val(ui.item.csz);
+				$('#paypal-os1').val(ui.item.highbid.bidder.address);
+				if ( ui.item.highbid.bidder.city ) {
+					$('#paypal-os2').val(ui.item.highbid.bidder.city);
+					$('#paypal-os4').val(ui.item.highbid.bidder.state);
+					$('#paypal-os5').val(ui.item.highbid.bidder.zip);
+				}
 			}
-		}
+		},
+                response: function(event, ui) {
+                    // ui.content is the array that's about to be sent to the response callback.
+                    if (ui.content.length === 0) {
+                        $("#paypal-empty-message").show().text("No results found, but you may still proceed.  Perhaps you already attempted?").delay(3000).hide('highlight');
+                    } else {
+                        $("#paypal-empty-message").empty();
+                    }
+                }
 	}).data( "ui-autocomplete" )._renderItem = function( ul, item ) {
 	      return $( "<li>" )
 		.append( "<a>" + item.label + " : " + item.desc + "</a>" )
 		.appendTo( ul );
 	};
+	$("#paypal-os2").autocomplete({
+		source: "<%= url_for 'ac_city' %>",
+		minLength: 2,
+		select: function(event, ui){
+                        if (ui.item){
+                                $('#paypal-os4').val(ui.item.state);
+                                $('#paypal-os5').val(ui.item.zip);  
+                        }
+		},
+	});
 }
 
 function on_click_clearalert(auction){
@@ -476,20 +539,22 @@ function on_click_login(auction) {
 				var t = $(this);
 				t.dialog("disable"); 
 				t.dialog({title: 'Identifying...'});
-				$.post('<%= url_for 'login' %>', {username: $('#login-username').val(), phone: $('#login-phone').val()}, function(data){
-					if ( data.res == 'ok' ) {
-						processContent(2);
-						if ( data.user.privs.admins ) {
-							$('#stats').show();
+				if ( $('#dialog-login-form').valid() ) {
+					$.post('<%= url_for 'login' %>', {username: $('#login-username').val(), phone: $('#login-phone').val()}, function(data){
+						if ( data.res == 'ok' ) {
+							processContent(2);
+							if ( data.user.privs.admins ) {
+								$('#stats').show();
+							} else {
+								$('#stats').hide();
+							}
+							t.dialog("close");
 						} else {
-							$('#stats').hide();
+							t.dialog("disable"); 
+							t.dialog({title: 'Identify yourself'});
 						}
-						t.dialog("close");
-					} else {
-						t.dialog("disable"); 
-						t.dialog({title: 'Identify yourself'});
-					}
-				});
+					});
+				}
 			},
 			Cancel: function(){$(this).dialog("close");}
 		},
@@ -859,15 +924,19 @@ $(document).ready(function(){
 
 
 	<div id="dialog-paypal" title="Pay by Credit Card" class="modal">
-		<form action='https://www.paypal.com/cgi-bin/webscr' method='post'>
+		<form id="dialog-paypal-form" action='https://www.paypal.com/cgi-bin/webscr' method='post'>
 			<input type='hidden' name='cmd' value='_s-xclick'><input type='hidden' name='hosted_button_id' value='4113257'>
+			<input type='hidden' name='bidderid' id="paypal-bidder_id">
+			<input type='hidden' name='itemid' id="paypal-item_id">
 			<table>
-				<tr><td colspan="2">Complete the form below to pay for your item:</td></tr>
-				<tr><td><em>*</em>Item #:</td><td><input type='hidden' name='on0' value='Item ID'><input class="required" id="paypal-os0" type='text' name='os0' maxlength='60' value='Item ID' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td><em>*</em>Item:</td><td><input type='hidden' name='on3' value='Item'><input class="required" id="paypal-name" type='text' name='item_name' maxlength='60' value='Item' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td><em>*</em>Street Address:</td><td><input type='hidden' name='on1' value='Street Address'><input class="required" id="paypal-os1" type='text' name='os1' maxlength='60' value='Street Address' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td><em>*</em>City, ST ZIP</td><td><input type='hidden' name='on2' value='City, State, Zip'><input class="required" id="paypal-os2" type='text' name='os2' maxlength='60' value='City, State, Zip' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td colspan="2" align="center"><input type='image' src='https://www.paypal.com/en_US/i/btn/btn_paynowCC_LG.gif' border='0' name='submit' alt='PayPal - The safer, easier way to pay online!'><img alt='' border='0' src='https://www.paypal.com/en_US/i/scr/pixel.gif' width='1' height='1'></td></tr>
+				<tr><td colspan="2">Complete the form below to pay for your item:<div id="paypal-empty-message"></div></td></tr>
+				<tr><td><em>*</em>Item #:</td><td><input type='hidden' name='on0' value='Item ID'><input class="required" id="paypal-os0" type='text' name='os0' maxlength='4'></td></tr>
+				<tr><td><em>*</em>Item:</td><td><input type='hidden' name='on3' value='Item'><input class="required" id="paypal-name" type='text' name='item_name' maxlength='120'></td></tr>
+				<tr><td><em>*</em>Street Address:</td><td><input type='hidden' name='on1' value='Street Address'><input class="required" id="paypal-os1" type='text' name='os1' maxlength='60'></td></tr>
+				<tr><td><em>*</em>City</td><td><input type='hidden' name='on2' value='City'><input class="required" id="paypal-os2" type='text' name='os2' maxlength='60'></td></tr>
+				<tr><td>State</td><td><input type='hidden' name='on4' value='State'><input id="paypal-os4" type='text' name='os4' maxlength='2'></td></tr>
+				<tr><td>Zip</td><td><input type='hidden' name='on5' value='Zip'><input id="paypal-os5" type='text' name='os5' maxlength='10'></td></tr>
+<!--				<tr><td colspan="2" align="center"><input type='image' src='https://www.paypal.com/en_US/i/btn/btn_paynowCC_LG.gif' border='0' name='submit' alt='PayPal - The safer, easier way to pay online!'><img alt='' border='0' src='https://www.paypal.com/en_US/i/scr/pixel.gif' width='1' height='1'></td></tr> -->
 			</table>
 		</form>
 	</div>
@@ -876,39 +945,39 @@ $(document).ready(function(){
 		<form id="dialog-operator-form" name="operator" action='<%= url_for 'bid' %>' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-operator-title">Submit Bid</div></td></tr>
-				<tr><td><em>*</em>Bidder</td><td><input class="required" id="operator-name" type='text' name='operator-name' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"><input id="operator-bidderid" type='hidden' name='operator-bidderid' maxlength='60' value=''></td></tr>
-				<tr><td><em>*</em>Phone</td><td><input class="required" id="operator-phone" type='text' name='operator-phone' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td><em>*</em>Amount</td><td><input class="required" id="operator-bid" type='text' name='operator-bid' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Bidder</td><td><input class="required" id="operator-name" type='text' name='operator-name' maxlength='60' value=''><input id="operator-bidderid" type='hidden' name='operator-bidderid' maxlength='60' value=''></td></tr>
+				<tr><td><em>*</em>Phone</td><td><input class="required" id="operator-phone" type='text' name='operator-phone' maxlength='60' value=''></td></tr>
+				<tr><td><em>*</em>Amount</td><td><input class="required" id="operator-bid" type='text' name='operator-bid' maxlength='60' value=''></td></tr>
 			</table>
 		</form>
 	</div>
 
 	<div id="dialog-register" title="Register" class="modal">
-		<form name="register" action='<%= url_for 'register' %>' method='post'>
+		<form id="dialog-register-form" name="register" action='<%= url_for 'register' %>' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-register-title">Register</div></td></tr>
-				<tr><td>Username</td><td><input id="register-username" type='text' name='register-username' maxlength='60' value='Username' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td>Name</td><td><input id="register-bidder" type='text' name='register-bidder' maxlength='60' value='Bidder' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td>Phone</td><td><input id="register-phone" type='text' name='register-phone' maxlength='60' value='Phone' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Username</td><td><input class="required" id="register-username" type='text' name='register-username' maxlength='60' value='Username'></td></tr>
+				<tr><td><em>*</em>Name</td><td><input class="required" id="register-bidder" type='text' name='register-bidder' maxlength='60' value='Bidder' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Phone</td><td><input class="required" id="register-phone" type='text' name='register-phone' maxlength='60' value='Phone' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
 			</table>
 		</form>
 	</div>
 
 	<div id="dialog-login" title="Identify yourself" class="modal">
-		<form name="login" action='<%= url_for 'login' %>' method='post'>
+		<form id="dialog-login-form" name="login" action='<%= url_for 'login' %>' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-login-title">Identify</div></td></tr>
-				<tr><td>Username</td><td><input id="login-username" type='text' name='login-username' maxlength='60' value='Username' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td>Phone</td><td><input id="login-phone" type='text' name='login-phone' maxlength='60' value='Phone' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Username</td><td><input class="required" id="login-username" type='text' name='login-username' maxlength='60' value='Username'></td></tr>
+				<tr><td><em>*</em>Phone</td><td><input class="required" id="login-phone" type='text' name='login-phone' maxlength='60' value='Phone'></td></tr>
 			</table>
 		</form>
 	</div>
 
 	<div id="dialog-bid" title="Bid" class="modal">
-		<form name="bid" action='<%= url_for 'bid' %>' method='post'>
+		<form id="dialog-bid-form" name="bid" action='<%= url_for 'bid' %>' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-bid-title">Submit Bid</div></td></tr>
-				<tr><td>Amount</td><td><input id="bid-bid" type='text' name='bid-bid' maxlength='60' value='Amount' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Amount</td><td><input class="required" id="bid-bid" type='text' name='bid-bid' maxlength='60' value='Amount'></td></tr>
 			</table>
 		</form>
 	</div>

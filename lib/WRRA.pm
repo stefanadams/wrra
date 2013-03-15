@@ -136,8 +136,9 @@ sub setup_routing {
 	$auction->post('/sell/:id')->over(has_priv=>'auctioneers')->to('auction#sell');
 	$auction->post('/starttimer/:id')->over(has_priv=>'auctioneers')->to('auction#timer', timer=>1);
 	$auction->post('/stoptimer/:id')->over(has_priv=>'auctioneers')->to('auction#timer', timer=>0);
-	$auction->post('/bid/:id' => {id=>undef})->over(has_priv=>'operators')->to('auction#bid');
-	$auction->get("/$_")->name($_) for qw/assign notify sell starttimer stoptimer bid/;
+	$auction->post('/bid/:id')->over(has_priv=>'operators')->to('auction#bid');
+	$auction->post('/bidder/:id')->to('auction#bidder');
+	$auction->any("/$_")->name($_) for qw/assign notify sell starttimer stoptimer bid bidder/;
 
 	$r->any('/register')->to('auth#register');
 	$r->any('/login')->to('auth#Login');
