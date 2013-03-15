@@ -20,7 +20,8 @@ sub Login {
 			res => $self->current_user?'ok':'err',
 			user => {
 				name => $self->current_user?$self->current_user->{username}:Mojo::JSON->false,
-				role=>$self->role||Mojo::JSON->false
+				role=>$self->role||Mojo::JSON->false,
+				privs=>$self->privileges||Mojo::JSON->false
 			}
 		}},
 	);
@@ -30,7 +31,14 @@ sub Logout {
 	my $self = shift;
 	$self->logout;
 	$self->respond_to(
-		json => {json => {user => {name => $self->current_user?$self->current_user->{username}:Mojo::JSON->false, role=>$self->role||Mojo::JSON->false}}},
+		json => {json => {
+			res => $self->current_user?'ok':'err',
+			user => {
+				name => $self->current_user?$self->current_user->{username}:Mojo::JSON->false,
+				role=>$self->role||Mojo::JSON->false,
+				privs=>$self->privileges||Mojo::JSON->false
+			}
+		}},
 	);
 }
 

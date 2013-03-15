@@ -10,6 +10,7 @@ sub items {
 			user => {
 				name => $self->is_user_authenticated ? $self->current_user->{name} : Mojo::JSON->false,
 				role => $self->is_user_authenticated ? $self->role : Mojo::JSON->false,
+				privs => $self->is_user_authenticated ? scalar $self->privileges : Mojo::JSON->false,
 			}
 		},
 		header => {

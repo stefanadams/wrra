@@ -38,7 +38,7 @@ function contextMenu(auction) {
 	    // define the elements of the menu
 	    build: function($trigger, e) {
 		$trigger.contextMenu(true);
-		if ( auction.session.user.role=="admin" ) {
+		if ( auction.session.user.role=="admins" ) {
 			return {
 			    callback: function(key, opt) {
 				var id = opt.$trigger.attr("itemid");
@@ -78,7 +78,7 @@ function contextMenu(auction) {
 			    }
 			    // there's more, have a look at the demos and docs...
 			};
-		} else if ( auction.session.user.role=="operator" ) {
+		} else if ( auction.session.user.role=="operators" ) {
 			return {
 			    callback: function(key, opt) {
 				var id = opt.$trigger.attr("itemid");
@@ -92,7 +92,7 @@ function contextMenu(auction) {
 				place_bid: {name: "Place Bid"},
 			    }
 			};
-		} else if ( auction.session.user.role=="auctioneer" ) {
+		} else if ( auction.session.user.role=="auctioneers" ) {
 			return {
 			    callback: function(key, opt) {
 				var id = opt.$trigger.attr("itemid");
@@ -165,7 +165,7 @@ function processContent(value) {
 				$("table.setalert span.alert").click(function(){on_click_alert(auction)});
 				$("#clearalert").click(function(){on_click_clearalert(auction)});
 				$("#register").click(function(){on_click_register(auction)});
-				if ( auction.session.user.role=="operator" ) {
+				if ( auction.session.user.role=="operators" ) {
 					$(".item-number").click(function(){on_click_operator('', $(this), auction)});
 				} else if ( auction.session.user.role ) {
 					$(".item-number").click(function(){on_click_bid(auction)});
@@ -479,7 +479,7 @@ function on_click_login(auction) {
 				$.post('<%= url_for 'login' %>', {username: $('#login-username').val(), phone: $('#login-phone').val()}, function(data){
 					if ( data.res == 'ok' ) {
 						processContent(2);
-						if ( data.user.role == 'admin' ) {
+						if ( data.user.role == 'admins' ) {
 							$('#stats').show();
 						} else {
 							$('#stats').hide();
@@ -587,7 +587,7 @@ $(document).ready(function(){
 				{#if $T.session.user.name}
 					<!-- (<a id="logout" class="mast">Sign out</a>)*Beta -->
 					<a id="logout" class="modal"><span class="hello">Hello, {$T.session.user.name}!</span></a>
-					{#if $T.session.user.role=="admin"}<a href="/admin/bookmarks">Bookmarks</a>{#/if}
+					{#if $T.session.user.role=="admins"}<a href="/admin/bookmarks">Bookmarks</a>{#/if}
 				{#else}
 					<!-- (<a id="register" class="mast">Register!</a> | <a id="signin" class="mast">Sign in!</a>) *Beta -->
 				{#/if}
@@ -681,7 +681,7 @@ $(document).ready(function(){
 					</tr>
 				</table>
 				{#/if}
-				{#if $T.session.user.role=="admin"}
+				{#if $T.session.user.role=="admins"}
 				<div id="dialog-alert" title="Set Alert" class="modal">
 					<form>
 					<fieldset>
@@ -723,9 +723,9 @@ $(document).ready(function(){
 									<div col="item">
 									<div style="float:left;width:80%">
 									{#if $T.r.auctioneer}<img src="img/{$T.r.auctioneer}.gif" />{#/if}
-									{#if $T.session.user.role=="operator"}
+									{#if $T.session.user.role=="operators"}
 										<a id="operator-{$T.r.id}" title="Place Bid" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
-									{#elseif $T.session.user.role=="auctioneer"}
+									{#elseif $T.session.user.role=="auctioneers"}
 										<a id="auctioneer-{$T.r.id}" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#elseif $T.session.user.name}
 										<a id="bid-{$T.r.id}" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
@@ -750,7 +750,7 @@ $(document).ready(function(){
 									</div>
 									<div style="float:right;width:20%;text-align:right">
 									{#if !$T.r.sold}
-									{#if $T.session.user.role=="admin" || $T.session.user.role=="auctioneer"}
+									{#if $T.session.user.role=="admins" || $T.session.user.role=="auctioneers"}
 										{#if $T.r.timer}
 											<img src="img/timer-on.gif" title="Running Time: {$T.r.runningtime}<br>Timer Time: {$T.r.timertime}"/>
 										{#elseif $T.r.notifications.starttimer}
@@ -781,7 +781,7 @@ $(document).ready(function(){
 									<span class="bidder">{$T.r.highbid.bidder.name}</span>
 									</div>
 									<div style="float:right;width:20%; text-align:left;">
-									{#if $T.session.user.role=="admin" || $T.session.user.role=="auctioneer"}
+									{#if $T.session.user.role=="admins" || $T.session.user.role=="auctioneers"}
 										{#if $T.r.sold}
 											<img src="img/sold.gif" ack="sold"/>
 										{#elseif $T.r.notifications.sell}

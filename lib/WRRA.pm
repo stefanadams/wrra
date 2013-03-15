@@ -78,19 +78,30 @@ sub startup {
 		user_privs => sub { # ->priviledges;  =>  (admins, auctioneers, ...)
 			my ($c, $extradata) = @_;
 			return undef unless $c->is_user_authenticated;
+			return undef unless $c->current_user;
+			return undef unless $c->current_user->{username};
 			return undef unless $c->config->{groups};
-			my %groups;
-			foreach ( keys %{$c->config->{groups}} ) {
-				$groups{$_}=1 if grep { $c->current_user->{username} eq $_ } _expand_group($c->config->{groups}, $_);
-			}
-			return wantarray ? keys %groups : {%groups};
+			my %privs = (
+				admin => [qw/admins adsales callers bellringers auctioneers operators backend/],
+				adsales => [qw/adsales/],
+				caller => [qw/callers/],
+				bellringer => [qw/bellringers/],
+				auctioneer => [qw/auctioneers backend/],
+				a => [qw/auctioneers backend/],
+				b => [qw/auctioneers backend/],
+				operator => [qw/operators backend/],
+			);
+			return undef unless $privs{$c->current_user->{username}};
+			return wantarray ? @{$privs{$c->current_user->{username}}} : {map { $_ => 1 } @{$privs{$c->current_user->{username}}}};
 		},
 		user_role => sub { # ->role;  =>  admins or auctioneers or ...
 			my ($c, $extradata) = @_;
 			return undef unless $c->is_user_authenticated;
 			return undef unless $c->config->{groups};
-			foreach ( keys %{$c->config->{groups}} ) {
-				return $_ if grep { $c->current_user->{username} eq $_ } @{$c->config->{groups}->{$_}};
+			my $groups = $c->config->{groups};
+			foreach my $g ( keys %$groups ) {
+				my ($role) = grep { $c->current_user->{username} eq $_ } @{$groups->{$g}} or next;
+				return $g
 			}
 			return $c->current_user->{username};
 		},
@@ -101,14 +112,14 @@ sub startup {
 	$self->plugin('AutoRoute', {route => $self->routes});
 }
 
-sub _expand_group {
-        my ($groups, $group) = @_;
-
-        my %groups = %$groups;
-        $group =~ s/^://;
-        push @{$groups{$group}}, _expand_group(\%groups, $_) foreach grep { /^:/ } @{$groups{$group}};
-        return grep { /^(?!:)/ } @{$groups{$group}};
-}
+#sub _expand_group {
+#        my ($groups, $group) = @_;
+#
+#	my %groups = %$groups;
+#        $group =~ s/^://;
+#        push @{$groups{$group}}, _expand_group({%groups}, $_) foreach grep { /^:/ } @{$groups{$group}};
+#        return grep { /^(?!:)/ } @{$groups{$group}};
+#}
 
 sub setup_routing {
 	my $self = shift;
