@@ -4,13 +4,15 @@ use base 'WRRA::Schema::ResultSet';
 
 my ($nu, $nn) = ({'='=>undef},{'!='=>undef});
 
-sub complete { shift->search({scheduled=>$nn,started=>$nn,sold=>$nn,cleared=>$nn}) }
-sub paid { shift->search({scheduled=>$nn,started=>$nn,sold=>$nn,$paid=>$nn}) }
-sub sold_not_paid { shift->search({scheduled=>$nn,started=>$nn,sold=>$nn,paid=>$nu}) }
-sub sold { shift->search({scheduled=>$nn,started=>$nn,sold=>$nn}) }
-sub bidding { shift->search({scheduled=>$nn,auctioneer=>$nn,started=>$nn,sold=>$nu}) }
-sub on_deck { shift->search({scheduled=>$nn,auctioneer=>$nn,started=>$nu}) }
-sub ready { shift->search({scheduled=>$nn,auctioneer=>$nu}) }
-sub not_ready { shift->search({scheduled=>$nu}) }
+sub auctioneer { shift->search({auctioneer=>shift}, {order_by=>'seq'}) }
+
+sub complete { shift->search({scheduled=>$nn,started=>$nn,sold=>$nn,cleared=>$nn}, {order_by=>'number'}) }
+sub paid { shift->search({scheduled=>$nn,started=>$nn,sold=>$nn,$paid=>$nn}, {order_by=>'number'}) }
+sub unpaid { shift->search({scheduled=>$nn,started=>$nn,sold=>$nn,paid=>$nu}, {order_by=>'number'}) }
+sub sold { shift->search({scheduled=>$nn,started=>$nn,sold=>$nn}, {order_by=>'number'}) }
+sub bidding { shift->search({scheduled=>$nn,auctioneer=>$nn,started=>$nn,cleared=>$nu}, {order_by=>'number'}) }
+sub on_deck { shift->search({scheduled=>$nn,auctioneer=>$nn,started=>$nu}, {order_by=>'number'}) }
+sub ready { shift->search({scheduled=>$nn,auctioneer=>$nu}, {order_by=>'number'}) }
+sub not_ready { shift->search({scheduled=>$nu}, {order_by=>'number'}) }
 
 1;

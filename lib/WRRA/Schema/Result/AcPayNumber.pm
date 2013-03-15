@@ -8,7 +8,7 @@ sub desc { shift->name }
 
 sub _search {
 	my ($self, $rs, $req) = @_;
-	$rs->search({-or => ['number'=>$req->{term},'name'=>{'like' => '%'.$req->{term}.'%'}]}, {prefetch=>'highbid',group_by=>'number', order_by=>'number'})->current_year->sold_not_paid
+	$rs->search({-or => ['number'=>$req->{term},'name'=>{'like' => '%'.$req->{term}.'%'}]}, {prefetch=>'highbid',group_by=>'number', order_by=>'number'})->current_year->sold->unpaid
 }
 
 1;

@@ -47,8 +47,18 @@ sub _items {
 	my $rs = $self->db->resultset(Item => 'Bidding');
 	my $items;
 	given ( $self->param('Status') ) {
+		when ( 'Ready' ) {
+			$rs = $rs->current_year->ready;
+			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
+		}
+		when ( 'On Deck' ) {
+			$rs = $rs->current_year->on_deck;
+			$rs = $rs->auctioneer($self->current_user->{username}) if $self->role('auctioneers');
+			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
+		}
 		when ( 'Bidding' ) {
 			$rs = $rs->current_year->bidding;
+			$rs = $rs->auctioneer($self->current_user->{username}) if $self->role('auctioneers');
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 			foreach ( @$items ) {
 				# if((find_in_set('newbid',`items`.`notify`) > 0),1,NULL) `newbid`
@@ -66,9 +76,12 @@ sub _items {
 				$_->{scheduled} = $_->{scheduled} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{started} = $_->{started} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{sold} = $_->{sold} ? Mojo::JSON->true : Mojo::JSON->false;
-				$_->{contacted} = $_->{contacted} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{cleared} = $_->{cleared} ? Mojo::JSON->true : Mojo::JSON->false;
 			}
+		}
+		when ( 'Verifying' ) {
+			$rs = $rs->current_year->verifying;
+			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 		}
 		default { return {} }
 	}

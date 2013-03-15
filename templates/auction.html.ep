@@ -319,7 +319,7 @@ function on_click_paypal(auction) {
                 response: function(event, ui) {
                     // ui.content is the array that's about to be sent to the response callback.
                     if (ui.content.length === 0) {
-                        $("#paypal-empty-message").show().text("No results found, but you may still proceed.  Perhaps you already attempted?").delay(3000).hide('highlight');
+                        $("#paypal-empty-message").show().text("No results found, but you may still proceed.").delay(3000).hide('highlight');
                     } else {
                         $("#paypal-empty-message").empty();
                     }
@@ -799,7 +799,7 @@ $(document).ready(function(){
 										<span class="item number">{$T.r.number}</span><span class="item">:</span>
 									{#/if}
 									{#if 0 && $T.r.url}<a class="itemurl" href="{$T.r.url}" target="_new">{#/if}
-									<span class="truncate" length="70">{$T.r.nstatus} {$T.r.name}</span>
+									<span class="truncate" length="70">{$T.r.name}</span>
 									{#if 0 && $T.r.url}</a>{#/if}
 									</div>
 									<div style="float:right;width:20%;text-align:right">

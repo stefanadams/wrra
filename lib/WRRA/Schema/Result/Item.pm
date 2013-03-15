@@ -312,7 +312,7 @@ sub id { shift->item_id }
 
 use constant {
 	COMPLETED => 70,
-	VERIFY => 60,
+	VERIFYING => 60,
 	SOLD => 50,
 	BIDDING => 40,
 	ON_DECK => 30,
@@ -332,7 +332,7 @@ use constant {
 sub status {
 	my $self = shift;
 	return COMPLETED if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   &&  $self->cleared   &&  $self->contacted;
-	return VERIFY    if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   &&  $self->cleared   && !$self->contacted;
+	return VERIFYING if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   &&  $self->cleared   && !$self->contacted;
 	return SOLD      if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   && !$self->cleared;# && !$self->contacted;
 	return BIDDING   if  $self->scheduled   &&  $self->auctioneer   &&  $self->started   && !$self->sold;# && !$self->cleared;  && !$self->contacted;
 	return ON_DECK   if  $self->scheduled   &&  $self->auctioneer   && !$self->started;# && !$self->sold   && !$self->cleared;  && !$self->contacted;
@@ -344,7 +344,7 @@ sub status {
 sub nstatus {
 	my $self = shift;
 	return 'Completed' if $self->status == COMPLETED;
-	return 'Verifying' if $self->status == VERIFY;
+	return 'Verifying' if $self->status == VERIFYING;
 	return 'Sold' if $self->status == SOLD;
 	return 'Bidding' if $self->status == BIDDING;
 	return 'On Deck' if $self->status == ON_DECK;
