@@ -10,6 +10,12 @@ sub startup {
 	$self = $self->moniker('wrra');
 	$self->secret($ENV{MOJO_SECRET} || $self->config->{secret} || __PACKAGE__);
 
+  # Make sure static files are cached
+  $self->hook(after_static => sub {
+    my $self = shift;
+    $self->res->headers->cache_control('max-age=21600, must-revalidate');
+  });
+
 	$self->plugin('Config');
 	$self->plugin('DateTime');
 	$self->plugin('Version');
