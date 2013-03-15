@@ -1,16 +1,25 @@
+use utf8;
 package WRRA::Schema::Result::Ad;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'WRRA::Schema::Result';
-
 =head1 NAME
 
 WRRA::Schema::Result::Ad
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<WRRA::Schema::Result>
+
+=cut
+
+use base 'WRRA::Schema::Result';
+
+=head1 TABLE: C<ads>
 
 =cut
 
@@ -75,11 +84,22 @@ __PACKAGE__->add_columns(
   "url",
   { data_type => "varchar", is_nullable => 0, size => 255 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</ad_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("ad_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-17 16:47:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:p0Re/k+OWF2/Y115mW5mbw
+# Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-13 14:11:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tB+/8I3AVoLlav5xq7K90Q
 
 __PACKAGE__->has_many(adcount => 'WRRA::Schema::Result::Adcount', 'ad_id', {join_type=>'left'});
 __PACKAGE__->belongs_to(advertiser => 'WRRA::Schema::Result::Donor',  {'foreign.donor_id'=>'self.advertiser_id'});

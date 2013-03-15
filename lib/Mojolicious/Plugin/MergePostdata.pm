@@ -10,7 +10,6 @@ sub register {
 		my $ct;
 		foreach ( grep { ref $conf->{$_} eq 'CODE' } keys %$conf ) {
 			next unless $_ =~ /$content_type/ || $content_type =~ /$_/;
-			$c->req->headers->content_type($_);
 			$ct = $_ and last;
 		}
 		return unless $ct;
@@ -18,6 +17,7 @@ sub register {
 		return unless ref $cb eq 'CODE';
 		my $postdata = $cb->($c);
 		return unless ref $postdata eq 'HASH';
+		$c->req->headers->content_type($ct);
 		$c->req->headers->add('X-MergePostData' => $ct);
 		$c->param($_) or $c->param($_ => $postdata->{$_}) for keys %$postdata;
 	});

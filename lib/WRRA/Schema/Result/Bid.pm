@@ -1,16 +1,25 @@
+use utf8;
 package WRRA::Schema::Result::Bid;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'WRRA::Schema::Result';
-
 =head1 NAME
 
 WRRA::Schema::Result::Bid
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<WRRA::Schema::Result>
+
+=cut
+
+use base 'WRRA::Schema::Result';
+
+=head1 TABLE: C<bids>
 
 =cut
 
@@ -82,11 +91,22 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</bid_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("bid_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-17 16:47:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Tffva72o0PeL1oZj7WgrlA
+# Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-13 14:11:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bN9L2BvXIbFA/5ZjADlxCw
 
 __PACKAGE__->belongs_to(bidder => 'WRRA::Schema::Result::Bidder', 'bidder_id');
 __PACKAGE__->belongs_to(item => 'WRRA::Schema::Result::Item', 'item_id');

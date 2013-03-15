@@ -22,7 +22,7 @@ sub register {
     my $name = decamelize(delete $_{name} // $result_class);
     $route =~ s/^\/+// if $route;
     $route //= $name;   
-    $r->dbroute(["/$route" => "Bs$result_class" => $source], {api => 'build_select'}, \'get', %_);
+    $r->dbroute(["/$route" => "Bs$result_class" => $source], {build_select => 'build_select'}, \'get', %_);
   });
 
   $app->helper(bs => sub {

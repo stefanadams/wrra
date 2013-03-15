@@ -1,16 +1,16 @@
 #!/bin/sh
 
+[ -z "$1" ] && { echo Usage: $0 db user pass; exit; }
 pwd=$(pwd)
 cd $(dirname $0)/../lib
-db=$(basename $(dirname $(pwd)))
-mkdir -p WRRA::Schema/Result WRRA::Schema/ResultSet
+mkdir -p WRRA/Schema/Result WRRA/Schema/ResultSet
 # -o constraint='qr/^[^(rotarians)]$/' # Rotarian.pm was needing to be custom for has_submission
 # sub { warn "$_[0]\n"; return "_$_[1]" if grep { @o=split /\./; warn "$_ -- $o[0] eq $_[2]->{table_name} && $o[1] eq $_[1]\n"; $o[0] eq $_[2]->{table_name} && $o[1] eq $_[1] } qw/rotarians.has_submissions/; return undef; };
 # -o components='["InflateColumn::DateTime", "Helper::Row::ToJSON"]'
+# Don't use any more:	-o col_accessor_map='sub { return "_$_[1]" if $_[2]->{table_name} eq "rotarians" && grep { $_ eq $_[1] } qw/has_submissions/; return undef; }' \
 dbicdump \
 	-o dump_directory=. \
-	-o col_accessor_map='sub { return "_$_[1]" if $_[2]->{table_name} eq "rotarians" && grep { $_ eq $_[1] } qw/has_submissions/; return undef; }' \
+	-o preserve_case=1 \
 	-o default_resultset_class=ResultSet \
 	-o result_base_class='WRRA::Schema::Result' \
-	-o preserve_case=1 \
 	WRRA::Schema dbi:mysql:database=${1:-$db} ${2:-$db} ${3:-$db} '{ quote_char => "`" }'

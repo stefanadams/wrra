@@ -1,1 +1,2 @@
-# DBIx::Class::Helper::ResultSet::Shortcut Data::Walk Mojolicious::Plugin::WriteExcel Mojolicious::Plugin::I18N Mojolicious::Plugin::AutoRoute DBIx::Class
+# Spreadsheet::WriteExcel::Simple Spreadsheet::WriteExcel SQL::Translator DBIx::Class::ResultSet::HashRef Lingua::EN::NameParse IO::Socket::SSL Mojolicious::Plugin::Authentication Mojolicious::Plugin::Authorization App::cpanminus DBIx::Class::Helper::ResultSet::Shortcut Data::Walk Mojolicious::Plugin::WriteExcel Mojolicious::Plugin::I18N Mojolicious::Plugin::AutoRoute DBIx::Class DateTime DateTime::Format::DateParse DateTime::Format::MySQL
+# mysql-server mysql-client libdbd-mysql-perl libdbix-class-perl libwww-perl curl wget make gcc git git-flow nginx joe

@@ -1,16 +1,25 @@
+use utf8;
 package WRRA::Schema::Result::Item;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'WRRA::Schema::Result';
-
 =head1 NAME
 
 WRRA::Schema::Result::Item
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<WRRA::Schema::Result>
+
+=cut
+
+use base 'WRRA::Schema::Result';
+
+=head1 TABLE: C<items>
 
 =cut
 
@@ -35,6 +44,8 @@ __PACKAGE__->table("items");
   data_type: 'integer'
   extra: {unsigned => 1}
   is_nullable: 1
+
+Covers ALL nights; one big incremental
 
 =head2 number
 
@@ -81,7 +92,7 @@ __PACKAGE__->table("items");
   extra: {list => ["a","b"]}
   is_nullable: 1
 
-=head2 notify
+=head2 notifications
 
   data_type: 'set'
   extra: {list => ["newbid","starttimer","stoptimer","holdover","sell"]}
@@ -200,7 +211,7 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "auctioneer",
   { data_type => "enum", extra => { list => ["a", "b"] }, is_nullable => 1 },
-  "notify",
+  "notifications",
   {
     data_type => "set",
     extra => {
@@ -247,11 +258,24 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</item_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("item_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-11-17 16:47:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zzBrNP/WiSzWNNMfSNjxXA
+# Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-13 14:11:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+riHy43WHIUGqRWS4gjM1g
+
+use 5.010;
 
 #belongs to means the fk is in your own table, and might have/has_many/has_one means the fk points to you, and is in the other table
 __PACKAGE__->belongs_to(donor => 'WRRA::Schema::Result::Donor', 'donor_id', {join_type=>'left'}); # An Item belongs_to a Donor, join to Donor via donor_id
@@ -272,73 +296,133 @@ sub id { shift->item_id }
 #	('a','b');
 #}
 
-#sub notify {
-#	my $self = shift;
-#	('newbid','starttimer','stoptimer','holdover','sell');
-#}
+# Extended Accessors
+
+use constant {
+	COMPLETED => 70,
+	VERIFY => 60,
+	SOLD => 50,
+	BIDDING => 40,
+	ON_DECK => 30,
+	READY => 20,
+	NOT_READY => 10,
+	UNKNOWN => undef,
+};
+use constant {
+	TRUE => 1,
+	FALSE => 0,
+};
+use constant {
+	MINUTES => 60,
+	DOLLARS => 1,
+};
 
 sub status {
 	my $self = shift;
-	my $status = {map {$_=>ref $self->$_?1:defined $self->$_?$self->$_:undef} qw/scheduled started timer sold cleared contacted auctioneer/};
-	return 'Complete'  if  $status->{scheduled}   &&           1              &&  $status->{started}   &&  $status->{sold}   &&  $status->{cleared};
-	return 'Sold'      if  $status->{scheduled}   &&           1              &&  $status->{started}   &&  $status->{sold}   && !$status->{cleared};
-	return 'Bidding'   if  $status->{scheduled}   &&  $status->{auctioneer}   &&  $status->{started}   && !$status->{sold};# && !$status->{cleared};
-	return 'OnDeck'    if  $status->{scheduled}   &&  $status->{auctioneer}   && !$status->{started};# && !$status->{sold}   && !$status->{cleared};
-	return 'Ready'     if  $status->{scheduled}   && !$status->{auctioneer};# && !$status->{started}   && !$status->{sold}   && !$status->{cleared};
-	return 'Not Ready' if !$status->{scheduled};# && !$status->{auctioneer}   && !$status->{started}   && !$status->{sold}   && !$status->{cleared};
-	return 'Unknown';
+	return COMPLETED if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   &&  $self->cleared   &&  $self->contacted;
+	return VERIFY    if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   &&  $self->cleared   && !$self->contacted;
+	return SOLD      if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   && !$self->cleared;# && !$self->contacted;
+	return BIDDING   if  $self->scheduled   &&  $self->auctioneer   &&  $self->started   && !$self->sold;# && !$self->cleared;  && !$self->contacted;
+	return ON_DECK   if  $self->scheduled   &&  $self->auctioneer   && !$self->started;# && !$self->sold   && !$self->cleared;  && !$self->contacted;
+	return READY     if  $self->scheduled   && !$self->auctioneer;# && !$self->started   && !$self->sold   && !$self->cleared;  && !$self->contacted;
+	return NOT_READY if !$self->scheduled;# && !$self->auctioneer   && !$self->started   && !$self->sold   && !$self->cleared;  && !$self->contacted;
+	return UNKNOWN;
 }
 
 sub nstatus {
 	my $self = shift;
-	return 60 if $self->status eq 'Complete';
-	return 50 if $self->status eq 'Sold';
-	return 40 if $self->status eq 'Bidding';
-	return 30 if $self->status eq 'OnDeck';
-	return 20 if $self->status eq 'Ready';
-	return 10 if $self->status eq 'Not Ready';
-	return undef if $self->status eq 'Unknown';
+	return 'Completed' if $self->status == COMPLETED;
+	return 'Verifying' if $self->status == VERIFY;
+	return 'Sold' if $self->status == SOLD;
+	return 'Bidding' if $self->status == BIDDING;
+	return 'On Deck' if $self->status == ON_DECK;
+	return 'Ready' if $self->status == READY;
+	return 'Not Ready' if $self->status == NOT_READY;
+	return 'Unknown';
 }
 
 sub startbid {
 	my $self = shift;
-	return 5 if $self->value < 100;
-	return 50 if $self->value < 250;
-	return 100;
+	my $startbid = eval { $self->schema->config->{database}->{options}->{starting_bid} } || [[(100 * DOLLARS) => (5 * DOLLARS)], [(250 * DOLLARS) => (50 * DOLLARS)], (100 * DOLLARS)];
+	foreach my $range ( sort { $a->[0] <=> $b->[0] } grep { ref eq 'ARRAY' } @$startbid ) {
+		return $range->[1] if ($self->value * DOLLARS) < ($range->[0] * DOLLARS);
+	}
+	return ((sort { $a <=> $b } grep { !ref } @$startbid)[0]) || (5 * DOLLARS);
 }
 
 sub minbid {
 	my $self = shift;
-	return undef unless $self->can('highbid');
-	return $self->startbid unless ref $self->highbid;
-	return undef unless $self->highbid->can('bid');
-	return $self->highbid->bid+5 if $self->highbid->bid < $self->value;
-	return $self->highbid->bid+1;
+	my $minbid_under = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || (5 * DOLLARS);
+	my $minbid_over = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || (1 * DOLLARS);
+	return $self->startbid unless $self->highbid;
+	return $self->startbid unless $self->highbid->bid;
+	return ($self->highbid->bid + ($minbid_under * DOLLARS)) if ($self->highbid->bid * DOLLARS) < ($self->value * DOLLARS);
+	return ($self->highbid->bid + ($minbid_over * DOLLARS));
 }
 
 sub cansell {
 	my $self = shift;
-	return undef if !ref $self->timer || ref $self->sold;
-	return time-$self->timer->epoch > 5*60 ? 1 : 0;
+	return 0 if $self->sold;
+	return 0 unless $self->timer;
+	my $mintimer = eval { $self->schema->config->{database}->{options}->{minimum_timer} } || (5 * MINUTES);
+	my $datetime = eval { $self->schema->controller->datetime->epoch } || time;
+	return $datetime - $self->timer->epoch > $mintimer ? TRUE : FALSE;
 }
 
 sub bellringer {
 	my $self = shift;
-	return undef unless $self->can('highbid') && ref $self->highbid;
-	return undef unless $self->highbid->can('bid');
-	return $self->highbid->bid >= $self->value ? 1 : undef;
+	return FALSE unless $self->highbid;
+	return FALSE unless $self->highbid->bid;
+	return $self->highbid->bid >= $self->value ? TRUE : FALSE;
 }
 
 sub runningtime {
 	my $self = shift;
-	return undef unless ref $self->started;
-	return time-$self->started->epoch;
+	return undef unless $self->started;
+	my $datetime = eval { $self->schema->controller->datetime->epoch } || time;
+	return ($datetime - $self->started->epoch) * MINUTES;
 }
 
-sub timerminutes {
+sub timertime {
 	my $self = shift;
-	return undef unless ref $self->timer;
-	return time-$self->timer->epoch;
+	return undef unless $self->timer;
+	my $datetime = eval { $self->schema->controller->datetime->epoch } || time;
+	return ($datetime - $self->timer->epoch) * MINUTES;
+}
+
+#$r->notify;				returns list of set tags
+#$r->notify([qw/newbid starttimer/]);	sets the tags to those specified
+#$r->notify('newbid' => 1);		turns on (or off) the newbid tag  (Do NOT toggle)
+#$r->notify('newbid');			returns t/f if this tag is set
+sub notify {
+        my $self = shift;
+        return $self->notifications unless @_;
+	my $notify = shift;
+	if ( ref $notify eq 'ARRAY' ) {
+		return $self->notifications(join ',', @$notify);
+	} else {
+		my $state = shift;
+	        if ( $state ) {
+        	        return $self->notifications(\"CONCAT_WS(',',notify,'$notify')");
+	        } elsif ( defined $state ) {
+        	        return $self->notifications(\"REPLACE(notify,'$notify','')");
+	        } else {
+			my @notify = split /,/, $self->notifications;
+			return (grep { $_ eq $notify } @notify) ? $notify : undef;
+		}
+	}
+}
+
+sub respond { # ('newbid','starttimer','stoptimer','holdover','sell');
+	my ($self, $notify) = @_;
+	given ( $self->notify($notify) ) {
+		when ( 'newbid' ) { return $self->notify('newbid'=>0) }
+		when ( 'starttimer') { return $self->timer(\'now()')->notify('starttimer'=>0) }
+		when ( 'stoptimer') { return $self->timer(undef)->notify('stoptimer'=>0) }
+		when ( 'holdover' ) { return $self->notify('holdover'=>0) }
+		when ( 'sell' ) { return $self->sold(\'now()')->notify('sell'=>0) }
+	}
+	return $self;
 }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
