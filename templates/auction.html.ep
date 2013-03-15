@@ -258,6 +258,7 @@ function on_click_paypal(auction) {
 		height: 320,
 		width: 380,
 		modal: true,
+		position: {my: "center top", at: "bottom", of: "#headergroup"},
 		open: function() {
 			$('#dialog-paypal-form input').val('');
 			$('#dialog-paypal-form input[name="os0"]').mask("999?9");
@@ -363,6 +364,7 @@ function on_click_alert(auction){
 		height: 240,
 		width: 520,
 		modal: true,
+		position: {my: "center top", at: "bottom", of: "#headergroup"},
 		buttons: {
 			"Send Alert": function() {
 				$("#alert-set-alert").removeClass("ui-state-error");
@@ -424,6 +426,7 @@ function on_click_operator(key, opt, auction) {
 		height: 218,
 		width: 350,
 		modal: true,
+		position: {my: "center top", at: "bottom", of: "#headergroup"},
 		open: function() {
 			$('#dialog-operator-form input[name=operator-bid]').val(minbid);
 			$('#dialog-operator-form input[name=operator-phone]').mask("(999) 999-9999");
@@ -525,6 +528,7 @@ function on_click_login(auction) {
 		height: 218,
 		width: 350,
 		modal: true,
+		position: {my: "center top", at: "bottom", of: "#headergroup"},
 		open: function() {
 			$('form[name=login] input[name="login-phone"]').mask("9999");
 			$(this).keypress(function(e) {
@@ -774,8 +778,9 @@ $(document).ready(function(){
 			</div>
 		</div>
 		<div id="bodygroup">
-			<div id="items">
-				{#if $T.items}
+			<div id="bidding">
+			{#if $T.items}
+				{#if $T.items.bidding}
 					<table id='itemsbidding' class="items bidding tablesorter">
 						<thead>
 						<tr>
@@ -783,7 +788,7 @@ $(document).ready(function(){
 						</tr>
 						</thead>
 						<tbody>
-						{#foreach $T.items as r}
+						{#foreach $T.items.bidding as r}
 							<tr id="tr_{$T.r.id}" class="context-item {#if $T.r.timer && !$T.r.sold}timer{#/if} {#if $T.r.sold}sold{#/if}" itemid="{$T.r.id}" sold="{$T.r.sold}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}">
 								<td col="item" class=tooltip item="{$T.r.name}" description="{$T.r.description}" img="{$T.r.img}">
 									<div col="item">
@@ -904,6 +909,58 @@ $(document).ready(function(){
 					</table>
 				{#/if}
 			</div>
+
+			<div id="ondeck">
+				{#if $T.items.ondeck}
+					<table id='items-ondeck' class="items ondeck">
+						<thead>
+						<tr>
+							<th>Item</th><th>Value</th><th>Donor</th>{#if $T.session.user.privs.auctioneers}<th>Start Now</th>{#/if}
+						</tr>
+						</thead>
+						<tbody>
+						{#foreach $T.items.ondeck as r}
+							<tr id="ondeck_{$T.r.id}" class="context-item" itemid="{$T.r.id}" name="item">
+								<td>
+									<div style="float:left;width:80%">
+									<span class="item number">{$T.r.number}</span><span class="item">:</span>
+									<span class="truncate" length="70">{$T.r.name}</span>
+									</div>
+								</td>
+								<td>
+									<div style="float:left;width:80%">
+									<span class="currency">{$T.r.value}</span>
+									</div>
+								</td>
+								<td>
+									<div style="float:left;width:80%">
+									<span class="donor">{$T.r.donor.name}</span>
+									</div>
+								</td>
+								{#if $T.session.user.privs.auctioneers}
+								<td col="start">
+									<div style="float:left;width:80%">
+									<img id="start_{$T.r.id}" src="img/paddle1.gif" />
+									</div>
+								</td>
+								{#/if}
+							</tr>
+						{#else}
+							<tr><td colspan=6><span name="tableempty">No items currently up for bid</span></td></tr>
+						{#/for}
+						</tbody>
+					</table>
+				{#else}
+					<table class='closed'>
+						<thead>
+						<tr>
+							<th><!-- Closed --></th>
+						</tr>
+						</thead>
+					</table>
+				{#/if}
+			</div>
+			{#/if}
 		</div>
 
 		<br /><br />
@@ -967,8 +1024,8 @@ $(document).ready(function(){
 		<form id="dialog-login-form" name="login" action='<%= url_for 'login' %>' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-login-title">Identify</div></td></tr>
-				<tr><td><em>*</em>Username</td><td><input class="required" id="login-username" type='text' name='login-username' maxlength='60' value='Username'></td></tr>
-				<tr><td><em>*</em>Phone</td><td><input class="required" id="login-phone" type='text' name='login-phone' maxlength='60' value='Phone'></td></tr>
+				<tr><td><em>*</em>Username</td><td><input class="required" id="login-username" type='text' name='login-username' maxlength='60'></td></tr>
+				<tr><td><em>*</em>PIN</td><td><input class="required" id="login-phone" type='text' name='login-phone' maxlength='4'></td></tr>
 			</table>
 		</form>
 	</div>

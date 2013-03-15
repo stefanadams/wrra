@@ -25,16 +25,21 @@ sub items {
 			},
 			play => $self->config('play'),
 			alert => {
-				(msg => eval { $self->db->resultset('Alert')->search({alert=>[$self->privileges||'public']})->first->msg } || ''),
+				(msg => eval { $self->db->resultset('Alert')->search({alert=>$self->role||'public'})->first->msg } || ''),
 			},
 			ads => {
 				(! $self->role ? (ad => $self->_display_ad) : ()),
 			}
 		},
-		$self->closed ? () : (items => $self->_items),
 		stats => {
 		},
 	};
+	unless ( $self->closed ) {
+		for ( qw/ready ondeck bidding verifying/ ) {
+			my $i = $self->_items($_);
+			$items->{items}->{$_} = $i if $i;
+		}
+	}
 	$self->respond_to(
 		json => {json => $items},
 	);
@@ -42,21 +47,23 @@ sub items {
 
 sub _items {
 	my $self = shift;
+	my $status = shift;
 	my $photosdir = join '/', $self->app->home, 'public', ($self->config('photos') || 'photos');
 	my $photosurl = join '/', ($self->config('photos') || 'photos');
 	my $rs = $self->db->resultset(Item => 'Bidding');
 	my $items;
-	given ( $self->param('Status') ) {
-		when ( 'Ready' ) {
+	given ( $status ) {
+		when ( 'ready' ) {
+			return undef unless $self->has_priv('admins');
 			$rs = $rs->current_year->ready;
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 		}
-		when ( 'On Deck' ) {
-			$rs = $rs->current_year->on_deck;
+		when ( 'ondeck' ) {
+			$rs = $rs->current_year->ondeck;
 			$rs = $rs->auctioneer($self->current_user->{username}) if $self->role('auctioneers');
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 		}
-		when ( 'Bidding' ) {
+		when ( 'bidding' ) {
 			$rs = $rs->current_year->bidding;
 			$rs = $rs->auctioneer($self->current_user->{username}) if $self->role('auctioneers');
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
@@ -79,8 +86,9 @@ sub _items {
 				$_->{cleared} = $_->{cleared} ? Mojo::JSON->true : Mojo::JSON->false;
 			}
 		}
-		when ( 'Verifying' ) {
+		when ( 'verifying' ) {
 			$rs = $rs->current_year->verifying;
+			return undef unless $self->has_priv('callers');
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 		}
 		default { return {} }
