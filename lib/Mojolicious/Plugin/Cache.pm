@@ -4,9 +4,9 @@ use Mojo::Base 'Mojolicious::Plugin';
 sub register {
 	my ($self, $app, $conf) = @_;
 
-	$self->hook(after_static => sub {
-		my $self = shift;
-		$self->res->headers->cache_control('max-age=21600, must-revalidate');
+	$app->hook(after_static => sub {
+		my $c = shift;
+		$c->res->headers->cache_control('max-age=21600, must-revalidate');
 	});
 }
 
