@@ -7,7 +7,7 @@ my ($nu, $nn) = ({'='=>undef},{'!='=>undef});
 sub auctioneer {
 	my ($self, $auctioneer) = @_;
 	$auctioneer ||= $nn;
-	$self->search({auctioneer=>$auctioneer}, {order_by=>'seq'});
+	$self->search({auctioneer=>$auctioneer}, {order_by=>[qw/seq number/], rows=>$self->session->{auctioneer_limit}||10});
 }
 
 sub complete { shift->search({scheduled=>$nn,started=>$nn,sold=>$nn,cleared=>$nn}, {order_by=>'number'}) }

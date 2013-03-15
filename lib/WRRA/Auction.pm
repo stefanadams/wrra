@@ -195,55 +195,20 @@ sub _fakebidding {
 	return $row;
 }
 
-sub assign {
+sub start {
 	my $self = shift;
-	my ($id, $auctioneer) = ($self->param('id'), $self->param('auctioneer'));
-	my $r = $self->db->resultset('Item')->find($id)->update({auctioneer=>$auctioneer});
-	$self->respond_to(
-		json => {json => {res=>$r?'ok':'err'}},
-	);
-}
-
-=head2
-sub notify : Runmode RequireAjax Authen Authz('admins') {
-        my $self = shift;
-        $self->dbh->do("UPDATE items_vw SET notify = CONCAT_WS(',',notify,?) WHERE item_id=?", undef, $self->param('notify'), $self->param('item'));
-        return $self->to_json({error=>0});
-}
-
-sub respond : Runmode RequireAjax Authen Authz('auctioneers') {
-        my $self = shift;
-        if ( $self->param('respond') eq 'start' ) {
-                $self->dbh->do("UPDATE items_vw SET started=now() WHERE item_id=?", undef, $self->param('item'));
-        } elsif ( $self->param('respond') eq 'newbid' ) {
-                $self->dbh->do("UPDATE items_vw SET notify=REPLACE(notify,'newbid','') WHERE item_id=?", undef, $self->param('item'));
-        } elsif ( $self->param('respond') eq 'starttimer' ) {
-                $self->dbh->do("UPDATE items_vw SET timer=now(),notify=REPLACE(notify,'starttimer','') WHERE item_id=?", undef, $self->param('item'));
-        } elsif ( $self->param('respond') eq 'stoptimer' ) {
-                $self->dbh->do("UPDATE items_vw SET timer=null,notify=REPLACE(notify,'stoptimer,'') WHERE item_id=?", undef, $self->param('item'));
-        } elsif ( $self->param('respond') eq 'holdover' ) {
-                $self->dbh->do("UPDATE items_vw SET notify=REPLACE(notify,'holdover','') WHERE item_id=?", undef, $self->param('item'));
-        } elsif ( $self->param('respond') eq 'sell' ) {
-                my $item = $self->dbh->selectrow_hashref("SELECT sold FROM items WHERE id=?", undef, $self->param('item'));
-                $self->dbh->do("UPDATE items_vw SET ".(!$item->{sold}?'sold':'cleared')."=now(),notify=REPLACE(notify,'sell','') WHERE item_id=?", undef, $self->param('item'));
-        }
-        return $self->to_json({error=>0});
-}
-=cut
-
-sub notify {
-	my $self = shift;
-	my ($notify, $id, $state) = ($self->param('notify'), $self->param('id'), $self->param('state'));
-	my $r = $self->db->resultset('Item')->find($id)->notify($notify, $state)->update;
-	$self->respond_to(
-		json => {json => {res=>$r?'ok':'err'}},
-	);
-}
-
-sub sell {
-	my $self = shift;
-	my ($id) = ($self->param('id'));
-	my $r = $self->db->resultset('Item')->find($id)->sold(\'now()')->update;
+	my $id = $self->param('id') or return $self->render_not_found;
+	my $r;
+	given ( $self->role ) {
+		when ( 'admins' ) {
+			my $auctioneer = $self->param('auctioneer') or return $self->render_not_found;
+			$r = $self->db->resultset('Item')->find($id)->update({auctioneer=>$auctioneer});
+		}
+		when ( 'auctioneers' ) {
+			$r = $self->db->resultset('Item')->find($id)->update({started=>$self->datetime_mysql});
+		}
+		default { return $self->render_not_found }
+	}
 	$self->respond_to(
 		json => {json => {res=>$r?'ok':'err'}},
 	);
@@ -251,8 +216,36 @@ sub sell {
 
 sub timer {
 	my $self = shift;
-	my ($id, $state) = ($self->param('id'), $self->param('state'));
-	my $r = $self->db->resultset('Item')->find($id)->update({sold=>\'now()'});
+	my $timer = $self->param('timer');
+	my $id = $self->param('id') or return $self->render_not_found;
+	my $r;
+	given ( $self->role ) {
+		when ( 'admins' ) {
+			$r = $self->db->resultset('Item')->find($id)->notify("${timer}timer" => 1)->update;
+		}
+		when ( 'auctioneers' ) {
+			$r = $self->db->resultset('Item')->find($id)->respond("${timer}timer")->update;
+		}
+		default { return $self->render_not_found }
+	}
+	$self->respond_to(
+		json => {json => {res=>$r?'ok':'err'}},
+	);
+}
+
+sub sell {
+	my $self = shift;
+	my $id = $self->param('id') or return $self->render_not_found;
+	my $r;
+	given ( $self->role ) {
+		when ( 'admins' ) {
+			$r = $self->db->resultset('Item')->find($id)->notify(sell => 1)->update;
+		}
+		when ( 'auctioneers' ) {
+			$r = $self->db->resultset('Item')->find($id)->respond('sell')->update;
+		}
+		default { return $self->render_not_found }
+	}
 	$self->respond_to(
 		json => {json => {res=>$r?'ok':'err'}},
 	);
@@ -260,18 +253,27 @@ sub timer {
 
 sub bid {
 	my $self = shift;
-	my $item_id = $self->param('id') or return $self->render_json({res=>'err'});
-	my $phone = $self->param('phone') or return $self->render_json({res=>'err'});
-	my $bidder_id = $self->param('bidder_id');
-	my $name = $self->param('name') or return $self->render_json({res=>'err'});
-	my $bid = $self->param('bid') or return $self->render_json({res=>'err'});
+	my $id = $self->param('id') or return $self->render_json({res=>'err'});
 	my $r;
-	unless ( $bidder_id ) {
-		my $new_bidder = $self->db->resultset('Bidder')->create({name=>$name,phone=>$phone});
-		return $self->render_json({res=>'err'}) unless $bidder_id = $new_bidder->id;
+	given ( $self->role ) {
+		when ( 'auctioneers' ) {
+			$r = $self->db->resultset('Item')->find($id)->respond('newbid');#->update;
+warn "\n", Data::Dumper::Dumper($r), "\n";
+		}
+		when ( 'operators' ) {
+			my $phone = $self->param('phone') or return $self->render_json({res=>'err'});
+			my $bidder_id = $self->param('bidder_id');
+			my $name = $self->param('name') or return $self->render_json({res=>'err'});
+			my $bid = $self->param('bid') or return $self->render_json({res=>'err'});
+			unless ( $bidder_id ) {
+				my $new_bidder = $self->db->resultset('Bidder')->create({name=>$name,phone=>$phone});
+				return $self->render_json({res=>'err'}) unless $bidder_id = $new_bidder->id;
+			}
+			$bid = $self->db->resultset('Bid')->create({item_id=>$id,bidder_id=>$bidder_id,bid=>$bid,bidtime=>$self->datetime_mysql}) or return return $self->render_json({res=>'err'});
+			$r = $self->db->resultset('Item')->find($id)->update({highbid_id=>$bid->id});
+		}
+		default { return $self->render_not_found }
 	}
-	$bid = $self->db->resultset('Bid')->create({item_id=>$item_id,bidder_id=>$bidder_id,bid=>$bid,bidtime=>$self->datetime_mysql}) or return return $self->render_json({res=>'err'});
-	$r = $self->db->resultset('Item')->find($item_id)->update({highbid_id=>$bid->id});
 	$self->respond_to(
 		json => {json => {res=>$r?'ok':'err'}},
 	);

@@ -408,19 +408,21 @@ sub timertime {
 #$r->notify('newbid');			returns t/f if this tag is set
 sub notify {
         my $self = shift;
-        return $self->notifications unless @_;
+        return {map{ $_ => 1 } split /,/, $self->notifications} unless @_;
 	my $notify = shift;
 	if ( ref $notify eq 'ARRAY' ) {
 		return $self->notifications(join ',', @$notify);
 	} else {
 		my $state = shift;
+		my @notifications = split /,/, $self->notifications;
 	        if ( $state ) {
-        	        return $self->notifications(\"CONCAT_WS(',',notify,'$notify')");
+        	        return $self->notifications(join ',', @notifications, $notify);
 	        } elsif ( defined $state ) {
-        	        return $self->notifications(\"REPLACE(notify,'$notify','')");
+        	        my $a = $self->notifications(join ',', grep { $_ ne $notify } @notifications);
+warn Data::Dumper::Dumper($a);
+return $a;
 	        } else {
-			my @notify = split /,/, $self->notifications;
-			return (grep { $_ eq $notify } @notify) ? $notify : undef;
+			return (grep { $_ eq $notify } @notifications) ? $notify : undef;
 		}
 	}
 }
@@ -432,7 +434,7 @@ sub respond { # ('newbid','starttimer','stoptimer','holdover','sell');
 		when ( 'starttimer') { return $self->timer(\'now()')->notify('starttimer'=>0) }
 		when ( 'stoptimer') { return $self->timer(undef)->notify('stoptimer'=>0) }
 		when ( 'holdover' ) { return $self->notify('holdover'=>0) }
-		when ( 'sell' ) { return $self->sold(\'now()')->notify('sell'=>0) }
+		when ( 'sell' ) { return $self->sold ? $self->sold(\'now()')->notify('sell'=>0) : $self->cleared(\'now()') }
 	}
 	return $self;
 }

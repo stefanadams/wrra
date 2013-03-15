@@ -30,12 +30,14 @@ hr.tooltip {color: #ADD9ED}
 .sold {background-color: #6cf}
 .timer {background-color: #fc3}
 .bellringer {background-color: #fc3}
-.newbid {font-weight: bold;}
+.newbid {font-weight: bold;color:black;background-color:red}
 
 table.items {width:95%;border-collapse:collapse;margin-left:auto;margin-right:auto}
 table.items tr.highlight {background-color:#bbb}
 table.items td {border:thin solid black;padding-left:5px;padding-right:5px;padding-top:2px;padding-bottom:2px}
-table.ondeck {width:100%;border-collapse:collapse;margin-left:auto;margin-right:auto;background-color:#777}
+
+table.ondeck {width:50%;border-collapse:collapse;margin-left:auto;margin-right:auto;background-color:#777}
+table.ondeck img.start {cursor:pointer}
 
 table.items div[col="value"] {text-align:right}
 table.items div[col="highbid"] {text-align:right}

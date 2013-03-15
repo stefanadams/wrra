@@ -131,14 +131,20 @@ sub setup_routing {
 	$r->get('/')->xhr(0)->to(template => '/auction')->name('index');
 	my $auction = $r->under('/auction')->xhr;
 	$auction->get('/')->to('auction#items', Status=>'Bidding')->name('auction');
-	$auction->post('/assign/:id/:auctioneer')->over(has_priv=>'admins')->to('auction#assign');
-	$auction->post('/notify/:notify/:id', notify=>[qw/starttimer stoptimer holdover sell/])->over(has_priv=>'admins')->to('auction#notify');
-	$auction->post('/sell/:id')->over(has_priv=>'auctioneers')->to('auction#sell');
-	$auction->post('/starttimer/:id')->over(has_priv=>'auctioneers')->to('auction#timer', timer=>1);
-	$auction->post('/stoptimer/:id')->over(has_priv=>'auctioneers')->to('auction#timer', timer=>0);
-	$auction->post('/bid/:id')->over(has_priv=>'operators')->to('auction#bid');
-	$auction->post('/bidder/:id')->to('auction#bidder');
-	$auction->any("/$_")->name($_) for qw/assign notify sell starttimer stoptimer bid bidder/;
+	$auction->post('/start')->over(has_priv=>'auctioneers')->to('auction#start');
+	$auction->post('/timer/:timer', timer=>[qw/start stop/])->over(has_priv=>'auctioneers')->to('auction#timer');
+	$auction->post('/sell')->over(has_priv=>'auctioneers')->to('auction#sell');
+	$auction->post('/bid')->to('auction#bid');
+	$auction->post('/bidder')->to('auction#bidder');
+
+	#$auction->post('/assign/:id/:auctioneer')->over(has_priv=>'admins')->to('auction#assign');
+	#$auction->post('/start/:id')->over(has_priv=>'auctioneers')->to('auction#start');
+	#$auction->post('/notify/:notify/:id/:state', notify=>[qw/starttimer stoptimer holdover sell/])->over(has_priv=>'auctioneers')->to('auction#notify');
+	#$auction->post('/sell/:id')->over(has_priv=>'auctioneers')->to('auction#sell');
+	#$auction->post('/starttimer/:id')->over(has_priv=>'auctioneers')->to('auction#timer', timer=>1);
+	#$auction->post('/stoptimer/:id')->over(has_priv=>'auctioneers')->to('auction#timer', timer=>0);
+	#$auction->post('/respond/:id', notify=>[qw/starttimer stoptimer holdover sell/])->over(has_priv=>'auctioneers')->to('auction#notify');
+	#$auction->any("/$_")->name($_) for qw/start assign notify sell starttimer stoptimer bid bidder/;
 
 	$r->any('/register')->to('auth#register');
 	$r->any('/login')->to('auth#Login');

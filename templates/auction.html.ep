@@ -45,15 +45,16 @@ function contextMenu(auction) {
 				var pc = function(){processContent(1);};
 				processContent(0);
 				switch ( key ) {
-					case 'a':			$.post('<%= url_for 'assign' %>/'+id+'/a', pc); break;
-					case 'b':			$.post('<%= url_for 'assign' %>/'+id+'/b', pc); break;
-					case 'notify_starttimer':	$.post('<%= url_for 'notify' %>/timer/'+id+'/1', pc); break;
-					case 'notify_sell':		$.post('<%= url_for 'notify' %>/sell/'+id+'/1', pc); break;
-					case 'adjust_bid':		$.post('<%= url_for 'update_bid' %>', { celname:"bid","bid":"1","id":id}, pc); break;
-					case 'adjust_bidder':		$.post('<%= url_for 'update_bidder' %>', { celname:"bidder.name","bidder.name":"A","id":id}, pc); break;
+					case 'a':			$.post('<%= url_for 'start' %>', {id: id, auctioneer: 'a'}, pc); break;
+					case 'b':			$.post('<%= url_for 'start' %>', {id: id, auctioneer: 'b'}, pc); break;
+					case 'notify_starttimer':	$.post('<%= url_for 'timer', timer=>'start' %>', {id: id}, pc); break;
+					case 'notify_stoptimer':	$.post('<%= url_for 'timer', timer=>'stop' %>', {id: id}, pc); break;
+					case 'notify_sell':		$.post('<%= url_for 'sell' %>', {id: id}, pc); break;
+					case 'adjust_bid':		$.post('<%= url_for 'bid' %>', {id: id}, pc); break;
+					case 'adjust_bidder':		$.post('<%= url_for 'bidder' %>', {id: id}, pc); break;
 					case 'place_bid':		on_click_operator(key,opt,auction); break;
-					case 'retract_bid':		$.post('<%= url_for 'retract' %>/bid/'+id, pc); break;
-					case 'retract_item':		$.post('<%= url_for 'retract' %>/item/'+id, pc); break;
+					case 'retract_bid':		$.post('<%= url_for 'bid' %>', {id:id, retract:true}, pc); break;
+					case 'retract_item':		$.post('<%= url_for 'item' %>', {id:id, retract:true}, pc); break;
 				}
 			    },
 			    items: {
@@ -99,11 +100,11 @@ function contextMenu(auction) {
 				var pc = function(){processContent(1);};
 				processContent(0);
 				switch ( key ) {
-					case 'ack_newbid':	$.post('<%= url_for 'newbid' %>/'+id+'/0', pc); break;
-					case 'starttimer':	$.post('<%= url_for 'starttimer' %>/'+id, pc); break;
-					case 'stoptimer':	$.post('<%= url_for 'stoptimer' %>/'+id, pc); break;
-					case 'sell':		$.post('<%= url_for 'sell' %>/'+id, pc); break;
-					case 'clear':		$.post('<%= url_for 'clear' %>/'+id+'/0', pc); break;
+					case 'ack_newbid':	$.post('<%= url_for 'bid' %>', {id: id}, pc); break;
+					case 'starttimer':	$.post('<%= url_for 'timer', timer=>'start' %>', {id: id}, pc); break;
+					case 'stoptimer':	$.post('<%= url_for 'timer', timer=>'stop' %>', {id: id}, pc); break;
+					case 'sell':		$.post('<%= url_for 'sell' %>', {id: id}, pc); break;
+					case 'clear':		$.post('<%= url_for 'sell' %>', {id: id}, pc); break;
 				}
 			    },
 			    items: {
@@ -167,6 +168,15 @@ function processContent(value) {
 				$("#register").click(function(){on_click_register(auction)});
 				if ( auction.session.user.privs.operators ) {
 					$(".item-number").click(function(){on_click_operator('', $(this), auction)});
+				} else if ( auction.session.user.privs.auctioneers ) {
+					$(".newbid").click(function(){
+						var i = $(this).closest('tr').attr('key');
+						var row = auction.items.bidding[i];
+						$.post('<%= url_for 'bid' %>', {id: row.id}, function(){
+							processContent(2);
+						});
+					});
+					if ( auction.session.user.name!="auctioneer" ) $('img.auctioneer').hide();
 				} else if ( auction.session.user.role ) {
 					$(".item-number").click(function(){on_click_bid(auction)});
 				}
@@ -204,6 +214,15 @@ function processContent(value) {
 						$(this).removeClass("highlight");
 					}
 				);
+
+				// Apply a "Start Now" button to the On Deck table for auctioneers
+				$('table.ondeck img.start').click(function(){
+					var i = $(this).closest('tr').attr('key');
+					var row = auction.items.ondeck[i];
+					$.post('<%= url_for 'start' %>', {id:row.id}, function(){
+						processContent(2);
+					});
+				});
 
 //				$('#items tbody tr[timer="true"]').css('background-color', 'yellow');
 //				$('#items tbody tr[sold="true"]').css('background-color', '#414794');
@@ -276,7 +295,7 @@ function on_click_paypal(auction) {
 				t.dialog("disable"); 
 				t.dialog({title: 'Connecting to Paypal...'});
 				if ( $('#dialog-paypal-form').valid() ) {
-					$.post('<%= url_for 'bidder' %>/'+$('#paypal-bidder_id').val(), {
+					$.post('<%= url_for 'bidder' %>', {id:$('#paypal-bidder_id').val()}, {
 						item_id: $('#paypal-item_id').val(),
 						address: $('#paypal-os1').val(),
 						city: $('#paypal-os2').val(),
@@ -369,7 +388,7 @@ function on_click_alert(auction){
 			"Send Alert": function() {
 				$("#alert-set-alert").removeClass("ui-state-error");
 				$("#alert-set-msg").removeClass("ui-state-error");
-				$.post('<%= url_for 'alert' %>/'+$('input[name="alert-set-alert"]:checked').val(), {msg: $("#alert-set-msg").val()}, function(data){
+				$.post('<%= url_for 'alert' %>', {alert: $('input[name="alert-set-alert"]:checked').val(), msg: $("#alert-set-msg").val()}, function(data){
 					processContent(2);
 /*
 					if ( data.msg ) {
@@ -444,7 +463,7 @@ function on_click_operator(key, opt, auction) {
 				this_bid.dialog({title: 'Bid...'});
 				if ( $('#dialog-operator-form').valid() ) {
 					console.log('AAA');
-                                        $.post('<%= url_for 'bid' %>/'+item_id, {phone: $('#operator-phone').val(), name: $('#operator-name').val(), bid: $('#operator-bid').val(), approve: 1}, function(data){
+                                        $.post('<%= url_for 'bid' %>', {id:item_id, phone: $('#operator-phone').val(), name: $('#operator-name').val(), bid: $('#operator-bid').val(), approve: 1}, function(data){
                                                 //$.post('/api/approve/'+data.request.request_id+'/1', function(){
                                                 //	$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
                                                 //	processContent(0);
@@ -789,15 +808,15 @@ $(document).ready(function(){
 						</thead>
 						<tbody>
 						{#foreach $T.items.bidding as r}
-							<tr id="tr_{$T.r.id}" class="context-item {#if $T.r.timer && !$T.r.sold}timer{#/if} {#if $T.r.sold}sold{#/if}" itemid="{$T.r.id}" sold="{$T.r.sold}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}">
+							<tr id="tr_{$T.r.id}" key="{$T.r$key}" class="context-item {#if $T.r.timer && !$T.r.sold}timer{#/if} {#if $T.r.sold}sold{#/if}" itemid="{$T.r.id}" sold="{$T.r.sold}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}">
 								<td col="item" class=tooltip item="{$T.r.name}" description="{$T.r.description}" img="{$T.r.img}">
 									<div col="item">
 									<div style="float:left;width:80%">
-									{#if $T.r.auctioneer}<img src="img/{$T.r.auctioneer}.gif" />{#/if}
+									{#if $T.r.auctioneer}<img class="auctioneer" src="img/{$T.r.auctioneer}.gif" />{#/if}
 									{#if $T.session.user.privs.operators}
 										<a id="operator-{$T.r.id}" title="Place Bid" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#elseif $T.session.user.privs.auctioneers}
-										<a id="auctioneer-{$T.r.id}" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+										<a id="auctioneer-{$T.r.id}" class="{#if $T.r.notify.newbid}newbid{#/if} modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#elseif $T.session.user.name}
 										<a id="bid-{$T.r.id}" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#else}
@@ -920,27 +939,31 @@ $(document).ready(function(){
 						</thead>
 						<tbody>
 						{#foreach $T.items.ondeck as r}
-							<tr id="ondeck_{$T.r.id}" class="context-item" itemid="{$T.r.id}" name="item">
+							<tr id="ondeck_{$T.r.id}" class="context-item" itemid="{$T.r.id}" key="{$T.r$key}" name="item">
 								<td>
-									<div style="float:left;width:80%">
+									<div style="float:left;width:100%">
 									<span class="item number">{$T.r.number}</span><span class="item">:</span>
 									<span class="truncate" length="70">{$T.r.name}</span>
 									</div>
 								</td>
 								<td>
-									<div style="float:left;width:80%">
+									<div style="float:left;width:100%">
 									<span class="currency">{$T.r.value}</span>
 									</div>
 								</td>
 								<td>
-									<div style="float:left;width:80%">
+									<div style="float:left;width:100%">
 									<span class="donor">{$T.r.donor.name}</span>
 									</div>
 								</td>
 								{#if $T.session.user.privs.auctioneers}
-								<td col="start">
-									<div style="float:left;width:80%">
-									<img id="start_{$T.r.id}" src="img/paddle1.gif" />
+								<td align="center">
+									<div>
+									<div style="float:{#if $T.r$iteration%2==0}left{#else}right{#/if};width:60%">
+									{#if $T.items.bidding.length < <%= app->config->{auctioneers}->{max_items} || 5 %>}
+									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start" src="img/start1.png" />
+									{#/if}
+									</div>
 									</div>
 								</td>
 								{#/if}
