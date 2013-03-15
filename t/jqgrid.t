@@ -19,7 +19,7 @@ my $id;
 my $headers = {'Accept' => 'application/json', 'Content-Type' => 'application/json', 'X-Requested-With' => 'XMLHttpRequest'};
 
 # login
-$t->post_ok('/login' => $headers => form => {username=>"admin",phone=>4138})->status_is(200)->json_is('/user/role' => 'admin');
+$t->post_ok('/login' => $headers => form => {username=>"admin",phone=>4138})->status_is(200)->json_is('/user/role' => 'admins');
 
 # rotarians
 $t->post_ok('/admin/rotarians/create' => $headers => q'{"id":5465464,"name":"Testing Man","email":"","phone":"","oper":"add"}')->status_is(200)->json_is('/res' => 'ok');
@@ -65,7 +65,7 @@ $t->delete_ok('/admin/bellitems/delete' => $headers => qq'{"oper":"del","id":"$i
 # seq items
 
 # flyer
-$t->post_ok('/admin/reports/flyer' => $headers => q'{"_search":true,"nd":1363061516241,"rows":20,"page":1,"sidx":"name","sord":"asc"}')->status_is(200)->json_is('/rows/0/number' => "963");
+$t->post_ok('/admin/reports/flyer' => $headers => q'{"_search":true,"nd":1363061516241,"rows":20,"page":1,"sidx":"name","sord":"asc"}')->status_is(200)->json_is('/rows/0/number' => "961");
 
 # bidding
 
