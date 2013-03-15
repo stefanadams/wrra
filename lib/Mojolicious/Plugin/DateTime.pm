@@ -11,6 +11,7 @@ sub register {
 
 	$app->hook(before_dispatch => sub {
 		my $c = shift;
+		return $self->{datetime}->{now} = DateTime->now(time_zone=>'local') if $c->app->mode eq 'production';
 		my $datetime = $c->session->{datetime} || $c->config->{datetime} || $ENV{"${moniker}_DATETIME"};
 		$self->{datetime}->{now} = DateTime::Format::DateParse->parse_datetime($datetime) if $datetime;
 		$self->{datetime}->{now} ||= DateTime->now(time_zone=>'local');
@@ -22,12 +23,13 @@ sub register {
 	$app->helper(datetime => sub {
 		my $c = shift;
 		my $datetime = shift;
-		$self->{datetime}->{$datetime} ||= DateTime::Format::DateParse->parse_datetime($datetime) if $datetime;
-		return $datetime ? $self->{datetime}->{$datetime} : $self->{datetime}->{now};
+		return $self->{datetime}->{$datetime} ||= DateTime::Format::DateParse->parse_datetime($datetime) if $datetime;
+		return $self->{datetime}->{now};
 	});
 	$app->helper(datetime_mysql => sub {
 		my $c = shift;
-		DateTime::Format::MySQL->format_datetime($self->{datetime}->{now});
+		my $datetime = shift;
+		DateTime::Format::MySQL->format_datetime($self->{datetime}->{$datetime||'now'});
 	});
 }
 

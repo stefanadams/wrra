@@ -8,9 +8,11 @@ sub startup {
 	my $self = shift;
 
 	$self = $self->moniker('wrra');
+	$self->secret($ENV{MOJO_SECRET} || $self->config->{secret} || __PACKAGE__);
 
 	$self->plugin('Config');
 	$self->plugin('DateTime');
+	$self->plugin('Cache');
 	$self->plugin('Version');
 	$self->plugin('Hypnotoad');
 	$self->plugin('MergedParams');
@@ -60,11 +62,11 @@ sub startup {
         #        backend => [qw/:admins :auctioneers :operators/],
         #},
 	$self->plugin('authorization', {
-		has_priv => sub { # ->has_priviledge('priviledge')  =>  t/f if supplied priv is in list of user's privs
+		has_priv => sub { # ->has_privilege('privilege')  =>  t/f if supplied priv is in list of user's privs
 			my ($c, $priv, $extradata) = @_;
 			return 0 unless $c->is_user_authenticated;
 			return 0 unless $c->config->{groups};
-			return grep { $_ eq $priv } $c->priviledges;
+			return $c->privileges->{$priv};
 		},
 		is_role => sub { # ->is('role')  =>  t/f if supplied role is user's role
 			my ($c, $role, $extradata) = @_;
@@ -75,22 +77,33 @@ sub startup {
 			}
 			return 0;
 		},
-		user_privs => sub { # ->priviledges;  =>  (admins, auctioneers, ...)
+		user_privs => sub { # ->privileges;  =>  (admins, auctioneers, ...)
 			my ($c, $extradata) = @_;
 			return undef unless $c->is_user_authenticated;
+			return undef unless $c->current_user;
+			return undef unless $c->current_user->{username};
 			return undef unless $c->config->{groups};
-			my %groups;
-			foreach ( keys %{$c->config->{groups}} ) {
-				$groups{$_}=1 if grep { $c->current_user->{username} eq $_ } _expand_group($c->config->{groups}, $_);
-			}
-			return wantarray ? keys %groups : {%groups};
+			my %privs = (
+				admin => [qw/admins adsales callers bellringers auctioneers operators backend/],
+				adsales => [qw/adsales/],
+				caller => [qw/callers/],
+				bellringer => [qw/bellringers/],
+				auctioneer => [qw/auctioneers backend/],
+				a => [qw/auctioneers backend/],
+				b => [qw/auctioneers backend/],
+				operator => [qw/operators backend/],
+			);
+			return undef unless $privs{$c->current_user->{username}};
+			return {map { $_ => 1 } @{$privs{$c->current_user->{username}}}};
 		},
 		user_role => sub { # ->role;  =>  admins or auctioneers or ...
 			my ($c, $extradata) = @_;
 			return undef unless $c->is_user_authenticated;
 			return undef unless $c->config->{groups};
-			foreach ( keys %{$c->config->{groups}} ) {
-				return $_ if grep { $c->current_user->{username} eq $_ } @{$c->config->{groups}->{$_}};
+			my $groups = $c->config->{groups};
+			foreach my $g ( keys %$groups ) {
+				my ($role) = grep { $c->current_user->{username} eq $_ } @{$groups->{$g}} or next;
+				return $g
 			}
 			return $c->current_user->{username};
 		},
@@ -101,14 +114,14 @@ sub startup {
 	$self->plugin('AutoRoute', {route => $self->routes});
 }
 
-sub _expand_group {
-        my ($groups, $group) = @_;
-
-        my %groups = %$groups;
-        $group =~ s/^://;
-        push @{$groups{$group}}, _expand_group(\%groups, $_) foreach grep { /^:/ } @{$groups{$group}};
-        return grep { /^(?!:)/ } @{$groups{$group}};
-}
+#sub _expand_group {
+#        my ($groups, $group) = @_;
+#
+#	my %groups = %$groups;
+#        $group =~ s/^://;
+#        push @{$groups{$group}}, _expand_group({%groups}, $_) foreach grep { /^:/ } @{$groups{$group}};
+#        return grep { /^(?!:)/ } @{$groups{$group}};
+#}
 
 sub setup_routing {
 	my $self = shift;
@@ -118,12 +131,12 @@ sub setup_routing {
 	$r->get('/')->xhr(0)->to(template => '/auction')->name('index');
 	my $auction = $r->under('/auction')->xhr;
 	$auction->get('/')->to('auction#items', Status=>'Bidding')->name('auction');
-	$auction->post('/assign/:id/:auctioneer')->over(has_priv=>'admin')->to('auction#assign');
-	$auction->post('/notify/:notify/:id', notify=>[qw/starttimer stoptimer holdover sell/])->over(has_priv=>'admin')->to('auction#notify');
-	$auction->post('/sell/:id')->over(has_priv=>'auctioneer')->to('auction#sell');
-	$auction->post('/starttimer/:id')->over(has_priv=>'auctioneer')->to('auction#timer', timer=>1);
-	$auction->post('/stoptimer/:id')->over(has_priv=>'auctioneer')->to('auction#timer', timer=>0);
-	$auction->post('/bid/:id' => {id=>undef})->over(has_priv=>'operator')->to('auction#bid');
+	$auction->post('/assign/:id/:auctioneer')->over(has_priv=>'admins')->to('auction#assign');
+	$auction->post('/notify/:notify/:id', notify=>[qw/starttimer stoptimer holdover sell/])->over(has_priv=>'admins')->to('auction#notify');
+	$auction->post('/sell/:id')->over(has_priv=>'auctioneers')->to('auction#sell');
+	$auction->post('/starttimer/:id')->over(has_priv=>'auctioneers')->to('auction#timer', timer=>1);
+	$auction->post('/stoptimer/:id')->over(has_priv=>'auctioneers')->to('auction#timer', timer=>0);
+	$auction->post('/bid/:id' => {id=>undef})->over(has_priv=>'operators')->to('auction#bid');
 	$auction->get("/$_")->name($_) for qw/assign notify sell starttimer stoptimer bid/;
 
 	$r->any('/register')->to('auth#register');
@@ -134,8 +147,8 @@ sub setup_routing {
 	$r->get('/ad')->name('ad');
 
 	$r->get('/alert/:alert', {alert=>undef})->to('alert#alert');
-	$r->post('/alert/:alert', {alert=>undef})->over(has_priv=>'admin')->to('alert#alert');
-	$r->delete('/alert/:alert', {alert=>undef})->over(has_priv=>'admin')->to('alert#alert');
+	$r->post('/alert/:alert', {alert=>undef})->over(has_priv=>'admins')->to('alert#alert');
+	$r->delete('/alert/:alert', {alert=>undef})->over(has_priv=>'admins')->to('alert#alert');
 	$r->get('/alert')->name('alert');
 
 	my $api = $r->under('/api');
@@ -156,7 +169,7 @@ sub setup_routing {
 	$bs->build_select([Rotarians => 'Rotarian']);
 
 	$r->get('/bookmarks')->to(cb=>sub{shift->redirect_to('/admin/bookmarks')});
-	my $admin = $r->under('/admin')->over(has_priv=>'admin');
+	my $admin = $r->under('/admin')->over(has_priv=>'admins');
 	$admin->jqgrid([Rotarians => 'Rotarian']);
 	$admin->jqgrid([Donors => 'Donor'])->dbroute(['/items' => DonorItems => 'Item'], {jqgrid => 'read'});
 	$admin->jqgrid([Stockitems => 'Stockitem']);
