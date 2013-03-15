@@ -133,7 +133,7 @@ function processContent(value) {
 		$("#content").processTemplateStop();
 	}
 	if ( value ) {
-		$("#content").processTemplateStart("<%= url_for 'auction' %>", null, <%= app->config->{refresh}->{auction}->{content} || 10000 %>, null, {
+		$("#content").processTemplateStart("<%= url_for 'auction' %>", null, <%= app->config->{refresh}->{content} || 10000 %>, null, {
 			type: 'GET',
 			headers: {Accept: 'application/json'},
 			on_success: function(elem, d){
@@ -717,7 +717,7 @@ $(document).ready(function(){
 						</tr>
 						</thead>
 						<tbody>
-						{#foreach $T.items.rows as r}
+						{#foreach $T.items as r}
 							<tr id="tr_{$T.r.id}" class="context-item {#if $T.r.timer && !$T.r.sold}timer{#/if} {#if $T.r.sold}sold{#/if}" itemid="{$T.r.id}" sold="{$T.r.sold}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}">
 								<td col="item" class=tooltip item="{$T.r.name}" description="{$T.r.description}" img="{$T.r.img}">
 									<div col="item">
@@ -832,7 +832,7 @@ $(document).ready(function(){
 					<table class='closed'>
 						<thead>
 						<tr>
-							<th>Closed</th>
+							<th><!-- Closed --></th>
 						</tr>
 						</thead>
 					</table>

@@ -30,9 +30,7 @@ sub items {
 				(! $self->role ? (ad => $self->_display_ad) : ()),
 			}
 		},
-		items => {
-			rows => $self->closed ? Mojo::JSON->false : $self->_items,
-		},
+		$self->closed ? () : (items => $self->_items),
 		stats => {
 		},
 	};
