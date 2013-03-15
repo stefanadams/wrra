@@ -1,4 +1,6 @@
 log/*
-sql/*
+sql
+tarballs
 public/ads/*
+public/photos/*
 old
