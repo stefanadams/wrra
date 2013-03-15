@@ -15,6 +15,7 @@ sub startup {
 	$self->plugin('Cache');
 	$self->plugin('Version');
 	$self->plugin('Hypnotoad');
+	$self->plugin('PoweredBy' => (name => $self->config->{powered_by})) if $self->config->{powered_by};
 	$self->plugin('MergedParams');
 	$self->plugin('MergePostdata' => {'application/json' => sub { shift->req->json }});
 	$self->plugin('DBIC' => {schema => 'WRRA::Schema'});
@@ -29,7 +30,6 @@ sub startup {
 	$self->plugin('WRRA');
 	$self->plugin('authentication' => {
 		'autoload_user' => 1,
-		'session_key' => 'fifdhiwfiwhgfyug38g3iuhe8923oij20',
 		'load_user' => sub {
 			my ($c, $username) = @_;
 			if ( exists $c->config->{users}->{$username} ) {
