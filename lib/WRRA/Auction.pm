@@ -34,12 +34,14 @@ sub items {
 		stats => {
 		},
 	};
+$self->profiler_start;
 	unless ( $self->closed ) {
 		for ( qw/ready ondeck bidding verifying/ ) {
 			my $i = $self->_items($_);
 			$items->{items}->{$_} = $i if $i;
 		}
 	}
+$self->profiler_stop;
 	$self->respond_to(
 		json => {json => $items},
 	);
@@ -53,6 +55,7 @@ sub _items {
 	my $rs = $self->db->resultset(Item => 'Bidding')->search(undef, {prefetch=>'donor'});
 	my $items;
 	my $year = $self->datetime->year;
+#$self->profiler;
 	given ( $status ) {
 		when ( 'ready' ) {
 			return undef unless $self->has_priv('admins');
@@ -95,6 +98,7 @@ sub _items {
 		}
 		default { return {} }
 	}
+#$self->profiler;
 	return $items;
 }
 
