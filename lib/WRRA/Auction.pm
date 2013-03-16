@@ -5,6 +5,13 @@ use Mojo::JSON;
 
 sub items {
 	my $self = shift;
+	$self->respond_to(
+		json => {json => $self->memd || $self->memd($self->_items)},
+	);
+}
+
+sub _items {
+	my $self = shift;
 	my $items = {
 		session => {
 			user => {
@@ -24,30 +31,26 @@ sub items {
 				datetime => $self->datetime,
 			},
 			play => $self->config('play'),
-			alert => {
-				(msg => eval { $self->db->resultset('Alert')->search({alert=>$self->role||'public'})->first->msg } || ''),
-			},
-			ads => {
-				(! $self->role ? (ad => $self->_display_ad) : ()),
-			}
+#			alert => {
+#				(msg => eval { $self->db->resultset('Alert')->search({alert=>$self->role||'public'})->first->msg } || ''),
+#			},
+#			ads => {
+#				($self->privileges->{backend} ? () : (ad => $self->_display_ad)),
+#			}
 		},
 		stats => {
 		},
 	};
-$self->profiler_start;
 	unless ( $self->closed ) {
 		for ( qw/ready ondeck bidding verifying/ ) {
-			my $i = $self->_items($_);
+			my $i = $self->__items($_);
 			$items->{items}->{$_} = $i if $i;
 		}
 	}
-$self->profiler_stop;
-	$self->respond_to(
-		json => {json => $items},
-	);
+	return $items;
 }
 
-sub _items {
+sub __items {
 	my $self = shift;
 	my $status = shift;
 	my $photosdir = join '/', $self->app->home, 'public', ($self->config('photos') || 'photos');
