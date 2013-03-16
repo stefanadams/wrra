@@ -6,7 +6,7 @@ use Mojo::JSON;
 sub auction {
 	my $self = shift;
 	my $auction = $self->memd || $self->memd($self->_auction);
-	$auction->{ads} = $self->privileges->{backend} ? () : (ad => $self->_display_ad);
+	$auction->{header}->{ad} = $self->_display_ad;
 	$self->respond_to(
 		json => {json => $auction},
 	);
@@ -105,11 +105,12 @@ sub _items {
 sub _alert {
 	my $self = shift;
 	my $alert = $self->db->resultset('Alert')->search({alert=>$self->role||'public'})->first;
-	return $alert ? (msg=>$alert->msg) : ();
+	return {$alert ? (msg=>$alert->msg) : ()};
 }
 
 sub _display_ad {
         my $self = shift;
+	return {} if $self->has_priv('backend');
         my $adsdir = join '/', $self->app->home, 'public', ($self->config('ads') || 'ads');
         my $adsurl = join '/', ($self->config('ads') || 'ads');
 	delete $self->session->{ad}->{refresh};
@@ -240,7 +241,6 @@ sub timer {
 		}
 		default { return $self->render_not_found }
 	}
-	$self->memd;
 	$self->respond_to(
 		json => {json => {res=>$r?'ok':'err'}},
 	);

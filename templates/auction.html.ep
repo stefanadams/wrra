@@ -796,8 +796,8 @@ $(document).ready(function(){
 							<table class="ad">
 								<tr>
 									<td class="ad">
-										{#if $T.header.ads.ad.ad_id && $T.header.ads.ad.img}
-											<a href="<%= url_for 'ad' %>/{$T.header.ads.ad.ad_id}" target="_new"><img src="{$T.header.ads.ad.img}" border="0" alt="Click here to support our sponsor -- {$T.header.ads.ad.advertiser.name}<br><br>{$T.header.ads.ad.advertiser.advertisement||''}" /></a>
+										{#if $T.header.ad.ad_id && $T.header.ad.img}
+											<a href="<%= url_for 'ad' %>/{$T.header.ad.ad_id}" target="_new"><img src="{$T.header.ad.img}" border="0" alt="Click here to support our sponsor -- {$T.header.ad.advertiser.name}<br><br>{$T.header.ad.advertiser.advertisement||''}" /></a>
 										{#else}
 											<a href="<%= app->config->{default_ad}->{url} %>" target="_new"><img src="/ads/<%= app->config->{default_ad}->{img} %>" border="0" /></a>
 										{#/if}
