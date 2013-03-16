@@ -50,8 +50,9 @@ sub _items {
 	my $status = shift;
 	my $photosdir = join '/', $self->app->home, 'public', ($self->config('photos') || 'photos');
 	my $photosurl = join '/', ($self->config('photos') || 'photos');
-	my $rs = $self->db->resultset(Item => 'Bidding');
+	my $rs = $self->db->resultset(Item => 'Bidding')->search(undef, {prefetch=>'donor'});
 	my $items;
+	my $year = $self->datetime->year;
 	given ( $status ) {
 		when ( 'ready' ) {
 			return undef unless $self->has_priv('admins');
@@ -59,18 +60,19 @@ sub _items {
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 		}
 		when ( 'ondeck' ) {
+			return undef unless $self->has_priv('auctioneers');
 			$rs = $rs->current_year->ondeck;
-			$rs = $rs->auctioneer($self->current_user->{username}) if $self->role('auctioneers');
+			$rs = $rs->auctioneer($self->current_user->{username}) if $self->role eq 'auctioneers';
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 		}
 		when ( 'bidding' ) {
-			$rs = $rs->current_year->bidding;
-			$rs = $rs->auctioneer($self->current_user->{username}) if $self->role('auctioneers');
+			$rs = $rs->current_year->bidding->search(undef, {prefetch=>{bids=>'bidder'}});
+			$rs = $rs->auctioneer($self->current_user->{username}) if $self->role eq 'auctioneers';
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 			foreach ( @$items ) {
 				# if((find_in_set('newbid',`items`.`notify`) > 0),1,NULL) `newbid`
 				# if((`items`.`status` = 'Sold'),1,NULL) `sold`
-				$_->{img} = (glob("$photosdir/$_->{year}/$_->{number}.*"))[0] if $_->{number};
+				($_->{img}) = glob("$photosdir/$year/$_->{number}.*") if $_->{number};
 				$_->{img} && -e $_->{img} && -f _ && -r _ && do {
 					$_->{img} =~ s/^$photosdir\/?// or $_->{img} = undef;
 					$_->{img} = join '/', '', $photosurl, $_->{img} if $_->{img};
@@ -224,7 +226,7 @@ sub timer {
 			$r = $self->db->resultset('Item')->find($id)->notify("${timer}timer" => 1)->update;
 		}
 		when ( 'auctioneers' ) {
-			$r = $self->db->resultset('Item')->find($id)->respond("${timer}timer")->update;
+			$r = $self->db->resultset('Item')->find($id)->respond("${timer}timer")->update({timer=>$timer eq 'start' ? $self->datetime_mysql : undef});
 		}
 		default { return $self->render_not_found }
 	}
@@ -242,7 +244,12 @@ sub sell {
 			$r = $self->db->resultset('Item')->find($id)->notify(sell => 1)->update;
 		}
 		when ( 'auctioneers' ) {
-			$r = $self->db->resultset('Item')->find($id)->respond('sell')->update;
+			$r = $self->db->resultset('Item')->find($id);
+			if ( $r->sold ) {
+				$r->update({cleared=>$self->datetime_mysql});
+			} else {
+				$r->respond('sell')->update({sold=>$self->datetime_mysql});
+			}
 		}
 		default { return $self->render_not_found }
 	}
@@ -257,8 +264,7 @@ sub bid {
 	my $r;
 	given ( $self->role ) {
 		when ( 'auctioneers' ) {
-			$r = $self->db->resultset('Item')->find($id)->respond('newbid');#->update;
-warn "\n", Data::Dumper::Dumper($r), "\n";
+			$r = $self->db->resultset('Item')->find($id)->respond('newbid')->update;
 		}
 		when ( 'operators' ) {
 			my $phone = $self->param('phone') or return $self->render_json({res=>'err'});
@@ -270,7 +276,7 @@ warn "\n", Data::Dumper::Dumper($r), "\n";
 				return $self->render_json({res=>'err'}) unless $bidder_id = $new_bidder->id;
 			}
 			$bid = $self->db->resultset('Bid')->create({item_id=>$id,bidder_id=>$bidder_id,bid=>$bid,bidtime=>$self->datetime_mysql}) or return return $self->render_json({res=>'err'});
-			$r = $self->db->resultset('Item')->find($id)->update({highbid_id=>$bid->id});
+			$r = $self->db->resultset('Item')->find($id)->notify(newbid=>1)->update({highbid_id=>$bid->id});
 		}
 		default { return $self->render_not_found }
 	}

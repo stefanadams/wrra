@@ -17,7 +17,7 @@ sub unpaid { shift->search({scheduled=>$nn,started=>$nn,sold=>$nn,paid=>$nu}, {o
 sub sold { shift->search({scheduled=>$nn,started=>$nn,sold=>$nn}, {order_by=>'number'}) }
 sub bidding { shift->search({scheduled=>$nn,auctioneer=>$nn,started=>$nn,cleared=>$nu}, {order_by=>'number'}) }
 sub ondeck { shift->search({scheduled=>$nn,auctioneer=>$nn,started=>$nu}, {order_by=>'number'}) }
-sub ready { shift->search({scheduled=>$nn,auctioneer=>$nu}, {order_by=>'number'}) }
+sub ready { shift->search({scheduled=>$nn,auctioneer=>$nu}, {order_by=>'number', rows=>10}) }
 sub staged { shift->search({scheduled=>$nu}, {order_by=>'number'}) }
 
 1;

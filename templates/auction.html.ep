@@ -166,17 +166,64 @@ function processContent(value) {
 				$("table.setalert span.alert").click(function(){on_click_alert(auction)});
 				$("#clearalert").click(function(){on_click_clearalert(auction)});
 				$("#register").click(function(){on_click_register(auction)});
-				if ( auction.session.user.privs.operators ) {
-					$(".item-number").click(function(){on_click_operator('', $(this), auction)});
+				if ( auction.session.user.privs.admins ) {
+                                        $(".start-a").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.ready[i];
+                                            $.post('<%= url_for 'start' %>', {id: row.id, auctioneer: 'a'}, function(){ processContent(2); });
+                                        });
+                                        $(".start-b").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.ready[i];
+                                            $.post('<%= url_for 'start' %>', {id: row.id, auctioneer: 'b'}, function(){ processContent(2); });
+                                        });
+                                        $(".starttimer").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'timer', timer=>'start' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".stoptimer").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'timer', timer=>'stop' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".holdover").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'holdover' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".sell").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'sell' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
 				} else if ( auction.session.user.privs.auctioneers ) {
-					$(".newbid").click(function(){
-						var i = $(this).closest('tr').attr('key');
-						var row = auction.items.bidding[i];
-						$.post('<%= url_for 'bid' %>', {id: row.id}, function(){
-							processContent(2);
-						});
-					});
+                                        $(".start").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.ondeck[i];
+                                            $.post('<%= url_for 'start' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".newbid").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'bid' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".starttimer").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'timer', timer=>'start' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".stoptimer").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'timer', timer=>'stop' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".holdover").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'holdover' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".sell").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'sell' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".clear").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'sell' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+				} else if ( auction.session.user.privs.operators ) {
 					if ( auction.session.user.name!="auctioneer" ) $('img.auctioneer').hide();
+				} else if ( auction.session.user.privs.operators ) {
+					$(".item-number").click(function(){on_click_operator('', $(this), auction)});
 				} else if ( auction.session.user.role ) {
 					$(".item-number").click(function(){on_click_bid(auction)});
 				}
@@ -803,7 +850,7 @@ $(document).ready(function(){
 					<table id='itemsbidding' class="items bidding tablesorter">
 						<thead>
 						<tr>
-							<th>Item</th><th>Value</th><th>High&nbsp;Bid</th><th>High Bidder</th><th>Donor</th><th>Message</th>
+							<th>Item</th><th>Value</th><th>High&nbsp;Bid</th><th>High Bidder</th>{#if $T.session.user.privs.auctioneers}<th>Actions</th>{#/if}<th>Donor</th><th>Message</th>
 						</tr>
 						</thead>
 						<tbody>
@@ -816,7 +863,7 @@ $(document).ready(function(){
 									{#if $T.session.user.privs.operators}
 										<a id="operator-{$T.r.id}" title="Place Bid" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#elseif $T.session.user.privs.auctioneers}
-										<a id="auctioneer-{$T.r.id}" class="{#if $T.r.notify.newbid}newbid{#/if} modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+										<a id="auctioneer-{$T.r.id}" class="{#if $T.r.notify.newbid}newbid{#/if}" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#elseif $T.session.user.name}
 										<a id="bid-{$T.r.id}" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#else}
@@ -840,15 +887,7 @@ $(document).ready(function(){
 									</div>
 									<div style="float:right;width:20%;text-align:right">
 									{#if !$T.r.sold}
-									{#if $T.session.user.privs.admins || $T.session.user.privs.auctioneers}
-										{#if $T.r.timer}
-											<img src="img/timer-on.gif" title="Running Time: {$T.r.runningtime}<br>Timer Time: {$T.r.timertime}"/>
-										{#elseif $T.r.notifications.starttimer}
-											<img src="img/timer-request.gif" title="Running Time: {$T.r.runningtime}"/>
-										{#/if}
-									{#else}
 										{#if $T.r.timer}<img src="img/timer-on.gif" title="Running Time: {$T.r.runningtime}<br>Timer Time: {$T.r.timertime}"/>{#/if}
-									{#/if}
 									{#/if}
 									</div>
 									</div>
@@ -884,6 +923,31 @@ $(document).ready(function(){
 									</div>
 									</div>
 								</td>
+								{#if $T.session.user.privs.auctioneers}
+								<td col="actions">
+									{#if $T.session.user.privs.admins}
+                                                                                {#if $T.r.cansell}
+                                                                                        <img class="sell" src="img/gavel4.gif">
+                                                                                {#elseif $T.r.notify.starttimer}
+                                                                                        <img class="stoptimer" src="img/timer-on.gif">
+                                                                                {#else}
+                                                                                        <img class="starttimer" src="img/timer-request.gif">
+                                                                                {#/if}
+									{#else}
+                                                                                {#if $T.r.sold}
+                                                                                        <img class="clear" src="img/no.gif">
+                                                                                {#elseif $T.r.notify.sell}
+                                                                                        <img class="sell" src="img/gavel4.gif">
+                                                                                {#elseif $T.r.notify.holdover}
+                                                                                        <img class="holdover" src="img/star1.gif">
+                                                                                {#elseif $T.r.notify.stoptimer}
+                                                                                        <img class="stoptimer" src="img/timer-on.gif">
+                                                                                {#elsif $T.r.notify.starttimer}
+                                                                                        <img class="starttimer" src="img/timer-request.gif">
+                                                                                {#/if}
+									{#/if}
+								</td>
+								{#/if}
 								<td col="donor">
 									<div col="donor">
 									<div style="float:left;width:80%">
@@ -898,7 +962,7 @@ $(document).ready(function(){
 								</td>
 								<td col="message" class="tooltip" message="{$T.r.donor.advertisement}">
 									<div col="message">
-									<span class="message truncate" length="45" itemid="{$T.r.id}">{$T.r.donor.advertisement}</span>
+									<span class="message truncate" length="160" itemid="{$T.r.id}">{$T.r.donor.advertisement}</span>
 									</div>
 								</td>
 							</tr>
@@ -907,6 +971,7 @@ $(document).ready(function(){
 						{#/for}
 						</tbody>
 					</table>
+					{#if !$T.session.user.role}
 					<div id="key">
 						<span class="key">Key:
 							<img valign='middle' src='img/paddle1.gif' width='16' height='16' class="tooltip above" description="New Bid">&nbsp;= New Bid |
@@ -918,6 +983,7 @@ $(document).ready(function(){
 							<img valign='middle' src='img/attach_image.gif' width='16' height='16' class="tooltip above" description="<img src='img/attach_image.gif' />">&nbsp;= View image
 						</span>
 					</div>
+					{#/if}
 				{#else}
 					<table class='closed'>
 						<thead>
@@ -930,7 +996,49 @@ $(document).ready(function(){
 			</div>
 
 			<div id="ondeck">
-				{#if $T.items.ondeck}
+				{#if $T.items.ready}
+					<table id='items-ready' class="items ready">
+						<thead>
+						<tr>
+							<th>Item</th><th>Value</th><th>Donor</th>{#if $T.session.user.privs.admins}<th>Assign</th>{#/if}
+						</tr>
+						</thead>
+						<tbody>
+						{#foreach $T.items.ready as r}
+							<tr id="ready_{$T.r.id}" class="context-item" itemid="{$T.r.id}" key="{$T.r$key}" name="item">
+								<td>
+									<div style="float:left;width:100%">
+									<span class="item number">{$T.r.number}</span><span class="item">:</span>
+									<span class="truncate" length="70">{$T.r.name}</span>
+									</div>
+								</td>
+								<td>
+									<div style="float:left;width:100%">
+									<span class="currency">{$T.r.value}</span>
+									</div>
+								</td>
+								<td>
+									<div style="float:left;width:100%">
+									<span class="donor">{$T.r.donor.name}</span>
+									</div>
+								</td>
+								{#if $T.session.user.privs.admins}
+								<td align="center">
+									<div>
+									<div style="float:center;width:60%">
+									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start-a" src="img/a.gif" />
+									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start-b" src="img/b.gif" />
+									</div>
+									</div>
+								</td>
+								{#/if}
+							</tr>
+						{#else}
+							<tr><td colspan=6><span name="tableempty">No items currently up for bid</span></td></tr>
+						{#/for}
+						</tbody>
+					</table>
+				{#elseif $T.items.ondeck}
 					<table id='items-ondeck' class="items ondeck">
 						<thead>
 						<tr>

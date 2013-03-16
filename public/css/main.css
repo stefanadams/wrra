@@ -30,7 +30,14 @@ hr.tooltip {color: #ADD9ED}
 .sold {background-color: #6cf}
 .timer {background-color: #fc3}
 .bellringer {background-color: #fc3}
-.newbid {font-weight: bold;color:black;background-color:red}
+.start-a {cursor:pointer;}
+.start-b {cursor:pointer;}
+.newbid {font-weight:bold;color:black;background-color:red;cursor:pointer;}
+.starttimer {cursor:pointer;}
+.stoptimer {cursor:pointer;}
+.holdover {cursor:pointer;}
+.sell {cursor:pointer;}
+.clear {cursor:pointer;}
 
 table.items {width:95%;border-collapse:collapse;margin-left:auto;margin-right:auto}
 table.items tr.highlight {background-color:#bbb}

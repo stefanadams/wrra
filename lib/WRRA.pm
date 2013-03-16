@@ -73,7 +73,7 @@ sub startup {
 			return 0 unless $c->is_user_authenticated;
 			return 1 if $c->current_user->{username} eq $role;
 			foreach ( keys %{$c->config->{groups}} ) {
-				return 1 if grep { $c->role eq $_ && $c->current_user->{username} eq $_ } @{$c->config->{groups}->{$_}};
+				return 1 if grep { $c->current_user->{username} eq $_ } @{$c->config->{groups}->{$_}};
 			}
 			return 0;
 		},
@@ -132,7 +132,7 @@ sub setup_routing {
 	my $auction = $r->under('/auction')->xhr;
 	$auction->get('/')->to('auction#items', Status=>'Bidding')->name('auction');
 	$auction->post('/start')->over(has_priv=>'auctioneers')->to('auction#start');
-	$auction->post('/timer/:timer', timer=>[qw/start stop/])->over(has_priv=>'auctioneers')->to('auction#timer');
+	$auction->post('/timer/:timer', timer=>[qw/start stop/])->over(has_priv=>'auctioneers')->to('auction#timer')->name('timer');
 	$auction->post('/sell')->over(has_priv=>'auctioneers')->to('auction#sell');
 	$auction->post('/bid')->to('auction#bid');
 	$auction->post('/bidder')->to('auction#bidder');
