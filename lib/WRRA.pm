@@ -134,7 +134,7 @@ sub setup_routing {
 	# Normal route to controller
 	$r->get('/')->xhr(0)->to(template => '/auction')->name('index');
 	my $auction = $r->under('/auction')->xhr;
-	$auction->get('/')->to('auction#items', Status=>'Bidding')->name('auction');
+	$auction->get('/')->to('auction#auction')->name('auction');
 	$auction->post('/start')->over(has_priv=>'auctioneers')->to('auction#start');
 	$auction->post('/timer/:timer', timer=>[qw/start stop/])->over(has_priv=>'auctioneers')->to('auction#timer')->name('timer');
 	$auction->post('/sell')->over(has_priv=>'auctioneers')->to('auction#sell');

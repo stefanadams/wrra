@@ -3,14 +3,16 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Mojo::JSON;
 
-sub items {
+sub auction {
 	my $self = shift;
+	my $auction = $self->memd || $self->memd($self->_auction);
+	$auction->{ads} = $self->privileges->{backend} ? () : (ad => $self->_display_ad);
 	$self->respond_to(
-		json => {json => $self->memd || $self->memd($self->_items)},
+		json => {json => $auction},
 	);
 }
 
-sub _items {
+sub _auction {
 	my $self = shift;
 	my $items = {
 		session => {
@@ -31,26 +33,21 @@ sub _items {
 				datetime => $self->datetime,
 			},
 			play => $self->config('play'),
-#			alert => {
-#				(msg => eval { $self->db->resultset('Alert')->search({alert=>$self->role||'public'})->first->msg } || ''),
-#			},
-#			ads => {
-#				($self->privileges->{backend} ? () : (ad => $self->_display_ad)),
-#			}
+			alert => $self->_alert,
 		},
 		stats => {
 		},
 	};
 	unless ( $self->closed ) {
 		for ( qw/ready ondeck bidding verifying/ ) {
-			my $i = $self->__items($_);
+			my $i = $self->_items($_);
 			$items->{items}->{$_} = $i if $i;
 		}
 	}
 	return $items;
 }
 
-sub __items {
+sub _items {
 	my $self = shift;
 	my $status = shift;
 	my $photosdir = join '/', $self->app->home, 'public', ($self->config('photos') || 'photos');
@@ -103,6 +100,12 @@ sub __items {
 	}
 #$self->profiler;
 	return $items;
+}
+
+sub _alert {
+	my $self = shift;
+	my $alert = $self->db->resultset('Alert')->search({alert=>$self->role||'public'})->first;
+	return $alert ? (msg=>$alert->msg) : ();
 }
 
 sub _display_ad {
@@ -237,6 +240,7 @@ sub timer {
 		}
 		default { return $self->render_not_found }
 	}
+	$self->memd;
 	$self->respond_to(
 		json => {json => {res=>$r?'ok':'err'}},
 	);
