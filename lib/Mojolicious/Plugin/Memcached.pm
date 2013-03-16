@@ -33,7 +33,7 @@ sub register {
 		my $name = join '#', $username, ($c->stash('controller')||''), ($c->stash('action')||'');
 		if ( $object ) {
 			$c->app->log->debug("storing in cache for $name");
-			local $_ = $memd->set($name => $object => 30);
+			local $_ = $memd->set($name => $object => $conf->{expires} || $c->config->{cache}->{expires} || 30);
 			return $object;
 		} else {
 			if ( $object = $memd->get($name) ) {
