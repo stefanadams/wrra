@@ -24,13 +24,26 @@ sub register {
 	});
 	$app->hook(after_dispatch => sub {
 		my $c = shift;
+		if ( $c->req->method ne 'GET' ) {
+			$c->app->log->debug("automatically flushing cache");
+			$memd->flush_all;
+		}
 		$memd->disconnect_all;
 	});
 	$app->helper(memcached => sub { $memd });
 	$app->helper(memd => sub {
-		my ($c, $object) = @_;
+		my ($c, $name, $object) = @_;
+		unless ( defined wantarray ) {
+			$c->app->log->debug("explicitly flushing cache");
+			$memd->flush_all;
+			return;
+		}
+		if ( ref $name ) {
+			$object = $name;
+			$name = undef;
+		}
 		my $username = ref $conf->{username} eq 'CODE' ? $conf->{username}->($c) : '';
-		my $name = join '#', ($username||''), ($c->stash('controller')||''), ($c->stash('action')||'');
+		$name = join '#', ($username||''), ($c->stash('controller')||''), ($c->stash('action')||''), ($name||'');
 		if ( $object ) {
 			$c->app->log->debug("storing in cache for $name");
 			local $_ = $memd->set($name => $object => $conf->{expires} || $c->config->{cache}->{expires} || 30);
