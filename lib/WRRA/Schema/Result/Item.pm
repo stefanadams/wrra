@@ -140,12 +140,6 @@ Covers ALL nights; one big incremental
   datetime_undef_if_invalid: 1
   is_nullable: 1
 
-=head2 paid
-
-  data_type: 'datetime'
-  datetime_undef_if_invalid: 1
-  is_nullable: 1
-
 =head2 cleared
 
   data_type: 'datetime'
@@ -153,6 +147,12 @@ Covers ALL nights; one big incremental
   is_nullable: 1
 
 =head2 contacted
+
+  data_type: 'datetime'
+  datetime_undef_if_invalid: 1
+  is_nullable: 1
+
+=head2 paid
 
   data_type: 'datetime'
   datetime_undef_if_invalid: 1
@@ -251,12 +251,6 @@ __PACKAGE__->add_columns(
     datetime_undef_if_invalid => 1,
     is_nullable => 1,
   },
-  "paid",
-  {
-    data_type => "datetime",
-    datetime_undef_if_invalid => 1,
-    is_nullable => 1,
-  },
   "cleared",
   {
     data_type => "datetime",
@@ -264,6 +258,12 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
   "contacted",
+  {
+    data_type => "datetime",
+    datetime_undef_if_invalid => 1,
+    is_nullable => 1,
+  },
+  "paid",
   {
     data_type => "datetime",
     datetime_undef_if_invalid => 1,
@@ -284,8 +284,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("item_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-15 12:52:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qwThNh431gToYh5QIga5/A
+# Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-16 12:32:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MD3Lr7gfDDzIsTZ3RNU5qQ
 
 use 5.010;
 
