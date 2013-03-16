@@ -984,14 +984,6 @@ $(document).ready(function(){
 						</span>
 					</div>
 					{#/if}
-				{#else}
-					<table class='closed'>
-						<thead>
-						<tr>
-							<th><!-- Closed --></th>
-						</tr>
-						</thead>
-					</table>
 				{#/if}
 			</div>
 
@@ -1091,6 +1083,16 @@ $(document).ready(function(){
 					</table>
 				{#/if}
 			</div>
+                        {#else}
+                                {#if $T.session.user.privs.backend}
+                                <table class='closed'>
+                                        <thead>
+                                        <tr>
+                                                <th>Closed</th>
+                                        </tr>
+                                        </thead>
+                                </table>
+                                {#/if}
 			{#/if}
 		</div>
 
