@@ -15,6 +15,7 @@ sub startup {
 	$self->plugin('Cache');
 	$self->plugin('Version');
 	$self->plugin('Hypnotoad');
+	$self->plugin('Profiler');
 	$self->plugin('PoweredBy' => (name => $self->config->{powered_by})) if $self->config->{powered_by};
 	$self->plugin('MergedParams');
 	$self->plugin('MergePostdata' => {'application/json' => sub { shift->req->json }});

@@ -30,7 +30,7 @@ sub register {
 
 =head1 NAME
 
-Mojolicious::Plugin::MyStash - Access request as MyStash
+Mojolicious::Plugin::Profiler - Access request as MyStash
 
 =head1 SYNOPSIS
 
