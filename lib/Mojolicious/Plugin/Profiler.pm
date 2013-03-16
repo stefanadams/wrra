@@ -15,14 +15,24 @@ sub register {
 	});
 	$app->helper(profiler_start => sub {
 		my $c = shift;
-		push @{$self->{profiler_stack}}, DateTime::HiRes->now;
+		if ( my $name = shift ) {
+			$self->{profiler_named}->{$name} = DateTime::HiRes->now;
+		} else {
+			push @{$self->{profiler_stack}}, DateTime::HiRes->now;
+		}
 	});
 	$app->helper(profiler_stop => sub {
 		my $c = shift;
-		my $n = @{$self->{profiler_stack}} or return;
-		my $p = pop @{$self->{profiler_stack}};
+		my $name = shift;
+		my $p;
+		if ( $name ) {
+			$p = delete $self->{profiler_named}->{$name};
+		} else {
+			$name = @{$self->{profiler_stack}} or return;
+			$p = pop @{$self->{profiler_stack}};
+		}
 		$p = DateTime::HiRes->now->hires_epoch - $p->hires_epoch;
-		warn "Profiler $n: $p\n";
+		warn "Profiler $name: $p\n";
 	});
 }
 
