@@ -7,15 +7,16 @@ use List::MoreUtils qw(firstidx);
 sub startup {
 	my $self = shift;
 
+	$self->plugin('Profiler');
+
 	$self = $self->moniker('wrra');
 	$self->secret($ENV{MOJO_SECRET} || $self->config->{secret} || __PACKAGE__);
 
 	$self->plugin('Config');
 	$self->plugin('DateTime');
-	$self->plugin('Cache');
 	$self->plugin('Version');
 	$self->plugin('Hypnotoad');
-	$self->plugin('Profiler');
+	$self->plugin('Memcached' => {username => sub { shift->username }});
 	$self->plugin('PoweredBy' => (name => $self->config->{powered_by})) if $self->config->{powered_by};
 	$self->plugin('MergedParams');
 	$self->plugin('MergePostdata' => {'application/json' => sub { shift->req->json }});
@@ -127,6 +128,8 @@ sub startup {
 sub setup_routing {
 	my $self = shift;
 	my $r = $self->routes;
+
+	$r->get('/profiler')->to(cb=>sub{shift->render_text('ok')});
 
 	# Normal route to controller
 	$r->get('/')->xhr(0)->to(template => '/auction')->name('index');

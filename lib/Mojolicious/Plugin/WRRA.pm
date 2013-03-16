@@ -10,6 +10,10 @@ sub register {
 	my ($self, $app, $conf) = @_;
 	my $moniker = uc($app->moniker);
 
+	$app->helper(username => sub {
+		my $c = shift;
+		return $c->is_user_authenticated ? $c->current_user->{username} : undef
+	});
 	$app->helper(years => sub {
 		my ($c, $year) = shift;
 		$year ||= $c->datetime->year;
