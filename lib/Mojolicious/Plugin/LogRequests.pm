@@ -28,7 +28,7 @@ sub register {
             my $headers= $req->headers->to_string;
             my $body   = $req->body;
             return if $path =~ /\.js$|\.css$/;
-            print STDERR "REQ : $tag : $method$xhr $path [$params]\n";
+            print STDERR "[$$]REQ : $tag : $method$xhr $path [$params]\n";
             print STDERR "HEADERS: $headers\n" if $ENV{MOJO_HEADERS};
             print STDERR "BODY: $body\n" if $xhr;
         });
