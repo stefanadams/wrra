@@ -30,7 +30,7 @@ sub register {
 	$app->helper(memd => sub {
 		my ($c, $object) = @_;
 		my $username = ref $conf->{username} eq 'CODE' ? $conf->{username}->($c) : '';
-		my $name = join '#', $username, ($c->stash('controller')||''), ($c->stash('action')||'');
+		my $name = join '#', ($username||''), ($c->stash('controller')||''), ($c->stash('action')||'');
 		if ( $object ) {
 			$c->app->log->debug("storing in cache for $name");
 			local $_ = $memd->set($name => $object => $conf->{expires} || $c->config->{cache}->{expires} || 30);
