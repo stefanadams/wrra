@@ -26,15 +26,46 @@ localStorage['allowHumanMsg'] = 1;
 var alert;
 var alert_msg;
 
+function get_row(elem, auction, table) {
+    var i = elem.closest('tr').attr('key');
+    var row = auction.items[table][i];
+    console.log(row);
+    return row;
+}
+
 function contextMenu(auction) {
-	if ( !auction.session.user.role ) {
-		$.contextMenu( 'destroy' );
+	if ( !auction.session.user.privs ) {
+		$('.context-item').contentMenu(false);
+		//$.contextMenu( 'destroy' );
 		return true;
 	}
 	console.log('cm', auction.session.user.role);
 	$.contextMenu({
 	    // define which elements trigger this menu
-	    selector: ".context-item",
+	    selector: ".ci-re-assign",
+	    trigger: 'hover',
+	    delay: 200,
+	    // define the elements of the menu
+	    build: function($trigger, e) {
+		$trigger.contextMenu(true);
+                return {
+                    callback: function(key, opt) {
+			var i = opt.$trigger.closest('tr').attr('key'); var row = auction.items.bidding[i];
+                        switch ( key ) {
+                                case 'a': $.post('<%= url_for 'start' %>', {id: id, auctioneer: 'a'}, pc); break;
+                                case 'b': $.post('<%= url_for 'start' %>', {id: id, auctioneer: 'b'}, pc); break;
+                        }
+                    },
+                    items: {
+                        a: {name: "Re-assign to A", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='a' ? true : false; }},
+                        b: {name: "Re-assign to B", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='b' ? true : false; }},
+                    }
+                };
+            }
+        });
+	$.contextMenu({
+	    // define which elements trigger this menu
+	    selector: ".ci-admins",
 	    // define the elements of the menu
 	    build: function($trigger, e) {
 		$trigger.contextMenu(true);
@@ -129,11 +160,13 @@ function contextMenu(auction) {
 	});
 }
 
+function pc() { processContent(2); }
 function processContent(value) {
 	if ( value == 2 ) {
 		$("#content").processTemplateStop();
+		value=1;
 	}
-	if ( value ) {
+	if ( value == 1 ) {
 		$("#content").processTemplateStart("<%= url_for 'auction' %>", null, <%= app->config->{refresh}->{content} || 10000 %>, null, {
 			type: 'GET',
 			headers: {Accept: 'application/json'},
@@ -305,8 +338,10 @@ function processContent(value) {
 				contextMenu(auction);
 			}
 		});
-	} else {
+	} else if ( value == 0 ) {
 		$("#content").processTemplateStop();
+	} else {
+		processContent(2);
 	}
 }
 
@@ -844,10 +879,10 @@ $(document).ready(function(){
 			</div>
 		</div>
 		<div id="bodygroup">
-			<div id="bidding">
+			<div id="items">
 			{#if $T.items}
 				{#if $T.items.bidding}
-					<table id='itemsbidding' class="items bidding tablesorter">
+					<table id='bidding' class="items bidding tablesorter">
 						<thead>
 						<tr>
 							<th>Item</th><th>Value</th><th>High&nbsp;Bid</th><th>High Bidder</th>{#if $T.session.user.privs.auctioneers}<th>Actions</th>{#/if}<th>Donor</th><th>Message</th>
@@ -859,7 +894,9 @@ $(document).ready(function(){
 								<td col="item" class=tooltip item="{$T.r.name}" description="{$T.r.description}" img="{$T.r.img}">
 									<div col="item">
 									<div style="float:left;width:80%">
-									{#if $T.r.auctioneer}<img class="auctioneer" src="img/{$T.r.auctioneer}.gif" />{#/if}
+									{#if $T.r.auctioneer}
+										<img class="auctioneer context-item {#if $T.session.user.privs.admins}ci-re-assign{#/if}" src="img/{$T.r.auctioneer}.gif" />
+									{#/if}
 									{#if $T.session.user.privs.operators}
 										<a id="operator-{$T.r.id}" title="Place Bid" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#elseif $T.session.user.privs.auctioneers}
@@ -927,23 +964,21 @@ $(document).ready(function(){
 								<td col="actions">
 									{#if $T.session.user.privs.admins}
                                                                                 {#if $T.r.cansell}
-                                                                                        <img class="sell" src="img/gavel4.gif">
-                                                                                {#elseif $T.r.notify.starttimer}
-                                                                                        <img class="stoptimer" src="img/timer-on.gif">
-                                                                                {#else}
-                                                                                        <img class="starttimer" src="img/timer-request.gif">
+                                                                                        <img class="sell" src="img/gavel4.gif" alt="Request to Sell">
+                                                                                {#elseif $T.r.notify.starttimer && !$T.r.timer}
+                                                                                        <img src="img/timer-requested.gif" alt="Timer Requested">
+                                                                                {#elseif !$T.r.notify.starttimer && !$T.r.timer}
+                                                                                        <img class="starttimer" src="img/timer-request.gif" alt="Request to Start Timer">
                                                                                 {#/if}
 									{#else}
                                                                                 {#if $T.r.sold}
-                                                                                        <img class="clear" src="img/no.gif">
+                                                                                        <img class="clear" src="img/no.gif" alt="Clear Item from Board">
                                                                                 {#elseif $T.r.notify.sell}
-                                                                                        <img class="sell" src="img/gavel4.gif">
+                                                                                        <img class="sell" src="img/gavel4.gif" alt="Sell Item Now">
                                                                                 {#elseif $T.r.notify.holdover}
-                                                                                        <img class="holdover" src="img/star1.gif">
-                                                                                {#elseif $T.r.notify.stoptimer}
-                                                                                        <img class="stoptimer" src="img/timer-on.gif">
-                                                                                {#elsif $T.r.notify.starttimer}
-                                                                                        <img class="starttimer" src="img/timer-request.gif">
+                                                                                        <img class="holdover" src="img/star1.gif" alt="Announce to Hold Over">
+                                                                                {#elseif $T.r.notify.starttimer}
+                                                                                        <img class="starttimer" src="img/timer-request.gif" alt="Start Timer Now">
                                                                                 {#/if}
 									{#/if}
 								</td>
@@ -987,7 +1022,7 @@ $(document).ready(function(){
 				{#/if}
 			</div>
 
-			<div id="ondeck">
+			<div id="non-bidding">
 				{#if $T.items.ready}
 					<table id='items-ready' class="items ready">
 						<thead>
@@ -1017,9 +1052,9 @@ $(document).ready(function(){
 								{#if $T.session.user.privs.admins}
 								<td align="center">
 									<div>
-									<div style="float:center;width:60%">
-									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start-a" src="img/a.gif" />
-									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start-b" src="img/b.gif" />
+									<div style="float:center;width:80%">
+									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start-a" src="img/a.gif" alt="Assign to A"/>
+									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start-b" src="img/b.gif" alt="Assign to B"/>
 									</div>
 									</div>
 								</td>
