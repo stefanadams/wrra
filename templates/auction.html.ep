@@ -6,6 +6,7 @@
 
 <!-- <META HTTP-EQUIV="refresh" content="120;URL=<%= url_for %>"> -->
 
+<link href='http://fonts.googleapis.com/css?family=Tinos' rel='stylesheet' type='text/css'>
 <link   rel="stylesheet" type="text/css" media="screen" href="/css/main.css" />
 <link   rel="stylesheet" type="text/css" media="screen" href="/css/jquery.contextMenu.css" />
 <link   href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/themes/base/jquery-ui.css" type="text/css" rel="stylesheet" media="all" />
@@ -854,7 +855,9 @@ $(document).ready(function(){
 									<div col="item">
 									<div style="float:left;width:80%">
 									{#if $T.r.auctioneer}
+										{#if ($T.session.user.role=="auctioneers" && $T.session.user.name=="auctioneer") || $T.session.user.role!="auctioneers"}
 										<img class="auctioneer context-item {#if $T.session.user.privs.admins}ci-re-assign{#/if}" src="img/{$T.r.auctioneer}.png" />
+										{#/if}
 									{#/if}
 									{#if $T.session.user.privs.operators}
 										<a id="operator-{$T.r.id}" title="Place Bid" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
@@ -894,8 +897,8 @@ $(document).ready(function(){
 									<span class="currency">{$T.r.highbid.bid}</span>
 									</div>
 									<div style="float:right;width:20%;text-align:right">
-									{#if $T.r.notify.newbid}<img class="{#if $T.session.user.privs.auctioneers}newbid{#/if}" src="img/newbid.png" title="New Bid"/>{#/if}
 									{#if $T.r.bellringer}<img src="img/bell.png" title="Bell Ringer"/>{#/if}
+									{#if $T.r.notify.newbid}<img class="{#if $T.session.user.privs.auctioneers}newbid{#/if}" src="img/newbid.png" title="New Bid"/>{#/if}
 									</div>
 									</div>
 								</td>
@@ -923,7 +926,7 @@ $(document).ready(function(){
 								<td col="actions">
 									{#if $T.session.user.privs.admins}
                                                                                 {#if $T.r.notify.sell}
-                                                                                        <img src="img/sell-requested.png" alt="Sale Requested">
+                                                                                        {#if $T.r.cansell}<img src="img/sell-requested.png" alt="Sale Requested">{#/if}
                                                                                 {#elseif !$T.r.notify.sell && $T.r.cansell}
                                                                                         <img class="sell" src="img/sell-request.png" alt="Request to Sell">
                                                                                 {#elseif $T.r.notify.starttimer && !$T.r.timer}
@@ -935,7 +938,7 @@ $(document).ready(function(){
                                                                                 {#if $T.r.sold}
                                                                                         <img class="clear" src="img/clear.png" alt="Clear Item from Board">
                                                                                 {#elseif $T.r.notify.sell}
-                                                                                        <img class="sell" src="img/sell-request.png" alt="Sell Item Now">
+											{#if $T.r.cansell}<img class="sell" src="img/sell-request.png" alt="Sell Item Now">{#/if}
                                                                                 {#elseif $T.r.notify.holdover}
                                                                                         <img class="holdover" src="img/star1.gif" alt="Announce to Hold Over">
                                                                                 {#elseif $T.r.notify.starttimer}
@@ -1057,7 +1060,7 @@ $(document).ready(function(){
 									<div>
 									<div style="float:{#if $T.r$iteration%2==0}left{#else}right{#/if};width:60%">
 									{#if $T.items.bidding.length < <%= app->config->{auctioneers}->{max_items} || 5 %>}
-									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start" src="img/start1.png" />
+									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start" src="img/start.png" />
 									{#/if}
 									</div>
 									</div>

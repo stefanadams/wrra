@@ -384,6 +384,7 @@ sub minbid {
 sub cansell {
 	my $self = shift;
 	return 0 unless $self->highbid;
+	return 0 if $self->notify('newbid');
 	return 0 if $self->sold;
 	return 0 unless $self->timer;
 	my $mintimer = eval { $self->result_source->schema->config->{database}->{options}->{minimum_timer} } || (5 * MINUTES);
