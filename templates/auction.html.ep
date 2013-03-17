@@ -186,6 +186,7 @@ function processContent(value) {
                                             var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
                                             $.post('<%= url_for 'sell' %>', {id: row.id}, function(){ processContent(2); });
                                         });
+					$(".item-number").click(function(){on_click_operator('', $(this), auction)});
 				} else if ( auction.session.user.privs.auctioneers ) {
                                         $(".start").click(function(){
                                             var i = $(this).closest('tr').attr('key'); var row = auction.items.ondeck[i];
@@ -216,14 +217,14 @@ function processContent(value) {
                                             $.post('<%= url_for 'sell' %>', {id: row.id}, function(){ processContent(2); });
                                         });
 				} else if ( auction.session.user.privs.operators ) {
-					if ( auction.session.user.name!="auctioneer" ) $('img.auctioneer').hide();
-				} else if ( auction.session.user.privs.operators ) {
 					$(".item-number").click(function(){on_click_operator('', $(this), auction)});
 				} else if ( auction.session.user.role ) {
 					$(".item-number").click(function(){on_click_bid(auction)});
 				}
 				$("#login").click(function(){on_click_login(auction)});
 				$("#logout").click(function(){on_click_logout(auction)});
+
+				if ( auction.session.user.role=='auctioneer' && auction.session.user.name!="auctioneer" ) $('img.auctioneer').hide(); else $('img.auctioneer').show();
 
 				// Items
 				//if (!!$(this).attr('item') && $(this).find('span.truncate').html().length > $(this).find('span.truncate').attr("length")){content.push($(this).attr('item'));}
@@ -829,11 +830,11 @@ $(document).ready(function(){
 					<form>
 					<fieldset>
 						<label for="alert">Send Alert To</label>
-						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="admin"/>Admins
-						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="operator"/>Operators
-						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="auctioneer"/>Auctioneers
-						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="caller"/>Callers
-						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="bellringer"/>Bellringers
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="admins"/>Admins
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="operators"/>Operators
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="auctioneers"/>Auctioneers
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="callers"/>Callers
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="bellringers"/>Bellringers
 						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="public"/>Public
 						<label for="msg">Message</label>
 						<input type="text" name="alert-set-msg" id="alert-set-msg" class="text ui-widget-content ui-corner-all" />
@@ -935,7 +936,9 @@ $(document).ready(function(){
 								{#if $T.session.user.privs.auctioneers}
 								<td col="actions">
 									{#if $T.session.user.privs.admins}
-                                                                                {#if $T.r.cansell}
+                                                                                {#if $T.r.notify.sell}
+                                                                                        <img src="img/gavel3.png" alt="Sale Requested">
+                                                                                {#elseif !$T.r.notify.sell && $T.r.cansell}
                                                                                         <img class="sell" src="img/gavel4.gif" alt="Request to Sell">
                                                                                 {#elseif $T.r.notify.starttimer && !$T.r.timer}
                                                                                         <img src="img/timer-requested.gif" alt="Timer Requested">
