@@ -23,6 +23,7 @@
 
 
 <script type="text/javascript">
+localStorage['stop_error_pause'] = 0;
 localStorage['allowHumanMsg'] = 1;
 var alert;
 var alert_msg;
@@ -124,6 +125,21 @@ function contextMenu(auction) {
 
 function pc() { processContent(2); }
 function processContent(value) {
+	if ( value == 'pause' ) {
+		var t = new Date().getTime() - localStorage['stop_error_pause'];
+console.log('pause: '+t);
+		if ( t > 500 ) {
+			console.log('real pause');
+//			processContent(0);
+		}
+		return true;
+	}
+	if ( value == 'resume' ) {
+console.log('resume');
+		localStorage['stop_error_pause'] = new Date().getTime();
+//		setTimeout(processContent(1), 6000);
+		return true;
+	}
 	if ( value == 2 ) {
 		$("#content").processTemplateStop();
 		value=1;
@@ -285,8 +301,9 @@ function processContent(value) {
 //				$('#items tbody img[ack="sold"]').each(function(){processContent(0);$(this).click(function(){$.post('<%= url_for 'clear' %>'+$(this).attr('title'), function(){processContent(1);});});});
 
 				$( document ).tooltip({
-				      show: {delay:0},
 				      items: "img, [pic], [title]",
+				      open: function(e,ui){ return processContent('pause'); },
+				      close: function(e,ui){ return processContent('resume'); },
 				      content: function(callback) {
 					  var element = $( this );
 					  if ( element.is( "[pic]" ) ) {
