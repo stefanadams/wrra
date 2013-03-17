@@ -1051,9 +1051,16 @@ $(document).ready(function(){
 						{#foreach $T.items.ondeck as r}
 							<tr id="ondeck_{$T.r.id}" class="context-item" item_id="{$T.r.id}" key="{$T.r$key}" name="item">
 								<td>
-									<div style="float:left;width:100%">
+									<div col="item">
+									<div style="float:left;width:80%">
+									{#if $T.r.auctioneer}
+										{#if ($T.session.user.role=="auctioneers" && $T.session.user.name=="auctioneer") || $T.session.user.role!="auctioneers"}
+										<img class="auctioneer context-item {#if $T.session.user.privs.admins}ci-re-assign{#/if}" src="img/{$T.r.auctioneer}.png" />
+										{#/if}
+									{#/if}
 									<span class="item number">{$T.r.number}</span><span class="item">:</span>
 									<span class="truncate" length="70">{$T.r.name}</span>
+									</div>
 									</div>
 								</td>
 								<td>
@@ -1070,8 +1077,12 @@ $(document).ready(function(){
 								<td align="center">
 									<div>
 									<div style="float:{#if $T.r$iteration%2==0}left{#else}right{#/if};width:60%">
-									{#if $T.items.bidding.length < <%= app->config->{auctioneers}->{max_items} || 5 %>}
-									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start" src="img/start.png" />
+									{#if $T.session.user.name!="auctioneer"}
+										{#if $T.items.bidding.length < <%= app->config->{auctioneers}->{max_items} || 5 %>}
+										<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start" src="img/start.png" />
+										{#/if}
+									{#else}
+										<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start" src="img/start.png" />
 									{#/if}
 									</div>
 									</div>
