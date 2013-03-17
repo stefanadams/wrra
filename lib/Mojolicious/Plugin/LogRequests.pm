@@ -27,9 +27,9 @@ sub register {
             my $xhr    = $c->req->is_xhr ? '(XHR)' : '';
             my $headers= $req->headers->to_string;
             my $body   = $req->body;
-	    my $username = $c->username;
+	    my $username = $c->username || '-';
             return if $path =~ /\.js$|\.css$/;
-            print STDERR "[$$ - $username]REQ : $tag : $method$xhr $path [$params]\n";
+            print STDERR "[$$/$username]REQ : $tag : $method$xhr $path [$params]\n";
             print STDERR "HEADERS: $headers\n" if $ENV{MOJO_HEADERS};
             print STDERR "BODY: $body\n" if $xhr;
         });

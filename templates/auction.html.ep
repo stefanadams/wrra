@@ -128,6 +128,7 @@ function processContent(value) {
 		value=1;
 	}
 	if ( value == 1 ) {
+		$.contextMenu( 'destroy' );
 		$("#content").processTemplateStart("<%= url_for 'auction' %>", null, <%= app->config->{refresh}->{content} || 10000 %>, null, {
 			type: 'GET',
 			headers: {Accept: 'application/json'},
@@ -675,8 +676,10 @@ function on_click_bid(auction){
 
 function refreshTimer (value) {
 	if ( value ) {
+		console.log('Start Page Refresh Timer');
 		localStorage['refresh_timer'] = setTimeout(function(){location.reload(true);}, <%= app->config->{refresh}->{page} || 120000 %>);
 	} else {
+		console.log('Cancel Page Refresh Timer');
 		window.clearInterval(localStorage['refresh_timer']);
 	}
 }
@@ -687,6 +690,14 @@ $(document).ready(function(){
 	$.ajaxSetup({
 		//contentType: 'application/json',
 		headers: {Accept: 'application/json'},
+	});
+	$(document).ajaxComplete(function(event, request, settings) {
+		if ( request.status >= 400 ) {
+			refreshTimer(0);
+			$( "#bodygroup" ).empty().append( "<li>Oops!</li>" );
+		} else if ( !localStorage['refresh_timer'] ) {
+			refreshTimer(1)
+		}
 	});
 
 	$.extend({ dialog_alert: function (message, title) {
@@ -896,7 +907,7 @@ $(document).ready(function(){
 									<span class="currency">{$T.r.highbid.bid}</span>
 									</div>
 									<div style="float:right;width:20%;text-align:right">
-									{#if $T.r.notify.newbid}<img src="img/paddle1.gif" title="New Bid"/>{#/if}
+									{#if $T.r.notify.newbid}<img class="{#if $T.session.user.privs.auctioneers}newbid{#/if}" src="img/paddle1.gif" title="New Bid"/>{#/if}
 									{#if $T.r.bellringer}<img src="img/bell2.png" title="Bell Ringer"/>{#/if}
 									</div>
 									</div>
@@ -963,7 +974,7 @@ $(document).ready(function(){
 								</td>
 							</tr>
 						{#else}
-							<tr><td colspan=6><span name="tableempty">No items currently up for bid</span></td></tr>
+							<tr><td colspan={#if $T.session.user.privs.auctioneers}7{#else}6{#/if}><span name="tableempty">No items currently up for bid</span></td></tr>
 						{#/for}
 						</tbody>
 					</table>

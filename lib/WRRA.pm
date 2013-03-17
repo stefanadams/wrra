@@ -73,17 +73,16 @@ sub startup {
 		is_role => sub { # ->is('role')  =>  t/f if supplied role is user's role
 			my ($c, $role, $extradata) = @_;
 			return 0 unless $c->is_user_authenticated;
-			return 1 if $c->current_user->{username} eq $role;
+			return 1 if $c->username eq $role;
 			foreach ( keys %{$c->config->{groups}} ) {
-				return 1 if grep { $c->current_user->{username} eq $_ } @{$c->config->{groups}->{$_}};
+				return 1 if grep { $c->username eq $_ } @{$c->config->{groups}->{$_}};
 			}
 			return 0;
 		},
 		user_privs => sub { # ->privileges;  =>  (admins, auctioneers, ...)
 			my ($c, $extradata) = @_;
 			return undef unless $c->is_user_authenticated;
-			return undef unless $c->current_user;
-			return undef unless $c->current_user->{username};
+			return undef unless $c->username;
 			return undef unless $c->config->{groups};
 			my %privs = (
 				admin => [qw/admins adsales callers bellringers auctioneers operators backend/],
@@ -95,8 +94,8 @@ sub startup {
 				b => [qw/auctioneers backend/],
 				operator => [qw/operators backend/],
 			);
-			return undef unless $privs{$c->current_user->{username}};
-			return {map { $_ => 1 } @{$privs{$c->current_user->{username}}}};
+			return undef unless $privs{$c->username};
+			return {map { $_ => 1 } @{$privs{$c->username}}};
 		},
 		user_role => sub { # ->role;  =>  admins or auctioneers or ...
 			my ($c, $extradata) = @_;
@@ -104,10 +103,10 @@ sub startup {
 			return undef unless $c->config->{groups};
 			my $groups = $c->config->{groups};
 			foreach my $g ( keys %$groups ) {
-				my ($role) = grep { $c->current_user->{username} eq $_ } @{$groups->{$g}} or next;
+				my ($role) = grep { $c->username eq $_ } @{$groups->{$g}} or next;
 				return $g
 			}
-			return $c->current_user->{username};
+			return $c->username;
 		},
 	});
 

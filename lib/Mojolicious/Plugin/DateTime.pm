@@ -13,10 +13,9 @@ sub register {
 		my $c = shift;
 		return $self->{datetime}->{now} = DateTime->now(time_zone=>'local') if $c->app->mode eq 'production';
 		my $datetime = $c->session->{datetime} || $c->config->{datetime} || $ENV{"${moniker}_DATETIME"};
-		$self->{datetime}->{now} = DateTime::Format::DateParse->parse_datetime($datetime, 'local') if $datetime;
-		$self->{datetime}->{now} ||= DateTime->now(time_zone=>'local');
+		$self->{datetime}->{now} = $datetime ? DateTime::Format::DateParse->parse_datetime($datetime, 'local') : DateTime->now(time_zone=>'local');
 		$self->{datetime}->{now}->add(seconds=>time-$c->session->{start_time}) if $c->session->{start_time};
-		warn $self->{datetime}->{now} if $ENV{"${moniker}_DATETIME"} && !$ENV{MOJO_TEST};
+		warn $self->{datetime}->{now} if !$ENV{MOJO_TEST};
 		$c->session->{start_time} = time if $datetime && !$c->session->{start_time};
 		return $self->{datetime}->{now};
 	});

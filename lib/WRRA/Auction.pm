@@ -55,7 +55,6 @@ sub _items {
 	my $rs = $self->db->resultset(Item => 'Bidding')->search(undef, {prefetch=>'donor'});
 	my $items;
 	my $year = $self->datetime->year;
-#$self->profiler;
 	given ( $status ) {
 		when ( 'ready' ) {
 			return undef unless $self->has_priv('admins');
@@ -65,12 +64,12 @@ sub _items {
 		when ( 'ondeck' ) {
 			return undef unless $self->has_priv('auctioneers');
 			$rs = $rs->current_year->ondeck;
-			$rs = $rs->auctioneer($self->current_user->{username}) if $self->role eq 'auctioneers';
+			$rs = $rs->auctioneer($self->username) if $self->role eq 'auctioneers';
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 		}
 		when ( 'bidding' ) {
 			$rs = $rs->current_year->bidding->search(undef, {prefetch=>{bids=>'bidder'}});
-			$rs = $rs->auctioneer($self->current_user->{username}) if $self->role eq 'auctioneers';
+			$rs = $rs->auctioneer($self->username) if $self->role eq 'auctioneers';
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 			foreach ( @$items ) {
 				# if((find_in_set('newbid',`items`.`notify`) > 0),1,NULL) `newbid`
@@ -98,7 +97,6 @@ sub _items {
 		}
 		default { return {} }
 	}
-#$self->profiler;
 	return $items;
 }
 

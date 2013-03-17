@@ -32,7 +32,8 @@ hr.tooltip {color: #ADD9ED}
 .bellringer {background-color: #fc3}
 .start-a {cursor:pointer;}
 .start-b {cursor:pointer;}
-.newbid {font-weight:bold;color:black;background-color:red;cursor:pointer;}
+a.newbid {font-weight:bold;color:black;background-color:red;cursor:pointer;}
+img.newbid {cursor:pointer;}
 .starttimer {cursor:pointer;}
 .stoptimer {cursor:pointer;}
 .holdover {cursor:pointer;}
