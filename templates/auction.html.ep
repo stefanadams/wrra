@@ -913,7 +913,7 @@ $(document).ready(function(){
 									</div>
 									</div>
 								</td>
-								<td col="bidder">
+								<td col="bidder" title="{#foreach $T.r.bids as b}{$T.b.name} ({$T.b.bid}){#/for}">
 									<div style="margin:0 auto;">
 									<div col="bidder" style="margin:0 auto; width: 141px;">
 									<div style="float: left; width: 80%;">
