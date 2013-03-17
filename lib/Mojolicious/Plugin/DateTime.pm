@@ -7,23 +7,22 @@ use DateTime::Format::MySQL;
 
 sub register {
 	my ($self, $app, $conf) = @_;
-	my $moniker = uc($app->moniker);
+	my $basedt = $ENV{DATETIME} ? DateTime::Format::DateParse->parse_datetime($ENV{DATETIME}, 'local') : DateTime->now(time_zone=>'local');
+	my $start = time;
 
-	$app->hook(before_dispatch => sub {
-		my $c = shift;
-		return $self->{datetime}->{now} = DateTime->now(time_zone=>'local') if $c->app->mode eq 'production';
-		my $datetime = $c->session->{datetime} || $c->config->{datetime} || $ENV{"${moniker}_DATETIME"};
-		$self->{datetime}->{now} = $datetime ? DateTime::Format::DateParse->parse_datetime($datetime, 'local') : DateTime->now(time_zone=>'local');
-		$self->{datetime}->{now}->add(seconds=>time-$c->session->{start_time}) if $c->session->{start_time};
-		warn $self->{datetime}->{now} if !$ENV{MOJO_TEST};
-		$c->session->{start_time} = time if $datetime && !$c->session->{start_time};
-		return $self->{datetime}->{now};
-	});
 	$app->helper(datetime => sub {
 		my $c = shift;
-		my $datetime = shift;
-		return $self->{datetime}->{$datetime} ||= DateTime::Format::DateParse->parse_datetime($datetime, 'local') if $datetime;
-		return $self->{datetime}->{now};
+		my $dt = shift;
+		return $self->{datetime}->{$dt} ||= DateTime::Format::DateParse->parse_datetime($dt, 'local') if $dt;
+		my $datetime;
+		if ( $app->mode ne 'production' ) {
+			$datetime = $basedt->clone->add(seconds=>time-$start);
+			warn "FAKE: $datetime\n";
+		} else {
+			$datetime = DateTime->now(time_zone=>'local');
+			warn "REAL: $datetime\n";
+		}
+		return $self->{datetime}->{now} = $datetime;
 	});
 	$app->helper(datetime_mysql => sub {
 		my $c = shift;

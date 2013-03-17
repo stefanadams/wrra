@@ -388,6 +388,13 @@ sub cansell {
 	return 0 unless $self->timer;
 	my $mintimer = eval { $self->result_source->schema->config->{database}->{options}->{minimum_timer} } || (5 * MINUTES);
 	my $datetime = eval { $self->result_source->schema->controller->datetime->epoch } || time;
+warn Data::Dumper::Dumper({
+	datetime => $datetime,
+	timer => $self->timer->epoch,
+	mintimer => $mintimer,
+	'd-t' => $datetime - $self->timer->epoch,
+	'd-t > $m' => $datetime - $self->timer->epoch > $mintimer,
+});
 	return $datetime - $self->timer->epoch > $mintimer ? TRUE : FALSE;
 }
 

@@ -5,10 +5,8 @@ use Mojo::JSON;
 
 sub auction {
 	my $self = shift;
-	$ENV{DBIC_TRACE}=1;
 	my $auction = $self->memd || $self->memd($self->_auction);
 	$auction->{header}->{ad} = $self->_display_ad;
-	$ENV{DBIC_TRACE}=0;
 	$self->respond_to(
 		json => {json => $auction},
 	);
@@ -278,13 +276,13 @@ sub bid {
 		when ( 'auctioneers' ) {
 			$r = $self->db->resultset('Item')->find($id)->respond('newbid')->update;
 		}
-		when ( 'operators' ) {
+		when ( /^operators$|^admins$/ ) {
 			my $phone = $self->param('phone') or return $self->render_json({res=>'err'});
 			my $bidder_id = $self->param('bidder_id');
 			my $name = $self->param('name') or return $self->render_json({res=>'err'});
 			my $bid = $self->param('bid') or return $self->render_json({res=>'err'});
 			unless ( $bidder_id ) {
-				my $new_bidder = $self->db->resultset('Bidder')->create({name=>$name,phone=>$phone});
+				my $new_bidder = $self->db->resultset('Bidder')->create({year=>$self->datetime->year,name=>$name,phone=>$phone});
 				return $self->render_json({res=>'err'}) unless $bidder_id = $new_bidder->id;
 			}
 			$bid = $self->db->resultset('Bid')->create({item_id=>$id,bidder_id=>$bidder_id,bid=>$bid,bidtime=>$self->datetime_mysql}) or return return $self->render_json({res=>'err'});
@@ -301,6 +299,7 @@ sub bidder {
 	my $self = shift;
 	my $bidder_id = $self->param('id') or return $self->render_json({res=>'err'});
 	my $bidder = {
+		year => $self->datetime->year,
 		address => $self->param('address') || '',
 		city => $self->param('city') || '',
 		state => $self->param('state') || '',
