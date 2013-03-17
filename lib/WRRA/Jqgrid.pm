@@ -23,7 +23,6 @@ sub read {
 sub update {
 	my $self = shift;
 	$self->render_exception('Invalid update request') unless $self->param('oper') eq 'edit';
-warn $self->param('id'),"\n\n";
 	$self->respond_to(
 		json => {json => $self->jqgrid->update},
 	);
