@@ -52,8 +52,8 @@ function contextMenu(auction) {
                     callback: function(key, opt) {
 			var i = opt.$trigger.closest('tr').attr('key'); var row = auction.items.bidding[i];
                         switch ( key ) {
-                                case 'a': $.post('<%= url_for 'start' %>', {id: id, auctioneer: 'a'}, pc); break;
-                                case 'b': $.post('<%= url_for 'start' %>', {id: id, auctioneer: 'b'}, pc); break;
+                                case 'a': $.post('<%= url_for 'start' %>', {id: row.id, auctioneer: 'a'}, pc); break;
+                                case 'b': $.post('<%= url_for 'start' %>', {id: row.id, auctioneer: 'b'}, pc); break;
                         }
                     },
                     items: {
@@ -72,28 +72,26 @@ function contextMenu(auction) {
 		if ( auction.session.user.privs.admins ) {
 			return {
 			    callback: function(key, opt) {
-				var id = opt.$trigger.attr("itemid");
-				var pc = function(){processContent(1);};
-				processContent(0);
+				var i = opt.$trigger.closest('tr').attr('key'); var row = auction.items.bidding[i];
 				switch ( key ) {
-					case 'a':			$.post('<%= url_for 'start' %>', {id: id, auctioneer: 'a'}, pc); break;
-					case 'b':			$.post('<%= url_for 'start' %>', {id: id, auctioneer: 'b'}, pc); break;
-					case 'notify_starttimer':	$.post('<%= url_for 'timer', timer=>'start' %>', {id: id}, pc); break;
-					case 'notify_stoptimer':	$.post('<%= url_for 'timer', timer=>'stop' %>', {id: id}, pc); break;
-					case 'notify_sell':		$.post('<%= url_for 'sell' %>', {id: id}, pc); break;
-					case 'adjust_bid':		$.post('<%= url_for 'bid' %>', {id: id}, pc); break;
-					case 'adjust_bidder':		$.post('<%= url_for 'bidder' %>', {id: id}, pc); break;
+					case 'a':			$.post('<%= url_for 'start' %>', {id: row.id, auctioneer: 'a'}, pc); break;
+					case 'b':			$.post('<%= url_for 'start' %>', {id: row.id, auctioneer: 'b'}, pc); break;
+					case 'notify_starttimer':	$.post('<%= url_for 'timer', timer=>'start' %>', {id: row.id}, pc); break;
+					case 'notify_stoptimer':	$.post('<%= url_for 'timer', timer=>'stop' %>', {id: row.id}, pc); break;
+					case 'notify_sell':		$.post('<%= url_for 'sell' %>', {id: row.id}, pc); break;
+					case 'adjust_bid':		$.post('<%= url_for 'bid' %>', {id: row.id}, pc); break;
+					case 'adjust_bidder':		$.post('<%= url_for 'bidder' %>', {id: row.id}, pc); break;
 					case 'place_bid':		on_click_operator(key,opt,auction); break;
-					case 'retract_bid':		$.post('<%= url_for 'bid' %>', {id:id, retract:true}, pc); break;
-					case 'retract_item':		$.post('<%= url_for 'item' %>', {id:id, retract:true}, pc); break;
+					case 'retract_bid':		$.post('<%= url_for 'bid' %>', {id:row.id, retract:true}, pc); break;
+					case 'retract_item':		$.post('<%= url_for 'item' %>', {id:row.id, retract:true}, pc); break;
 				}
 			    },
 			    items: {
 				assign_auctioneer: {
 					name: "Re-assign Auctioneer",
 					items: {
-						a: {name: "A"},
-						b: {name: "B"},
+						a: {name: "A", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='a' ? true : false; }},
+						b: {name: "B", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='b' ? true : false; }},
 					},
 				},
 				"sep1": "---------",
@@ -107,43 +105,6 @@ function contextMenu(auction) {
 				place_bid: {name: "Place Bid"},
 				retract_bid: {name: "Clear Last Bid"},
 				retract_item: {name: "Retract Item Now"},
-			    }
-			    // there's more, have a look at the demos and docs...
-			};
-		} else if ( auction.session.user.privs.operators ) {
-			return {
-			    callback: function(key, opt) {
-				var id = opt.$trigger.attr("itemid");
-				var pc = function(){processContent(1);};
-				processContent(0);
-				switch ( key ) {
-					case 'place_bid':	on_click_operator(key,opt,auction); break;
-				}
-			    },
-			    items: {
-				place_bid: {name: "Place Bid"},
-			    }
-			};
-		} else if ( auction.session.user.privs.auctioneers ) {
-			return {
-			    callback: function(key, opt) {
-				var id = opt.$trigger.attr("itemid");
-				var pc = function(){processContent(1);};
-				processContent(0);
-				switch ( key ) {
-					case 'ack_newbid':	$.post('<%= url_for 'bid' %>', {id: id}, pc); break;
-					case 'starttimer':	$.post('<%= url_for 'timer', timer=>'start' %>', {id: id}, pc); break;
-					case 'stoptimer':	$.post('<%= url_for 'timer', timer=>'stop' %>', {id: id}, pc); break;
-					case 'sell':		$.post('<%= url_for 'sell' %>', {id: id}, pc); break;
-					case 'clear':		$.post('<%= url_for 'sell' %>', {id: id}, pc); break;
-				}
-			    },
-			    items: {
-				acknowledge_newbid: {name: "Acknowledge New Bid"},
-				start_timer: {name: "Start Timer"},
-				stop_timer: {name: "Stop Timer"},
-				sell: {name: "Sell Item"},
-				clear: {name: "Clear Item"},
 			    }
 			};
 		} else {

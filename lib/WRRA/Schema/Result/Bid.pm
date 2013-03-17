@@ -117,7 +117,7 @@ use DateTime;
 sub bidage {
 	my $self = shift;
 	return 'More than a day' if time-$self->bidtime->epoch > 60*60*24;
-	return join ':', map { sprintf '%02d', $_ } DateTime->now(time_zone=>'America/Chicago')->subtract_datetime($self->bidtime)->in_units(qw/hours minutes seconds/);
+	return join ':', map { sprintf '%02d', $_ } DateTime->now(time_zone=>'local')->subtract_datetime($self->bidtime)->in_units(qw/hours minutes seconds/);
 }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

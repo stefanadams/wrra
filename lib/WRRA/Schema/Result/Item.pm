@@ -288,6 +288,7 @@ __PACKAGE__->set_primary_key("item_id");
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MD3Lr7gfDDzIsTZ3RNU5qQ
 
 use 5.010;
+use Time::Seconds;
 
 #belongs to means the fk is in your own table, and might have/has_many/has_one means the fk points to you, and is in the other table
 __PACKAGE__->belongs_to(donor => 'WRRA::Schema::Result::Donor', 'donor_id', {join_type=>'left'}); # An Item belongs_to a Donor, join to Donor via donor_id
@@ -295,7 +296,15 @@ __PACKAGE__->belongs_to(stockitem => 'WRRA::Schema::Result::Stockitem', 'stockit
 __PACKAGE__->belongs_to(highbid => 'WRRA::Schema::Result::Bid', {'foreign.bid_id'=>'self.highbid_id'}, {join_type=>'left'}); # An Item belongs_to a particular highbid
 __PACKAGE__->has_many(bids => 'WRRA::Schema::Result::Bid', 'item_id', {join_type=>'left'}); # An Item has_many bids, join to Bid via item_id
 __PACKAGE__->many_to_many(bidders => 'bids', 'bidder'); # An Item is bid on by many Bidders, bridge to bidders via Bid's bidder
-
+__PACKAGE__->add_columns(
+	scheduled => {data_type => 'date', timezone => 'local'},
+	started => {data_type => 'datetime', timezone => 'local'},
+	timer => {data_type => 'datetime', timezone => 'local'},
+	sold => {data_type => 'datetime', timezone => 'local'},
+	cleared => {data_type => 'datetime', timezone => 'local'},
+	contacted => {data_type => 'datetime', timezone => 'local'},
+	paid => {data_type => 'datetime', timezone => 'local'},
+);
 sub id { shift->item_id }
 
 #sub itemcat {
@@ -355,7 +364,7 @@ sub nstatus {
 
 sub startbid {
 	my $self = shift;
-	my $startbid = eval { $self->schema->config->{database}->{options}->{starting_bid} } || [[(100 * DOLLARS) => (5 * DOLLARS)], [(250 * DOLLARS) => (50 * DOLLARS)], (100 * DOLLARS)];
+	my $startbid = eval { $self->result_source->schema->config->{database}->{options}->{starting_bid} } || [[(100 * DOLLARS) => (5 * DOLLARS)], [(250 * DOLLARS) => (50 * DOLLARS)], (100 * DOLLARS)];
 	foreach my $range ( sort { $a->[0] <=> $b->[0] } grep { ref eq 'ARRAY' } @$startbid ) {
 		return $range->[1] if ($self->value * DOLLARS) < ($range->[0] * DOLLARS);
 	}
@@ -364,8 +373,8 @@ sub startbid {
 
 sub minbid {
 	my $self = shift;
-	my $minbid_under = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || (5 * DOLLARS);
-	my $minbid_over = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || (1 * DOLLARS);
+	my $minbid_under = eval { $self->result_source->schema->config->{database}->{options}->{minimum_bid}->{under} } || (5 * DOLLARS);
+	my $minbid_over = eval { $self->result_source->schema->config->{database}->{options}->{minimum_bid}->{under} } || (1 * DOLLARS);
 	return $self->startbid unless $self->highbid;
 	return $self->startbid unless $self->highbid->bid;
 	return ($self->highbid->bid + ($minbid_under * DOLLARS)) if ($self->highbid->bid * DOLLARS) < ($self->value * DOLLARS);
@@ -374,10 +383,11 @@ sub minbid {
 
 sub cansell {
 	my $self = shift;
+	return 0 unless $self->highbid;
 	return 0 if $self->sold;
 	return 0 unless $self->timer;
-	my $mintimer = eval { $self->schema->config->{database}->{options}->{minimum_timer} } || (5 * MINUTES);
-	my $datetime = eval { $self->schema->controller->datetime->epoch } || time;
+	my $mintimer = eval { $self->result_source->schema->config->{database}->{options}->{minimum_timer} } || (5 * MINUTES);
+	my $datetime = eval { $self->result_source->schema->controller->datetime->epoch } || time;
 	return $datetime - $self->timer->epoch > $mintimer ? TRUE : FALSE;
 }
 
@@ -391,15 +401,17 @@ sub bellringer {
 sub runningtime {
 	my $self = shift;
 	return undef unless $self->started;
-	my $datetime = eval { $self->schema->controller->datetime->epoch } || time;
-	return ($datetime - $self->started->epoch) * MINUTES;
+	my $datetime = eval { $self->result_source->schema->controller->datetime->epoch } || time;
+	my $sec = Time::Seconds->new($datetime - $self->started->epoch);
+	return sprintf("%d:%02d:%02d", int($sec/3600), int($sec/60)%60, $sec%60);
 }
 
 sub timertime {
 	my $self = shift;
 	return undef unless $self->timer;
-	my $datetime = eval { $self->schema->controller->datetime->epoch } || time;
-	return ($datetime - $self->timer->epoch) * MINUTES;
+	my $datetime = eval { $self->result_source->schema->controller->datetime->epoch } || time;
+	my $sec = Time::Seconds->new($datetime - $self->timer->epoch);
+	return sprintf("%d:%02d:%02d", int($sec/3600), int($sec/60)%60, $sec%60);
 }
 
 #$r->notify;				returns list of set tags

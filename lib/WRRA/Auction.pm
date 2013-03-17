@@ -84,7 +84,7 @@ sub _items {
 				$_ = $self->_fakebidding($_);
 				$_->{bellringer} = $_->{bellringer} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{timer} = $_->{timer} ? Mojo::JSON->true : Mojo::JSON->false;
-				$_->{cansell} = $_->{cansel} ? Mojo::JSON->true : Mojo::JSON->false;
+				$_->{cansell} = $_->{cansell} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{scheduled} = $_->{scheduled} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{started} = $_->{started} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{sold} = $_->{sold} ? Mojo::JSON->true : Mojo::JSON->false;
@@ -156,7 +156,7 @@ sub _display_ad {
 sub _fakebidding {
 	my $self = shift;
 	my $row = shift;
-	return $row unless $self->app->mode eq 'developmen';
+	return $row unless $self->app->mode eq 'development' && $self->config->{fakebidding};
 	if ( int(rand(99)) < 25 ) {
 		$row->{nstatus} = 'Ready'; 
 	} elsif ( int(rand(99)) < 25 ) {
