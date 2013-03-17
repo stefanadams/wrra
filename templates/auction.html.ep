@@ -6,6 +6,7 @@
 
 <!-- <META HTTP-EQUIV="refresh" content="120;URL=<%= url_for %>"> -->
 
+<link href='http://fonts.googleapis.com/css?family=Tinos' rel='stylesheet' type='text/css'>
 <link   rel="stylesheet" type="text/css" media="screen" href="/css/main.css" />
 <link   rel="stylesheet" type="text/css" media="screen" href="/css/jquery.contextMenu.css" />
 <link   href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/themes/base/jquery-ui.css" type="text/css" rel="stylesheet" media="all" />
@@ -22,46 +23,77 @@
 
 
 <script type="text/javascript">
+localStorage['stop_error_pause'] = 0;
 localStorage['allowHumanMsg'] = 1;
 var alert;
 var alert_msg;
 
+function get_row(elem, auction, table) {
+    var i = elem.closest('tr').attr('key');
+    var row = auction.items[table][i];
+    console.log(row);
+    return row;
+}
+
 function contextMenu(auction) {
-	if ( !auction.session.user.role ) {
-		$.contextMenu( 'destroy' );
+	if ( !auction.session.user.privs ) {
+		$('.context-item').contentMenu(false);
+		//$.contextMenu( 'destroy' );
 		return true;
 	}
 	console.log('cm', auction.session.user.role);
 	$.contextMenu({
 	    // define which elements trigger this menu
-	    selector: ".context-item",
+	    selector: ".ci-re-assign",
+	    trigger: 'hover',
+	    delay: 200,
+	    // define the elements of the menu
+	    build: function($trigger, e) {
+		$trigger.contextMenu(true);
+                return {
+                    callback: function(key, opt) {
+			var i = opt.$trigger.closest('tr').attr('key'); var row = auction.items.bidding[i];
+                        switch ( key ) {
+                                case 'a': $.post('<%= url_for 'start' %>', {id: row.id, auctioneer: 'a'}, pc); break;
+                                case 'b': $.post('<%= url_for 'start' %>', {id: row.id, auctioneer: 'b'}, pc); break;
+                        }
+                    },
+                    items: {
+                        a: {name: "Re-assign to A", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='a' ? true : false; }},
+                        b: {name: "Re-assign to B", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='b' ? true : false; }},
+                    }
+                };
+            }
+        });
+	$.contextMenu({
+	    // define which elements trigger this menu
+	    selector: ".ci-admins",
 	    // define the elements of the menu
 	    build: function($trigger, e) {
 		$trigger.contextMenu(true);
 		if ( auction.session.user.privs.admins ) {
 			return {
 			    callback: function(key, opt) {
-				var id = opt.$trigger.attr("itemid");
-				var pc = function(){processContent(1);};
-				processContent(0);
+				var i = opt.$trigger.closest('tr').attr('key'); var row = auction.items.bidding[i];
 				switch ( key ) {
-					case 'a':			$.post('<%= url_for 'assign' %>/'+id+'/a', pc); break;
-					case 'b':			$.post('<%= url_for 'assign' %>/'+id+'/b', pc); break;
-					case 'notify_starttimer':	$.post('<%= url_for 'notify' %>/timer/'+id+'/1', pc); break;
-					case 'notify_sell':		$.post('<%= url_for 'notify' %>/sell/'+id+'/1', pc); break;
-					case 'adjust_bid':		$.post('<%= url_for 'update_bid' %>', { celname:"bid","bid":"1","id":id}, pc); break;
-					case 'adjust_bidder':		$.post('<%= url_for 'update_bidder' %>', { celname:"bidder.name","bidder.name":"A","id":id}, pc); break;
+					case 'a':			$.post('<%= url_for 'start' %>', {id: row.id, auctioneer: 'a'}, pc); break;
+					case 'b':			$.post('<%= url_for 'start' %>', {id: row.id, auctioneer: 'b'}, pc); break;
+					case 'notify_starttimer':	$.post('<%= url_for 'timer', timer=>'start' %>', {id: row.id}, pc); break;
+					case 'notify_stoptimer':	$.post('<%= url_for 'timer', timer=>'stop' %>', {id: row.id}, pc); break;
+					case 'notify_sell':		$.post('<%= url_for 'sell' %>', {id: row.id}, pc); break;
+					case 'adjust_bid':		$.post('<%= url_for 'bid' %>', {id: row.id}, pc); break;
+					case 'adjust_bidder':		$.post('<%= url_for 'bidder' %>', {id: row.id}, pc); break;
 					case 'place_bid':		on_click_operator(key,opt,auction); break;
-					case 'retract_bid':		$.post('<%= url_for 'retract' %>/bid/'+id, pc); break;
-					case 'retract_item':		$.post('<%= url_for 'retract' %>/item/'+id, pc); break;
+					case 'retract_bid':		$.post('<%= url_for 'bid' %>', {id:row.id, retract:true}, pc); break;
+					case 'retract_item':		$.post('<%= url_for 'item' %>', {id:row.id, retract:true}, pc); break;
 				}
 			    },
 			    items: {
 				assign_auctioneer: {
 					name: "Re-assign Auctioneer",
 					items: {
-						a: {name: "A"},
-						b: {name: "B"},
+						a: {name: "A", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='a' ? true : false; }},
+						b: {name: "B", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='b' ? true : false; }},
 					},
 				},
 				"sep1": "---------",
@@ -75,43 +107,6 @@ function contextMenu(auction) {
 				place_bid: {name: "Place Bid"},
 				retract_bid: {name: "Clear Last Bid"},
 				retract_item: {name: "Retract Item Now"},
-			    }
-			    // there's more, have a look at the demos and docs...
-			};
-		} else if ( auction.session.user.privs.operators ) {
-			return {
-			    callback: function(key, opt) {
-				var id = opt.$trigger.attr("itemid");
-				var pc = function(){processContent(1);};
-				processContent(0);
-				switch ( key ) {
-					case 'place_bid':	on_click_operator(key,opt,auction); break;
-				}
-			    },
-			    items: {
-				place_bid: {name: "Place Bid"},
-			    }
-			};
-		} else if ( auction.session.user.privs.auctioneers ) {
-			return {
-			    callback: function(key, opt) {
-				var id = opt.$trigger.attr("itemid");
-				var pc = function(){processContent(1);};
-				processContent(0);
-				switch ( key ) {
-					case 'ack_newbid':	$.post('<%= url_for 'newbid' %>/'+id+'/0', pc); break;
-					case 'starttimer':	$.post('<%= url_for 'starttimer' %>/'+id, pc); break;
-					case 'stoptimer':	$.post('<%= url_for 'stoptimer' %>/'+id, pc); break;
-					case 'sell':		$.post('<%= url_for 'sell' %>/'+id, pc); break;
-					case 'clear':		$.post('<%= url_for 'clear' %>/'+id+'/0', pc); break;
-				}
-			    },
-			    items: {
-				acknowledge_newbid: {name: "Acknowledge New Bid"},
-				start_timer: {name: "Start Timer"},
-				stop_timer: {name: "Stop Timer"},
-				sell: {name: "Sell Item"},
-				clear: {name: "Clear Item"},
 			    }
 			};
 		} else {
@@ -128,11 +123,29 @@ function contextMenu(auction) {
 	});
 }
 
+function pc() { processContent(2); }
 function processContent(value) {
+	if ( value == 'pause' ) {
+		var t = new Date().getTime() - localStorage['stop_error_pause'];
+console.log('pause: '+t);
+		if ( t > 500 ) {
+			console.log('real pause');
+//			processContent(0);
+		}
+		return true;
+	}
+	if ( value == 'resume' ) {
+console.log('resume');
+		localStorage['stop_error_pause'] = new Date().getTime();
+//		setTimeout(processContent(1), 6000);
+		return true;
+	}
 	if ( value == 2 ) {
 		$("#content").processTemplateStop();
+		value=1;
 	}
-	if ( value ) {
+	if ( value == 1 ) {
+		$.contextMenu( 'destroy' );
 		$("#content").processTemplateStart("<%= url_for 'auction' %>", null, <%= app->config->{refresh}->{content} || 10000 %>, null, {
 			type: 'GET',
 			headers: {Accept: 'application/json'},
@@ -165,13 +178,80 @@ function processContent(value) {
 				$("table.setalert span.alert").click(function(){on_click_alert(auction)});
 				$("#clearalert").click(function(){on_click_clearalert(auction)});
 				$("#register").click(function(){on_click_register(auction)});
-				if ( auction.session.user.privs.operators ) {
+				if ( auction.session.user.privs.admins ) {
+                                        $(".start-a").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.ready[i];
+                                            $.post('<%= url_for 'start' %>', {id: row.id, auctioneer: 'a'}, function(){ processContent(2); });
+                                        });
+                                        $(".start-b").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.ready[i];
+                                            $.post('<%= url_for 'start' %>', {id: row.id, auctioneer: 'b'}, function(){ processContent(2); });
+                                        });
+                                        $(".starttimer").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'timer', timer=>'start' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".stoptimer").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'timer', timer=>'stop' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".holdover").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'holdover' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".sell").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'sell' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+					$(".item-number").click(function(){on_click_operator('', $(this), auction)});
+				} else if ( auction.session.user.privs.auctioneers ) {
+                                        $(".start").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.ondeck[i];
+                                            $.post('<%= url_for 'start' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".newbid").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'bid' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".starttimer").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'timer', timer=>'start' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".stoptimer").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'timer', timer=>'stop' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".holdover").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'holdover' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".sell").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'sell' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+                                        $(".clear").click(function(){
+                                            var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                            $.post('<%= url_for 'sell' %>', {id: row.id}, function(){ processContent(2); });
+                                        });
+				} else if ( auction.session.user.privs.operators ) {
 					$(".item-number").click(function(){on_click_operator('', $(this), auction)});
 				} else if ( auction.session.user.role ) {
 					$(".item-number").click(function(){on_click_bid(auction)});
 				}
 				$("#login").click(function(){on_click_login(auction)});
 				$("#logout").click(function(){on_click_logout(auction)});
+
+				if ( auction.session.user.role=='auctioneer' && auction.session.user.name!="auctioneer" ) $('img.auctioneer').hide(); else $('img.auctioneer').show();
+                                $(".bidhistory").click(function(){
+                                    var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                    $.get('<%= url_for 'bidhistory' %>', {id:row.id}, function(data){
+					var hist = '';
+                                        data.forEach(function(a,b){
+                                            hist = hist + a.bidder.name+" ("+a.bid+")<br />\n";
+                                        });
+                                        $.dialog_alert(hist, "Bid History");
+                                    });
+                                });
 
 				// Items
 				//if (!!$(this).attr('item') && $(this).find('span.truncate').html().length > $(this).find('span.truncate').attr("length")){content.push($(this).attr('item'));}
@@ -184,9 +264,9 @@ function processContent(value) {
 						var more = text;
 						$(this).click(function(){$.dialog_alert(more, 'More...');});
 						if ( len > 0 ) {
-							text = text.substring(0,len)+'... <img src="img/paper1.gif" alt="'+text+'"/>';
+							text = text.substring(0,len)+'... <img src="img/info.png" alt="'+text+'"/>';
 						} else {
-							text = '<img src="img/paper1.gif" alt="'+text+'"/>';
+							text = '<img src="img/info.png" alt="'+text+'"/>';
 						}
 					}
 					$(this).html(text);
@@ -205,6 +285,15 @@ function processContent(value) {
 					}
 				);
 
+				// Apply a "Start Now" button to the On Deck table for auctioneers
+				$('table.ondeck img.start').click(function(){
+					var i = $(this).closest('tr').attr('key');
+					var row = auction.items.ondeck[i];
+					$.post('<%= url_for 'start' %>', {id:row.id}, function(){
+						processContent(2);
+					});
+				});
+
 //				$('#items tbody tr[timer="true"]').css('background-color', 'yellow');
 //				$('#items tbody tr[sold="true"]').css('background-color', '#414794');
 //				$('#items tbody img[notify="timer"]').each(function(){processContent(0);$(this).click(function(){$.post('<%= url_for 'starttimer' %>'+$(this).attr('title'), function(){processContent(1);});});});
@@ -213,7 +302,9 @@ function processContent(value) {
 
 				$( document ).tooltip({
 				      items: "img, [pic], [title]",
-				      content: function() {
+				      open: function(e,ui){ return processContent('pause'); },
+				      close: function(e,ui){ return processContent('resume'); },
+				      content: function(callback) {
 					  var element = $( this );
 					  if ( element.is( "[pic]" ) ) {
 					      var text = element.attr('text');
@@ -239,8 +330,10 @@ function processContent(value) {
 				contextMenu(auction);
 			}
 		});
-	} else {
+	} else if ( value == 0 ) {
 		$("#content").processTemplateStop();
+	} else {
+		processContent(2);
 	}
 }
 
@@ -258,24 +351,88 @@ function on_click_paypal(auction) {
 		height: 320,
 		width: 380,
 		modal: true,
-		close: refreshTimer(1)
+		position: {my: "center top", at: "bottom", of: "#headergroup"},
+		open: function() {
+			$('#dialog-paypal-form input').val('');
+			$('#dialog-paypal-form input[name="os0"]').mask("999?9");
+			$('#dialog-paypal-form input[name="os5"]').mask("99999?-9999");
+			$(this).keypress(function(e) {
+			    if (e.keyCode == $.ui.keyCode.ENTER) {
+				//console.log('You pressed enter!');
+				$(".ui-dialog:visible").find('.ui-dialog-buttonpane').find('button:first').click();
+			    }
+			});
+		},
+		buttons: {
+			"Pay Now": function(){
+				var t = $(this);
+				t.dialog("disable"); 
+				t.dialog({title: 'Connecting to Paypal...'});
+				if ( $('#dialog-paypal-form').valid() ) {
+					$.post('<%= url_for 'bidder' %>', {id:$('#paypal-bidder_id').val()}, {
+						item_id: $('#paypal-item_id').val(),
+						address: $('#paypal-os1').val(),
+						city: $('#paypal-os2').val(),
+						state: $('#paypal-os4').val(),
+						zip: $('#paypal-os5').val()
+					}, function(data){
+						if ( data.res == 'ok' ) {
+							$('#dialog-paypal-form').submit();
+						} else {
+							t.dialog("disable"); 
+							t.dialog({title: 'Identify yourself'});
+						}
+					});
+				}
+			},
+			Cancel: function(){$(this).dialog("close");}
+		},
+		close: function(){
+			$('#dialog-paypal-form input').val('');
+			refreshTimer(1);
+		}
 	});
+	//$("#dialog-login-title").html("Identify yourself.");
 	$("#dialog-paypal").dialog("open");
 	$("#paypal-os0").autocomplete({
 		source: "<%= url_for 'ac_pay_number' %>",
 		minLength: 3,
 		select: function(event, ui){
 			if (ui.item){
+				$('#paypal-bidder_id').val(ui.item.highbid.bidder.id);
+				$('#paypal-item_id').val(ui.item.id);
 				$('#paypal-name').val(ui.item.name);
-				$('#paypal-os1').val(ui.item.address);
-				$('#paypal-os2').val(ui.item.csz);
+				$('#paypal-os1').val(ui.item.highbid.bidder.address);
+				if ( ui.item.highbid.bidder.city ) {
+					$('#paypal-os2').val(ui.item.highbid.bidder.city);
+					$('#paypal-os4').val(ui.item.highbid.bidder.state);
+					$('#paypal-os5').val(ui.item.highbid.bidder.zip);
+				}
 			}
-		}
+		},
+                response: function(event, ui) {
+                    // ui.content is the array that's about to be sent to the response callback.
+                    if (ui.content.length === 0) {
+                        $("#paypal-empty-message").show().text("No results found, but you may still proceed.").delay(3000).hide('highlight');
+                    } else {
+                        $("#paypal-empty-message").empty();
+                    }
+                }
 	}).data( "ui-autocomplete" )._renderItem = function( ul, item ) {
 	      return $( "<li>" )
 		.append( "<a>" + item.label + " : " + item.desc + "</a>" )
 		.appendTo( ul );
 	};
+	$("#paypal-os2").autocomplete({
+		source: "<%= url_for 'ac_city' %>",
+		minLength: 2,
+		select: function(event, ui){
+                        if (ui.item){
+                                $('#paypal-os4').val(ui.item.state);
+                                $('#paypal-os5').val(ui.item.zip);  
+                        }
+		},
+	});
 }
 
 function on_click_clearalert(auction){
@@ -300,11 +457,12 @@ function on_click_alert(auction){
 		height: 240,
 		width: 520,
 		modal: true,
+		position: {my: "center top", at: "bottom", of: "#headergroup"},
 		buttons: {
 			"Send Alert": function() {
 				$("#alert-set-alert").removeClass("ui-state-error");
 				$("#alert-set-msg").removeClass("ui-state-error");
-				$.post('<%= url_for 'alert' %>/'+$('input[name="alert-set-alert"]:checked').val(), {msg: $("#alert-set-msg").val()}, function(data){
+				$.post('<%= url_for 'alert' %>', {alert: $('input[name="alert-set-alert"]:checked').val(), msg: $("#alert-set-msg").val()}, function(data){
 					processContent(2);
 /*
 					if ( data.msg ) {
@@ -334,35 +492,22 @@ function on_click_alert(auction){
 }
 
 function on_click_operator(key, opt, auction) {
-	var item_id, number, minbid, highbid, status, nstatus, timer, bellringer;
 	if ( key ) {
-		console.log(key, opt.$trigger.attr("itemid"));
-		item_id=opt.$trigger.attr('itemid');
-		number=opt.$trigger.attr('number');
-		minbid=opt.$trigger.attr('minbid');
-		highbid=opt.$trigger.attr('highbid');
-		nstatus=opt.$trigger.attr('nstatus');
-		timer=opt.$trigger.attr('timer');
-		bellringer=opt.$trigger.attr('bellringer');
+		var i = opt.$trigger.closest('tr').attr('key');
 	} else {
-		console.log(opt.attr('itemid'));
-		item_id=opt.attr('itemid');
-		number=opt.attr('number');
-		minbid=opt.attr('minbid');
-		highbid=opt.attr('highbid');
-		nstatus=opt.attr('nstatus');
-		timer=opt.attr('timer');
-		bellringer=opt.attr('bellringer');
+		var i = opt.closest('tr').attr('key');
 	}
-	console.log('operator', nstatus, status);
+	var row = auction.items.bidding[i];
+	console.log('operator', row.nstatus, row.status);
 	refreshTimer(0);
 	$("#dialog-operator").dialog({
 		autoOpen: false,
 		height: 218,
 		width: 350,
 		modal: true,
+		position: {my: "center top", at: "bottom", of: "#headergroup"},
 		open: function() {
-			$('#dialog-operator-form input[name=operator-bid]').val(minbid);
+			$('#dialog-operator-form input[name=operator-bid]').val(row.minbid);
 			$('#dialog-operator-form input[name=operator-phone]').mask("(999) 999-9999");
 			$(this).keypress(function(e) {
 			    if (e.keyCode == $.ui.keyCode.ENTER) {
@@ -378,7 +523,7 @@ function on_click_operator(key, opt, auction) {
 				this_bid.dialog({title: 'Bid...'});
 				if ( $('#dialog-operator-form').valid() ) {
 					console.log('AAA');
-                                        $.post('<%= url_for 'bid' %>/'+item_id, {phone: $('#operator-phone').val(), name: $('#operator-name').val(), bid: $('#operator-bid').val(), approve: 1}, function(data){
+                                        $.post('<%= url_for 'bid' %>', {id:row.id, bidder_id: $('#operator-bidder_id').val(), phone: $('#operator-phone').val(), name: $('#operator-name').val(), bid: $('#operator-bid').val(), approve: 1}, function(data){
                                                 //$.post('/api/approve/'+data.request.request_id+'/1', function(){
                                                 //	$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
                                                 //	processContent(0);
@@ -401,11 +546,11 @@ function on_click_operator(key, opt, auction) {
 			refreshTimer(0);
 		}
 	});
-	$("#dialog-operator-title").html("Bid on item "+number+" (Minimum: "+minbid+")");
-	if ( nstatus == "Bidding" ) {
+	$("#dialog-operator-title").html("Bid on item "+row.number+" (Minimum: "+row.minbid+")");
+	if ( row.nstatus == "Bidding" ) {
 		$("#dialog-operator").dialog("open");
 	} else {
-		$.dialog_alert(nstatus, "Closed!");
+		$.dialog_alert(row.nstatus, "Closed!");
 	}
 
 	$("#operator-name").autocomplete({
@@ -415,7 +560,7 @@ function on_click_operator(key, opt, auction) {
 			event.preventDefault;
 			if (ui.item){
 				$('#operator-phone').val(ui.item.phone);
-				$('#operator-bidderid').val(ui.item.id);
+				$('#operator-bidder_id').val(ui.item.id);
 			}
 		}
         }).data( "ui-autocomplete" )._renderItem = function( ul, item ) {
@@ -462,6 +607,7 @@ function on_click_login(auction) {
 		height: 218,
 		width: 350,
 		modal: true,
+		position: {my: "center top", at: "bottom", of: "#headergroup"},
 		open: function() {
 			$('form[name=login] input[name="login-phone"]').mask("9999");
 			$(this).keypress(function(e) {
@@ -476,20 +622,22 @@ function on_click_login(auction) {
 				var t = $(this);
 				t.dialog("disable"); 
 				t.dialog({title: 'Identifying...'});
-				$.post('<%= url_for 'login' %>', {username: $('#login-username').val(), phone: $('#login-phone').val()}, function(data){
-					if ( data.res == 'ok' ) {
-						processContent(2);
-						if ( data.user.privs.admins ) {
-							$('#stats').show();
+				if ( $('#dialog-login-form').valid() ) {
+					$.post('<%= url_for 'login' %>', {username: $('#login-username').val(), phone: $('#login-phone').val()}, function(data){
+						if ( data.res == 'ok' ) {
+							processContent(2);
+							if ( data.user.privs.admins ) {
+								$('#stats').show();
+							} else {
+								$('#stats').hide();
+							}
+							t.dialog("close");
 						} else {
-							$('#stats').hide();
+							t.dialog("disable"); 
+							t.dialog({title: 'Identify yourself'});
 						}
-						t.dialog("close");
-					} else {
-						t.dialog("disable"); 
-						t.dialog({title: 'Identify yourself'});
-					}
-				});
+					});
+				}
 			},
 			Cancel: function(){$(this).dialog("close");}
 		},
@@ -544,8 +692,10 @@ function on_click_bid(auction){
 
 function refreshTimer (value) {
 	if ( value ) {
+		console.log('Start Page Refresh Timer');
 		localStorage['refresh_timer'] = setTimeout(function(){location.reload(true);}, <%= app->config->{refresh}->{page} || 120000 %>);
 	} else {
+		console.log('Cancel Page Refresh Timer');
 		window.clearInterval(localStorage['refresh_timer']);
 	}
 }
@@ -557,6 +707,14 @@ $(document).ready(function(){
 		//contentType: 'application/json',
 		headers: {Accept: 'application/json'},
 	});
+	$(document).ajaxComplete(function(event, request, settings) {
+		if ( request.status >= 400 ) {
+			refreshTimer(0);
+			$( "#bodygroup" ).empty().append( "<li>Oops!</li>" );
+		} else if ( !localStorage['refresh_timer'] ) {
+			refreshTimer(1)
+		}
+	});
 
 	$.extend({ dialog_alert: function (message, title) {
 	  $("<div></div>").dialog( {
@@ -565,7 +723,7 @@ $(document).ready(function(){
 	    resizable: false,
 	    title: title,
 	    modal: true
-	  }).text(message);
+	  }).html(message);
 	}
 	});
 
@@ -608,7 +766,7 @@ $(document).ready(function(){
 									<span class="title">{$T.header.about.name} {$T.header.about.year} {$T.header.about.night?", Night " + $T.header.about.night:''} {$T.header.about.live?'':' (Offline)'}</span>
 								{#else}
 									<span class="title">{$T.header.about.name} -- Closed</span>
-									<img class="arrowsep" src="img/right_arrow_button.gif" />
+									<img class="arrowsep" src="img/arrow-right.png" />
 									<span class="reopens">Re-opens {$T.header.about.date_next}</span>
 								{#/if}
 								</div>
@@ -630,7 +788,7 @@ $(document).ready(function(){
 												{#/foreach}
 											</span>
 										</span>
-										<img class="arrowsep" src="img/right_arrow_button.gif" />
+										<img class="arrowsep" src="img/arrow-right.png" />
 										<span class="bid">Bid:
 											<span class="phone">
 												{#foreach $T.header.play.bid.phone as phone}
@@ -644,7 +802,7 @@ $(document).ready(function(){
 											<span class="chat"><a class="mast" href="http://dev.washingtonrotary.com/rra/mibew/client.php?locale=en&style=simplicit" id="livechat">Web Chat</a>
 											</span>
 										</span>
-										<img class="arrowsep" src="img/right_arrow_button.gif" />
+										<img class="arrowsep" src="img/arrow-right.png" />
 										{#/if}
 										<span class="pay">Pay:
 											<a id="paypal" class="modal">PayPal</a>
@@ -661,8 +819,8 @@ $(document).ready(function(){
 							<table class="ad">
 								<tr>
 									<td class="ad">
-										{#if $T.header.ads.ad.ad_id && $T.header.ads.ad.img}
-											<a href="<%= url_for 'ad' %>/{$T.header.ads.ad.ad_id}" target="_new"><img src="{$T.header.ads.ad.img}" border="0" alt="Click here to support our sponsor -- {$T.header.ads.ad.advertiser.name}<br><br>{$T.header.ads.ad.advertiser.advertisement||''}" /></a>
+										{#if $T.header.ad.ad_id && $T.header.ad.img}
+											<a href="<%= url_for 'ad' %>/{$T.header.ad.ad_id}" target="_new"><img src="{$T.header.ad.img}" border="0" alt="Click here to support our sponsor -- {$T.header.ad.advertiser.name}<br><br>{$T.header.ad.advertiser.advertisement||''}" /></a>
 										{#else}
 											<a href="<%= app->config->{default_ad}->{url} %>" target="_new"><img src="/ads/<%= app->config->{default_ad}->{img} %>" border="0" /></a>
 										{#/if}
@@ -687,11 +845,11 @@ $(document).ready(function(){
 					<form>
 					<fieldset>
 						<label for="alert">Send Alert To</label>
-						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="admin"/>Admins
-						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="operator"/>Operators
-						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="auctioneer"/>Auctioneers
-						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="caller"/>Callers
-						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="bellringer"/>Bellringers
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="admins"/>Admins
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="operators"/>Operators
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="auctioneers"/>Auctioneers
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="callers"/>Callers
+						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="bellringers"/>Bellringers
 						<input type="radio" name="alert-set-alert" class=" ui-widget-content ui-corner-all" value="public"/>Public
 						<label for="msg">Message</label>
 						<input type="text" name="alert-set-msg" id="alert-set-msg" class="text ui-widget-content ui-corner-all" />
@@ -710,37 +868,42 @@ $(document).ready(function(){
 		</div>
 		<div id="bodygroup">
 			<div id="items">
-				{#if $T.items}
-					<table id='itemsbidding' class="items bidding tablesorter">
+			{#if $T.items}
+				{#if $T.items.bidding}
+					<table id='bidding' class="items bidding tablesorter">
 						<thead>
 						<tr>
-							<th>Item</th><th>Value</th><th>High&nbsp;Bid</th><th>High Bidder</th><th>Donor</th><th>Message</th>
+							<th>Item</th><th>Value</th><th>High&nbsp;Bid</th><th>High Bidder</th>{#if $T.session.user.privs.auctioneers}<th>Actions</th>{#/if}<th>Donor</th><th>Message</th>
 						</tr>
 						</thead>
 						<tbody>
-						{#foreach $T.items as r}
-							<tr id="tr_{$T.r.id}" class="context-item {#if $T.r.timer && !$T.r.sold}timer{#/if} {#if $T.r.sold}sold{#/if}" itemid="{$T.r.id}" sold="{$T.r.sold}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}">
+						{#foreach $T.items.bidding as r}
+							<tr id="tr_{$T.r.id}" key="{$T.r$key}" class="context-item {#if $T.r.timer && !$T.r.sold}timer{#/if} {#if $T.r.sold}sold{#/if}" item_id="{$T.r.id}" sold="{$T.r.sold}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}">
 								<td col="item" class=tooltip item="{$T.r.name}" description="{$T.r.description}" img="{$T.r.img}">
 									<div col="item">
 									<div style="float:left;width:80%">
-									{#if $T.r.auctioneer}<img src="img/{$T.r.auctioneer}.gif" />{#/if}
+									{#if $T.r.auctioneer}
+										{#if ($T.session.user.role=="auctioneers" && $T.session.user.name=="auctioneer") || $T.session.user.role!="auctioneers"}
+										<img class="auctioneer context-item {#if $T.session.user.privs.admins}ci-re-assign{#/if}" src="img/{$T.r.auctioneer}.png" />
+										{#/if}
+									{#/if}
 									{#if $T.session.user.privs.operators}
-										<a id="operator-{$T.r.id}" title="Place Bid" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+										<a id="operator-{$T.r.id}" title="Place Bid" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#elseif $T.session.user.privs.auctioneers}
-										<a id="auctioneer-{$T.r.id}" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+										<a id="auctioneer-{$T.r.id}" class="{#if $T.r.notify.newbid}newbid{#/if}" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#elseif $T.session.user.name}
-										<a id="bid-{$T.r.id}" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+										<a id="bid-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#else}
 										<span class="item number">{$T.r.number}</span><span class="item">:</span>
 									{#/if}
 									{#if 0 && $T.r.url}<a class="itemurl" href="{$T.r.url}" target="_new">{#/if}
-									<span class="truncate" length="70">{$T.r.nstatus} {$T.r.name}</span>
+									<span class="truncate" length="70">{$T.r.name}</span>
 									{#if 0 && $T.r.url}</a>{#/if}
 									</div>
 									<div style="float:right;width:20%;text-align:right">
 									{#if $T.r.description}<span class="truncate" length="0">{$T.r.description}</span>{#/if}
-									{#if $T.r.url}<a href="{$T.r.url}" target="_new"><img src="img/chain1.png" style="border-style: none" title="Visit the product website of Item #{$T.r.number}"/></a>{#/if}
-									{#if $T.r.img}<a href="{$T.r.img}" target="_new"><img src="img/attach_image.gif" text="{$T.r.img}" pic="pic" /></a>{#/if}
+									{#if $T.r.url}<a href="{$T.r.url}" target="_new"><img src="img/link.png" style="border-style: none" title="Visit the product website of Item #{$T.r.number}"/></a>{#/if}
+									{#if $T.r.img}<a href="{$T.r.img}" target="_new"><img src="img/picture.png" text="{$T.r.img}" pic="pic" /></a>{#/if}
 									</div>
 									</div>
 								</td>
@@ -751,15 +914,7 @@ $(document).ready(function(){
 									</div>
 									<div style="float:right;width:20%;text-align:right">
 									{#if !$T.r.sold}
-									{#if $T.session.user.privs.admins || $T.session.user.privs.auctioneers}
-										{#if $T.r.timer}
-											<img src="img/timer-on.gif" title="Running Time: {$T.r.runningtime}<br>Timer Time: {$T.r.timertime}"/>
-										{#elseif $T.r.notifications.starttimer}
-											<img src="img/timer-request.gif" title="Running Time: {$T.r.runningtime}"/>
-										{#/if}
-									{#else}
-										{#if $T.r.timer}<img src="img/timer-on.gif" title="Running Time: {$T.r.runningtime}<br>Timer Time: {$T.r.timertime}"/>{#/if}
-									{#/if}
+										{#if $T.r.timer}<img src="img/timer.png" title="Running Time: {$T.r.runningtime}<br>Timer Time: {$T.r.timertime}"/>{#/if}
 									{#/if}
 									</div>
 									</div>
@@ -770,31 +925,56 @@ $(document).ready(function(){
 									<span class="currency">{$T.r.highbid.bid}</span>
 									</div>
 									<div style="float:right;width:20%;text-align:right">
-									{#if $T.r.notify.newbid}<img src="img/paddle1.gif" title="New Bid"/>{#/if}
-									{#if $T.r.bellringer}<img src="img/bell2.png" title="Bell Ringer"/>{#/if}
+									{#if $T.r.bellringer}<img src="img/bell.png" title="Bell Ringer"/>{#/if}
+									{#if $T.r.notify.newbid}<img class="{#if $T.session.user.privs.auctioneers}newbid{#/if}" src="img/newbid.png" title="New Bid"/>{#/if}
 									</div>
 									</div>
 								</td>
-								<td col="bidder">
+								<td col="bidder" class="bidhistory">
 									<div style="margin:0 auto;">
 									<div col="bidder" style="margin:0 auto; width: 141px;">
 									<div style="float: left; width: 80%;">
 									<span class="bidder">{$T.r.highbid.bidder.name}</span>
 									</div>
 									<div style="float:right;width:20%; text-align:left;">
-									{#if $T.session.user.privs.admins || $T.session.user.privs.auctioneers}
+									{#if $T.session.user.privs.auctioneers}
 										{#if $T.r.sold}
-											<img src="img/sold.gif" ack="sold"/>
+											<img src="img/sell-sold.png" ack="sold"/>
 										{#elseif $T.r.notifications.sell}
-											<img src="img/sell.gif" />
+											<img src="img/sell-requested.png" />
 										{#/if}
 									{#else}
-										{#if $T.r.timer}<img src="img/sold.gif" />{#/if}
+										{#if $T.r.sold}<img src="img/sell-sold.png" />{#/if}
 									{#/if}
 									</div>
 									</div>
 									</div>
 								</td>
+								{#if $T.session.user.privs.auctioneers}
+								<td col="actions">
+									{#if $T.session.user.privs.admins}
+                                                                                {#if $T.r.notify.sell}
+                                                                                        {#if $T.r.cansell}<img src="img/sell-requested.png" alt="Sale Requested">{#/if}
+                                                                                {#elseif !$T.r.notify.sell && $T.r.cansell}
+                                                                                        <img class="sell" src="img/sell-request.png" alt="Request to Sell">
+                                                                                {#elseif $T.r.notify.starttimer && !$T.r.timer}
+                                                                                        <img src="img/timer-requested.png" alt="Timer Requested">
+                                                                                {#elseif !$T.r.notify.starttimer && !$T.r.timer}
+                                                                                        <img class="starttimer" src="img/timer-request.png" alt="Request to Start Timer">
+                                                                                {#/if}
+									{#else}
+                                                                                {#if $T.r.sold}
+                                                                                        <img class="clear" src="img/clear.png" alt="Clear Item from Board">
+                                                                                {#elseif $T.r.notify.sell}
+											{#if $T.r.cansell}<img class="sell" src="img/sell-request.png" alt="Sell Item Now">{#/if}
+                                                                                {#elseif $T.r.notify.holdover}
+                                                                                        <img class="holdover" src="img/star1.gif" alt="Announce to Hold Over">
+                                                                                {#elseif $T.r.notify.starttimer}
+                                                                                        <img class="starttimer" src="img/timer-request.png" alt="Start Timer Now">
+                                                                                {#/if}
+									{#/if}
+								</td>
+								{#/if}
 								<td col="donor">
 									<div col="donor">
 									<div style="float:left;width:80%">
@@ -803,32 +983,134 @@ $(document).ready(function(){
 									{#if 0 && $T.r.donor.url}</a>{#/if}
 									</div>
 									<div style="float:right;width:20%;text-align:right">
-									{#if $T.r.donor.url}<a href="{$T.r.donor.url}" target="_new"><img src="img/chain1.png" style="border-style: none" title="Visit the website of {$T.r.donor.name}" /></a>{#/if}
+									{#if $T.r.donor.url}<a href="{$T.r.donor.url}" target="_new"><img src="img/link.png" style="border-style: none" title="Visit the website of {$T.r.donor.name}" /></a>{#/if}
 									</div>
 									</div>
 								</td>
 								<td col="message" class="tooltip" message="{$T.r.donor.advertisement}">
 									<div col="message">
-									<span class="message truncate" length="45" itemid="{$T.r.id}">{$T.r.donor.advertisement}</span>
+									<span class="message truncate" length="160" item_id="{$T.r.id}">{$T.r.donor.advertisement}</span>
 									</div>
 								</td>
 							</tr>
 						{#else}
-							<tr><td colspan=6><span name="tableempty">No items currently up for bid</span></td></tr>
+							<tr><td colspan={#if $T.session.user.privs.auctioneers}7{#else}6{#/if}><span name="tableempty">No items currently up for bid</span></td></tr>
 						{#/for}
 						</tbody>
 					</table>
+					{#if !$T.session.user.role}
 					<div id="key">
 						<span class="key">Key:
-							<img valign='middle' src='img/paddle1.gif' width='16' height='16' class="tooltip above" description="New Bid">&nbsp;= New Bid |
-							<img valign='middle' src='img/bell2.png' width='16' height='16' class="tooltip above" description="Bell Ringer">&nbsp;= Bell Ringer |
-							<img valign='middle' src='img/timer-on.gif' width='16' height='16' class="tooltip above" description="Timer">&nbsp;= Timer |
-							<img valign='middle' src='img/sold.gif' width='16' height='16' class="tooltip above" description="Sold">&nbsp;= Sold |
-							<img valign='middle' src='img/paper1.gif' width='16' height='16' class="tooltip above" description="More description">&nbsp;= More description |
-							<img valign='middle' src='img/chain1.png' width='16' height='16' class="tooltip_fixed above" description="<a href='http://google.com' target='_new'>Link</a>">&nbsp;= External link |
-							<img valign='middle' src='img/attach_image.gif' width='16' height='16' class="tooltip above" description="<img src='img/attach_image.gif' />">&nbsp;= View image
+							<img valign='middle' src='img/newbid.png' width='16' height='16' class="tooltip above" description="New Bid">&nbsp;= New Bid |
+							<img valign='middle' src='img/bell.png' width='16' height='16' class="tooltip above" description="Bell Ringer">&nbsp;= Bell Ringer |
+							<img valign='middle' src='img/timer.png' width='16' height='16' class="tooltip above" description="Timer">&nbsp;= Timer |
+							<img valign='middle' src='img/sell-sold.png' width='16' height='16' class="tooltip above" description="Sold">&nbsp;= Sold |
+							<img valign='middle' src='img/info.png' width='16' height='16' class="tooltip above" description="More description">&nbsp;= More description |
+							<img valign='middle' src='img/link.png' width='16' height='16' class="tooltip_fixed above" description="<a href='http://google.com' target='_new'>Link</a>">&nbsp;= External link |
+							<img valign='middle' src='img/picture.png' width='16' height='16' class="tooltip above" description="<img src='img/picture.png' />">&nbsp;= View image
 						</span>
 					</div>
+					{#/if}
+				{#/if}
+			</div>
+
+			<div id="non-bidding">
+				{#if $T.items.ready}
+					<table id='items-ready' class="items ready">
+						<thead>
+						<tr>
+							<th>Item</th><th>Value</th><th>Donor</th>{#if $T.session.user.privs.admins}<th>Assign</th>{#/if}
+						</tr>
+						</thead>
+						<tbody>
+						{#foreach $T.items.ready as r}
+							<tr id="ready_{$T.r.id}" class="context-item" item_id="{$T.r.id}" key="{$T.r$key}" name="item">
+								<td>
+									<div style="float:left;width:100%">
+									<span class="item number">{$T.r.number}</span><span class="item">:</span>
+									<span class="truncate" length="70">{$T.r.name}</span>
+									</div>
+								</td>
+								<td>
+									<div style="float:left;width:100%">
+									<span class="currency">{$T.r.value}</span>
+									</div>
+								</td>
+								<td>
+									<div style="float:left;width:100%">
+									<span class="donor">{$T.r.donor.name}</span>
+									</div>
+								</td>
+								{#if $T.session.user.privs.admins}
+								<td align="center">
+									<div>
+									<div style="float:center;width:80%">
+									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start-a" src="img/a.png" alt="Assign to A"/>
+									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start-b" src="img/b.png" alt="Assign to B"/>
+									</div>
+									</div>
+								</td>
+								{#/if}
+							</tr>
+						{#else}
+							<tr><td colspan=6><span name="tableempty">No more items scheduled to start today</span></td></tr>
+						{#/for}
+						</tbody>
+					</table>
+				{#elseif $T.items.ondeck}
+					<table id='items-ondeck' class="items ondeck">
+						<thead>
+						<tr>
+							<th>Item</th><th>Value</th><th>Donor</th>{#if $T.session.user.privs.auctioneers}<th>Start Now</th>{#/if}
+						</tr>
+						</thead>
+						<tbody>
+						{#foreach $T.items.ondeck as r}
+							<tr id="ondeck_{$T.r.id}" class="context-item" item_id="{$T.r.id}" key="{$T.r$key}" name="item">
+								<td>
+									<div col="item">
+									<div style="float:left;width:80%">
+									{#if $T.r.auctioneer}
+										{#if ($T.session.user.role=="auctioneers" && $T.session.user.name=="auctioneer") || $T.session.user.role!="auctioneers"}
+										<img class="auctioneer context-item {#if $T.session.user.privs.admins}ci-re-assign{#/if}" src="img/{$T.r.auctioneer}.png" />
+										{#/if}
+									{#/if}
+									<span class="item number">{$T.r.number}</span><span class="item">:</span>
+									<span class="truncate" length="70">{$T.r.name}</span>
+									</div>
+									</div>
+								</td>
+								<td>
+									<div style="float:left;width:100%">
+									<span class="currency">{$T.r.value}</span>
+									</div>
+								</td>
+								<td>
+									<div style="float:left;width:100%">
+									<span class="donor">{$T.r.donor.name}</span>
+									</div>
+								</td>
+								{#if $T.session.user.privs.auctioneers}
+								<td align="center">
+									<div>
+									<div style="float:{#if $T.r$iteration%2==0}left{#else}right{#/if};width:60%">
+									{#if $T.session.user.name!="auctioneer"}
+										{#if $T.items.bidding.length < <%= app->config->{auctioneers}->{max_items} || 5 %>}
+										<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start" src="img/start.png" />
+										{#/if}
+									{#else}
+										<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start" src="img/start.png" />
+									{#/if}
+									</div>
+									</div>
+								</td>
+								{#/if}
+							</tr>
+						{#else}
+							<tr><td colspan=6><span name="tableempty">No more items waiting to be started</span></td></tr>
+						{#/for}
+						</tbody>
+					</table>
 				{#else}
 					<table class='closed'>
 						<thead>
@@ -839,6 +1121,17 @@ $(document).ready(function(){
 					</table>
 				{#/if}
 			</div>
+                        {#else}
+                                {#if $T.session.user.privs.backend}
+                                <table class='closed'>
+                                        <thead>
+                                        <tr>
+                                                <th>Closed</th>
+                                        </tr>
+                                        </thead>
+                                </table>
+                                {#/if}
+			{#/if}
 		</div>
 
 		<br /><br />
@@ -859,56 +1152,61 @@ $(document).ready(function(){
 
 
 	<div id="dialog-paypal" title="Pay by Credit Card" class="modal">
-		<form action='https://www.paypal.com/cgi-bin/webscr' method='post'>
+		<form id="dialog-paypal-form" action='https://www.paypal.com/cgi-bin/webscr' method='post'>
 			<input type='hidden' name='cmd' value='_s-xclick'><input type='hidden' name='hosted_button_id' value='4113257'>
+			<input type='hidden' name='bidder_id' id="paypal-bidder_id">
+			<input type='hidden' name='item_id' id="paypal-item_id">
 			<table>
-				<tr><td colspan="2">Complete the form below to pay for your item:</td></tr>
-				<tr><td><em>*</em>Item #:</td><td><input type='hidden' name='on0' value='Item ID'><input class="required" id="paypal-os0" type='text' name='os0' maxlength='60' value='Item ID' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td><em>*</em>Item:</td><td><input type='hidden' name='on3' value='Item'><input class="required" id="paypal-name" type='text' name='item_name' maxlength='60' value='Item' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td><em>*</em>Street Address:</td><td><input type='hidden' name='on1' value='Street Address'><input class="required" id="paypal-os1" type='text' name='os1' maxlength='60' value='Street Address' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td><em>*</em>City, ST ZIP</td><td><input type='hidden' name='on2' value='City, State, Zip'><input class="required" id="paypal-os2" type='text' name='os2' maxlength='60' value='City, State, Zip' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td colspan="2" align="center"><input type='image' src='https://www.paypal.com/en_US/i/btn/btn_paynowCC_LG.gif' border='0' name='submit' alt='PayPal - The safer, easier way to pay online!'><img alt='' border='0' src='https://www.paypal.com/en_US/i/scr/pixel.gif' width='1' height='1'></td></tr>
+				<tr><td colspan="2">Complete the form below to pay for your item:<div id="paypal-empty-message"></div></td></tr>
+				<tr><td><em>*</em>Item #:</td><td><input type='hidden' name='on0' value='Item ID'><input class="required" id="paypal-os0" type='text' name='os0' maxlength='4'></td></tr>
+				<tr><td><em>*</em>Item:</td><td><input type='hidden' name='on3' value='Item'><input class="required" id="paypal-name" type='text' name='item_name' maxlength='120'></td></tr>
+				<tr><td><em>*</em>Street Address:</td><td><input type='hidden' name='on1' value='Street Address'><input class="required" id="paypal-os1" type='text' name='os1' maxlength='60'></td></tr>
+				<tr><td><em>*</em>City</td><td><input type='hidden' name='on2' value='City'><input class="required" id="paypal-os2" type='text' name='os2' maxlength='60'></td></tr>
+				<tr><td>State</td><td><input type='hidden' name='on4' value='State'><input id="paypal-os4" type='text' name='os4' maxlength='2'></td></tr>
+				<tr><td>Zip</td><td><input type='hidden' name='on5' value='Zip'><input id="paypal-os5" type='text' name='os5' maxlength='10'></td></tr>
+<!--				<tr><td colspan="2" align="center"><input type='image' src='https://www.paypal.com/en_US/i/btn/btn_paynowCC_LG.gif' border='0' name='submit' alt='PayPal - The safer, easier way to pay online!'><img alt='' border='0' src='https://www.paypal.com/en_US/i/scr/pixel.gif' width='1' height='1'></td></tr> -->
 			</table>
 		</form>
 	</div>
 
 	<div id="dialog-operator" title="Operator" class="modal">
 		<form id="dialog-operator-form" name="operator" action='<%= url_for 'bid' %>' method='post'>
+			<input type='hidden' name='bidder_id' id="paypal-bidder_id">
 			<table>
 				<tr><td colspan="2"><div id="dialog-operator-title">Submit Bid</div></td></tr>
-				<tr><td><em>*</em>Bidder</td><td><input class="required" id="operator-name" type='text' name='operator-name' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"><input id="operator-bidderid" type='hidden' name='operator-bidderid' maxlength='60' value=''></td></tr>
-				<tr><td><em>*</em>Phone</td><td><input class="required" id="operator-phone" type='text' name='operator-phone' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td><em>*</em>Amount</td><td><input class="required" id="operator-bid" type='text' name='operator-bid' maxlength='60' value='' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Bidder</td><td><input class="required" id="operator-name" type='text' name='operator-name' maxlength='60' value=''><input id="operator-bidder_id" type='hidden' name='operator-bidder_id' maxlength='60' value=''></td></tr>
+				<tr><td><em>*</em>Phone</td><td><input class="required" id="operator-phone" type='text' name='operator-phone' maxlength='60' value=''></td></tr>
+				<tr><td><em>*</em>Amount</td><td><input class="required" id="operator-bid" type='text' name='operator-bid' maxlength='60' value=''></td></tr>
 			</table>
 		</form>
 	</div>
 
 	<div id="dialog-register" title="Register" class="modal">
-		<form name="register" action='<%= url_for 'register' %>' method='post'>
+		<form id="dialog-register-form" name="register" action='<%= url_for 'register' %>' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-register-title">Register</div></td></tr>
-				<tr><td>Username</td><td><input id="register-username" type='text' name='register-username' maxlength='60' value='Username' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td>Name</td><td><input id="register-bidder" type='text' name='register-bidder' maxlength='60' value='Bidder' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td>Phone</td><td><input id="register-phone" type='text' name='register-phone' maxlength='60' value='Phone' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Username</td><td><input class="required" id="register-username" type='text' name='register-username' maxlength='60' value='Username'></td></tr>
+				<tr><td><em>*</em>Name</td><td><input class="required" id="register-bidder" type='text' name='register-bidder' maxlength='60' value='Bidder' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Phone</td><td><input class="required" id="register-phone" type='text' name='register-phone' maxlength='60' value='Phone' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
 			</table>
 		</form>
 	</div>
 
 	<div id="dialog-login" title="Identify yourself" class="modal">
-		<form name="login" action='<%= url_for 'login' %>' method='post'>
+		<form id="dialog-login-form" name="login" action='<%= url_for 'login' %>' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-login-title">Identify</div></td></tr>
-				<tr><td>Username</td><td><input id="login-username" type='text' name='login-username' maxlength='60' value='Username' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
-				<tr><td>Phone</td><td><input id="login-phone" type='text' name='login-phone' maxlength='60' value='Phone' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Username</td><td><input class="required" id="login-username" type='text' name='login-username' maxlength='60'></td></tr>
+				<tr><td><em>*</em>PIN</td><td><input class="required" id="login-phone" type='text' name='login-phone' maxlength='4'></td></tr>
 			</table>
 		</form>
 	</div>
 
 	<div id="dialog-bid" title="Bid" class="modal">
-		<form name="bid" action='<%= url_for 'bid' %>' method='post'>
+		<form id="dialog-bid-form" name="bid" action='<%= url_for 'bid' %>' method='post'>
 			<table>
 				<tr><td colspan="2"><div id="dialog-bid-title">Submit Bid</div></td></tr>
-				<tr><td>Amount</td><td><input id="bid-bid" type='text' name='bid-bid' maxlength='60' value='Amount' onfocus="this.value = ( this.value == this.defaultValue ) ? '' : this.value;return true;"></td></tr>
+				<tr><td><em>*</em>Amount</td><td><input class="required" id="bid-bid" type='text' name='bid-bid' maxlength='60' value='Amount'></td></tr>
 			</table>
 		</form>
 	</div>

@@ -49,7 +49,7 @@ sub register {
 		$route =~ s/^\/+// if $route;
 		$route //= $name;
 		my $extra_path = delete $_{extra_path};
-		$r->$method(join('/', '', grep { $_ } $route, $extra_path))->to("$controller#$action", results=>[$source, $result_class], %_)->name(join('_', map { s/\W//g; $_ } grep { $_ } $name, $extra_path));
+		$r->$method(join('/', '', grep { $_ } $route, $extra_path))->xhr->to("$controller#$action", results=>[$source, $result_class], %_)->name(join('_', map { s/\W//g; $_ } grep { $_ } $name, $extra_path));
 		$r;
 	});
 }

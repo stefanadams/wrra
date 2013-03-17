@@ -10,6 +10,10 @@ sub register {
 	my ($self, $app, $conf) = @_;
 	my $moniker = uc($app->moniker);
 
+	$app->helper(username => sub {
+		my $c = shift;
+		return $c->is_user_authenticated ? $c->current_user->{username} : undef
+	});
 	$app->helper(years => sub {
 		my ($c, $year) = shift;
 		$year ||= $c->datetime->year;
@@ -70,6 +74,15 @@ sub register {
 		my $closed = $c->datetime >= $c->hours($c->auctions->[0])->[0] && $c->datetime <= $c->hours($c->auctions->[0])->[1] ? 0 : 1;
 		#warn Data::Dumper::Dumper({closed=>$closed, hours=>[$c->hours->[0]->datetime, $c->hours->[1]->datetime]});
 		return $closed;
+	});
+	$app->helper(in_progress => sub {
+		my ($c, $year) = @_;
+		return 0 unless @{$c->hours};
+		my $range = $c->config->{auctions}->{$c->years($year)->[0]} or return wantarray ? () : [];
+		my @auctions = $c->range($range);
+		my $in_progress = $c->datetime >= $c->hours($c->auctions->[0])->[0] && $c->datetime <= $c->hours($c->auctions->[-1])->[1];
+		#warn Data::Dumper::Dumper([$c->datetime->datetime, $c->hours($c->auctions->[0])->[0]->datetime, $c->hours($c->auctions->[-1])->[1]->datetime]);
+		return $in_progress;
 	});
 }
 

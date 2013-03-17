@@ -152,6 +152,12 @@ Covers ALL nights; one big incremental
   datetime_undef_if_invalid: 1
   is_nullable: 1
 
+=head2 paid
+
+  data_type: 'datetime'
+  datetime_undef_if_invalid: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -257,6 +263,12 @@ __PACKAGE__->add_columns(
     datetime_undef_if_invalid => 1,
     is_nullable => 1,
   },
+  "paid",
+  {
+    data_type => "datetime",
+    datetime_undef_if_invalid => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -272,10 +284,11 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("item_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-13 14:11:46
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+riHy43WHIUGqRWS4gjM1g
+# Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-16 12:32:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MD3Lr7gfDDzIsTZ3RNU5qQ
 
 use 5.010;
+use Time::Seconds;
 
 #belongs to means the fk is in your own table, and might have/has_many/has_one means the fk points to you, and is in the other table
 __PACKAGE__->belongs_to(donor => 'WRRA::Schema::Result::Donor', 'donor_id', {join_type=>'left'}); # An Item belongs_to a Donor, join to Donor via donor_id
@@ -283,7 +296,15 @@ __PACKAGE__->belongs_to(stockitem => 'WRRA::Schema::Result::Stockitem', 'stockit
 __PACKAGE__->belongs_to(highbid => 'WRRA::Schema::Result::Bid', {'foreign.bid_id'=>'self.highbid_id'}, {join_type=>'left'}); # An Item belongs_to a particular highbid
 __PACKAGE__->has_many(bids => 'WRRA::Schema::Result::Bid', 'item_id', {join_type=>'left'}); # An Item has_many bids, join to Bid via item_id
 __PACKAGE__->many_to_many(bidders => 'bids', 'bidder'); # An Item is bid on by many Bidders, bridge to bidders via Bid's bidder
-
+__PACKAGE__->add_columns(
+	scheduled => {data_type => 'date', timezone => 'local'},
+	started => {data_type => 'datetime', timezone => 'local'},
+	timer => {data_type => 'datetime', timezone => 'local'},
+	sold => {data_type => 'datetime', timezone => 'local'},
+	cleared => {data_type => 'datetime', timezone => 'local'},
+	contacted => {data_type => 'datetime', timezone => 'local'},
+	paid => {data_type => 'datetime', timezone => 'local'},
+);
 sub id { shift->item_id }
 
 #sub itemcat {
@@ -300,7 +321,7 @@ sub id { shift->item_id }
 
 use constant {
 	COMPLETED => 70,
-	VERIFY => 60,
+	VERIFYING => 60,
 	SOLD => 50,
 	BIDDING => 40,
 	ON_DECK => 30,
@@ -320,7 +341,7 @@ use constant {
 sub status {
 	my $self = shift;
 	return COMPLETED if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   &&  $self->cleared   &&  $self->contacted;
-	return VERIFY    if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   &&  $self->cleared   && !$self->contacted;
+	return VERIFYING if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   &&  $self->cleared   && !$self->contacted;
 	return SOLD      if  $self->scheduled   &&           1          &&  $self->started   &&  $self->sold   && !$self->cleared;# && !$self->contacted;
 	return BIDDING   if  $self->scheduled   &&  $self->auctioneer   &&  $self->started   && !$self->sold;# && !$self->cleared;  && !$self->contacted;
 	return ON_DECK   if  $self->scheduled   &&  $self->auctioneer   && !$self->started;# && !$self->sold   && !$self->cleared;  && !$self->contacted;
@@ -332,7 +353,7 @@ sub status {
 sub nstatus {
 	my $self = shift;
 	return 'Completed' if $self->status == COMPLETED;
-	return 'Verifying' if $self->status == VERIFY;
+	return 'Verifying' if $self->status == VERIFYING;
 	return 'Sold' if $self->status == SOLD;
 	return 'Bidding' if $self->status == BIDDING;
 	return 'On Deck' if $self->status == ON_DECK;
@@ -343,7 +364,7 @@ sub nstatus {
 
 sub startbid {
 	my $self = shift;
-	my $startbid = eval { $self->schema->config->{database}->{options}->{starting_bid} } || [[(100 * DOLLARS) => (5 * DOLLARS)], [(250 * DOLLARS) => (50 * DOLLARS)], (100 * DOLLARS)];
+	my $startbid = eval { $self->result_source->schema->config->{database}->{options}->{starting_bid} } || [[(100 * DOLLARS) => (5 * DOLLARS)], [(175 * DOLLARS) => (30 * DOLLARS)], [(250 * DOLLARS) => (50 * DOLLARS)], (100 * DOLLARS)];
 	foreach my $range ( sort { $a->[0] <=> $b->[0] } grep { ref eq 'ARRAY' } @$startbid ) {
 		return $range->[1] if ($self->value * DOLLARS) < ($range->[0] * DOLLARS);
 	}
@@ -352,8 +373,8 @@ sub startbid {
 
 sub minbid {
 	my $self = shift;
-	my $minbid_under = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || (5 * DOLLARS);
-	my $minbid_over = eval { $self->schema->config->{database}->{options}->{minimum_bid}->{under} } || (1 * DOLLARS);
+	my $minbid_under = eval { $self->result_source->schema->config->{database}->{options}->{minimum_bid}->{under} } || (5 * DOLLARS);
+	my $minbid_over = eval { $self->result_source->schema->config->{database}->{options}->{minimum_bid}->{under} } || (1 * DOLLARS);
 	return $self->startbid unless $self->highbid;
 	return $self->startbid unless $self->highbid->bid;
 	return ($self->highbid->bid + ($minbid_under * DOLLARS)) if ($self->highbid->bid * DOLLARS) < ($self->value * DOLLARS);
@@ -362,10 +383,19 @@ sub minbid {
 
 sub cansell {
 	my $self = shift;
+	return 0 unless $self->highbid;
+	return 0 if $self->notify('newbid');
 	return 0 if $self->sold;
 	return 0 unless $self->timer;
-	my $mintimer = eval { $self->schema->config->{database}->{options}->{minimum_timer} } || (5 * MINUTES);
-	my $datetime = eval { $self->schema->controller->datetime->epoch } || time;
+	my $mintimer = eval { $self->result_source->schema->config->{database}->{options}->{minimum_timer} } || (5 * MINUTES);
+	my $datetime = eval { $self->result_source->schema->controller->datetime->epoch } || time;
+#warn Data::Dumper::Dumper({
+#	datetime => $datetime,
+#	timer => $self->timer->epoch,
+#	mintimer => $mintimer,
+#	'd-t' => $datetime - $self->timer->epoch,
+#	'd-t > $m' => $datetime - $self->timer->epoch > $mintimer,
+#});
 	return $datetime - $self->timer->epoch > $mintimer ? TRUE : FALSE;
 }
 
@@ -379,15 +409,17 @@ sub bellringer {
 sub runningtime {
 	my $self = shift;
 	return undef unless $self->started;
-	my $datetime = eval { $self->schema->controller->datetime->epoch } || time;
-	return ($datetime - $self->started->epoch) * MINUTES;
+	my $datetime = eval { $self->result_source->schema->controller->datetime->epoch } || time;
+	my $sec = Time::Seconds->new($datetime - $self->started->epoch);
+	return sprintf("%d:%02d:%02d", int($sec/3600), int($sec/60)%60, $sec%60);
 }
 
 sub timertime {
 	my $self = shift;
 	return undef unless $self->timer;
-	my $datetime = eval { $self->schema->controller->datetime->epoch } || time;
-	return ($datetime - $self->timer->epoch) * MINUTES;
+	my $datetime = eval { $self->result_source->schema->controller->datetime->epoch } || time;
+	my $sec = Time::Seconds->new($datetime - $self->timer->epoch);
+	return sprintf("%d:%02d:%02d", int($sec/3600), int($sec/60)%60, $sec%60);
 }
 
 #$r->notify;				returns list of set tags
@@ -396,19 +428,22 @@ sub timertime {
 #$r->notify('newbid');			returns t/f if this tag is set
 sub notify {
         my $self = shift;
-        return $self->notifications unless @_;
+        return {map{ $_ => 1 } split /,/, $self->notifications||''} unless @_;
 	my $notify = shift;
 	if ( ref $notify eq 'ARRAY' ) {
-		return $self->notifications(join ',', @$notify);
+		$self->notifications(join ',', @$notify);
+		return $self;
 	} else {
 		my $state = shift;
+		my @notifications = split /,/, $self->notifications;
 	        if ( $state ) {
-        	        return $self->notifications(\"CONCAT_WS(',',notify,'$notify')");
+        	        $self->notifications(join ',', @notifications, $notify);
+			return $self;
 	        } elsif ( defined $state ) {
-        	        return $self->notifications(\"REPLACE(notify,'$notify','')");
+        	        $self->notifications(join ',', grep { $_ ne $notify } @notifications);
+			return $self;
 	        } else {
-			my @notify = split /,/, $self->notifications;
-			return (grep { $_ eq $notify } @notify) ? $notify : undef;
+			return (grep { $_ eq $notify } @notifications) ? $notify : undef;
 		}
 	}
 }
@@ -417,10 +452,10 @@ sub respond { # ('newbid','starttimer','stoptimer','holdover','sell');
 	my ($self, $notify) = @_;
 	given ( $self->notify($notify) ) {
 		when ( 'newbid' ) { return $self->notify('newbid'=>0) }
-		when ( 'starttimer') { return $self->timer(\'now()')->notify('starttimer'=>0) }
-		when ( 'stoptimer') { return $self->timer(undef)->notify('stoptimer'=>0) }
+		when ( 'starttimer') { return $self->notify('starttimer'=>0) }
+		when ( 'stoptimer') { return $self->notify('stoptimer'=>0) }
 		when ( 'holdover' ) { return $self->notify('holdover'=>0) }
-		when ( 'sell' ) { return $self->sold(\'now()')->notify('sell'=>0) }
+		when ( 'sell' ) { return $self->notify('sell'=>0) }
 	}
 	return $self;
 }

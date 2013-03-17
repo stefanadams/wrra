@@ -25,6 +25,7 @@ our $relationships = [qw/rotarian/];
 our $read = {
 	'rotarian.name' => \'concat(rotarian.lastname, rotarian.firstname)',
 	'contact' => 'contact1',
+	'solicit' => sub { warn Data::Dumper::Dumper(1, [map{ref}@_]); return solicit=>1 },
 };
 # When editing (i.e. creating or updating), use this hashref to lookup coderefs and pass the value to provide and expect back a full hash of key/value pairs.
 our $edit = {

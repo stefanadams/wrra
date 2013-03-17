@@ -31,7 +31,7 @@ sub register {
 		$r1->dbroute(['/create' => $result_class => $source], {jqgrid => 'create'}, name => "create_$name");
 		$r1->dbroute(['/' => $result_class => $source], {jqgrid => 'read'}, name => "read_$name");
 		$r1->dbroute(['/update' => $result_class => $source], {jqgrid => 'update'}, name => "update_$name");
-		$r1->dbroute(['/delete' => $result_class => $source], {jqgrid => 'delete'}, \'delete', name => "delete_$name");
+		$r1->dbroute(['/delete' => $result_class => $source], {jqgrid => 'delete'}, name => "delete_$name");
 		$r1;
 	});
 
@@ -54,8 +54,9 @@ sub register {
 		my ($c, $op, $rs) = @_;
 		my $crud = new DBIx::Class::Crud;
 		$crud->resultset($c->db->resultset($c->param('results')));
-		$crud->request(ref $c->merged ? $c->merged : {$c->merged});
+		$crud->request($c->req->params->to_hash);
 		delete $crud->request->{_};
+		delete $crud->request->{oper};
 		$crud->filters(\&filters);
 		$crud->where(\&where);
 		$crud->order_by(\&order_by);

@@ -3,7 +3,16 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Mojo::JSON;
 
-sub items {
+sub auction {
+	my $self = shift;
+	my $auction = $self->memd || $self->memd($self->_auction);
+	$auction->{header}->{ad} = $self->_display_ad;
+	$self->respond_to(
+		json => {json => $auction},
+	);
+}
+
+sub _auction {
 	my $self = shift;
 	my $items = {
 		session => {
@@ -24,59 +33,83 @@ sub items {
 				datetime => $self->datetime,
 			},
 			play => $self->config('play'),
-			alert => {
-				(msg => eval { $self->db->resultset('Alert')->search({alert=>[$self->privileges||'public']})->first->msg } || ''),
-			},
-			ads => {
-				(! $self->role ? (ad => $self->_display_ad) : ()),
-			}
+			alert => $self->_alert,
 		},
-		$self->closed ? () : (items => $self->_items),
 		stats => {
 		},
 	};
-	$self->respond_to(
-		json => {json => $items},
-	);
+	unless ( $self->closed ) {
+		for ( qw/ready ondeck bidding verifying/ ) {
+			my $i = $self->_items($_);
+			$items->{items}->{$_} = $i if $i;
+		}
+	}
+	return $items;
 }
 
 sub _items {
 	my $self = shift;
+	my $status = shift;
 	my $photosdir = join '/', $self->app->home, 'public', ($self->config('photos') || 'photos');
 	my $photosurl = join '/', ($self->config('photos') || 'photos');
-	my $rs = $self->db->resultset(Item => 'Bidding');
+	my $rs = $self->db->resultset(Item => 'Bidding')->search(undef, {prefetch=>'donor'});
 	my $items;
-	given ( $self->param('Status') ) {
-		when ( 'Bidding' ) {
-			$rs = $rs->current_year->bidding;
+	my $year = $self->datetime->year;
+	given ( $status ) {
+		when ( 'ready' ) {
+			return undef unless $self->has_priv('admins');
+			$rs = $rs->current_year->ready;
+			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
+		}
+		when ( 'ondeck' ) {
+			return undef unless $self->has_priv('auctioneers');
+			$rs = $rs->current_year->ondeck;
+			$rs = $rs->auctioneer($self->username) if $self->role && $self->role eq 'auctioneers' && $self->username ne 'auctioneer';
+			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
+		}
+		when ( 'bidding' ) {
+			$rs = $rs->current_year->bidding->search(undef, {prefetch=>['highbid', 'bids']});
+			$rs = $rs->auctioneer($self->username) if $self->role && $self->role eq 'auctioneers' && $self->username ne 'auctioneer';
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 			foreach ( @$items ) {
 				# if((find_in_set('newbid',`items`.`notify`) > 0),1,NULL) `newbid`
 				# if((`items`.`status` = 'Sold'),1,NULL) `sold`
-				$_->{img} = (glob("$photosdir/$_->{year}/$_->{number}.*"))[0] if $_->{number};
+				($_->{img}) = glob("$photosdir/$year/$_->{number}.*") if $_->{number};
 				$_->{img} && -e $_->{img} && -f _ && -r _ && do {
 					$_->{img} =~ s/^$photosdir\/?// or $_->{img} = undef;
 					$_->{img} = join '/', '', $photosurl, $_->{img} if $_->{img};
 					last;
 				};
 				$_ = $self->_fakebidding($_);
+#				foreach ( $self->db->resultset('Bid'
 				$_->{bellringer} = $_->{bellringer} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{timer} = $_->{timer} ? Mojo::JSON->true : Mojo::JSON->false;
-				$_->{cansell} = $_->{cansel} ? Mojo::JSON->true : Mojo::JSON->false;
+				$_->{cansell} = $_->{cansell} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{scheduled} = $_->{scheduled} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{started} = $_->{started} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{sold} = $_->{sold} ? Mojo::JSON->true : Mojo::JSON->false;
-				$_->{contacted} = $_->{contacted} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{cleared} = $_->{cleared} ? Mojo::JSON->true : Mojo::JSON->false;
 			}
+		}
+		when ( 'verifying' ) {
+			$rs = $rs->current_year->verifying;
+			return undef unless $self->has_priv('callers');
+			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 		}
 		default { return {} }
 	}
 	return $items;
 }
 
+sub _alert {
+	my $self = shift;
+	my $alert = $self->db->resultset('Alert')->search({alert=>$self->role||'public'})->first;
+	return {$alert ? (msg=>$alert->msg) : ()};
+}
+
 sub _display_ad {
         my $self = shift;
+	return {} if $self->has_priv('backend');
         my $adsdir = join '/', $self->app->home, 'public', ($self->config('ads') || 'ads');
         my $adsurl = join '/', ($self->config('ads') || 'ads');
 	delete $self->session->{ad}->{refresh};
@@ -122,7 +155,7 @@ sub _display_ad {
 sub _fakebidding {
 	my $self = shift;
 	my $row = shift;
-	return $row unless $self->app->mode eq 'developmen';
+	return $row unless $self->app->mode eq 'development' && $self->config->{fakebidding};
 	if ( int(rand(99)) < 25 ) {
 		$row->{nstatus} = 'Ready'; 
 	} elsif ( int(rand(99)) < 25 ) {
@@ -174,55 +207,20 @@ sub _fakebidding {
 	return $row;
 }
 
-sub assign {
+sub start {
 	my $self = shift;
-	my ($id, $auctioneer) = ($self->param('id'), $self->param('auctioneer'));
-	my $r = $self->db->resultset('Item')->find($id)->update({auctioneer=>$auctioneer});
-	$self->respond_to(
-		json => {json => {res=>$r?'ok':'err'}},
-	);
-}
-
-=head2
-sub notify : Runmode RequireAjax Authen Authz('admins') {
-        my $self = shift;
-        $self->dbh->do("UPDATE items_vw SET notify = CONCAT_WS(',',notify,?) WHERE item_id=?", undef, $self->param('notify'), $self->param('item'));
-        return $self->to_json({error=>0});
-}
-
-sub respond : Runmode RequireAjax Authen Authz('auctioneers') {
-        my $self = shift;
-        if ( $self->param('respond') eq 'start' ) {
-                $self->dbh->do("UPDATE items_vw SET started=now() WHERE item_id=?", undef, $self->param('item'));
-        } elsif ( $self->param('respond') eq 'newbid' ) {
-                $self->dbh->do("UPDATE items_vw SET notify=REPLACE(notify,'newbid','') WHERE item_id=?", undef, $self->param('item'));
-        } elsif ( $self->param('respond') eq 'starttimer' ) {
-                $self->dbh->do("UPDATE items_vw SET timer=now(),notify=REPLACE(notify,'starttimer','') WHERE item_id=?", undef, $self->param('item'));
-        } elsif ( $self->param('respond') eq 'stoptimer' ) {
-                $self->dbh->do("UPDATE items_vw SET timer=null,notify=REPLACE(notify,'stoptimer,'') WHERE item_id=?", undef, $self->param('item'));
-        } elsif ( $self->param('respond') eq 'holdover' ) {
-                $self->dbh->do("UPDATE items_vw SET notify=REPLACE(notify,'holdover','') WHERE item_id=?", undef, $self->param('item'));
-        } elsif ( $self->param('respond') eq 'sell' ) {
-                my $item = $self->dbh->selectrow_hashref("SELECT sold FROM items WHERE id=?", undef, $self->param('item'));
-                $self->dbh->do("UPDATE items_vw SET ".(!$item->{sold}?'sold':'cleared')."=now(),notify=REPLACE(notify,'sell','') WHERE item_id=?", undef, $self->param('item'));
-        }
-        return $self->to_json({error=>0});
-}
-=cut
-
-sub notify {
-	my $self = shift;
-	my ($notify, $id, $state) = ($self->param('notify'), $self->param('id'), $self->param('state'));
-	my $r = $self->db->resultset('Item')->find($id)->notify($notify, $state)->update;
-	$self->respond_to(
-		json => {json => {res=>$r?'ok':'err'}},
-	);
-}
-
-sub sell {
-	my $self = shift;
-	my ($id) = ($self->param('id'));
-	my $r = $self->db->resultset('Item')->find($id)->sold(\'now()')->update;
+	my $id = $self->param('id') or return $self->render_not_found;
+	my $r;
+	given ( $self->role ) {
+		when ( 'admins' ) {
+			my $auctioneer = $self->param('auctioneer') or return $self->render_not_found;
+			$r = $self->db->resultset('Item')->find($id)->update({auctioneer=>$auctioneer});
+		}
+		when ( 'auctioneers' ) {
+			$r = $self->db->resultset('Item')->find($id)->update({started=>$self->datetime_mysql});
+		}
+		default { return $self->render_not_found }
+	}
 	$self->respond_to(
 		json => {json => {res=>$r?'ok':'err'}},
 	);
@@ -230,27 +228,94 @@ sub sell {
 
 sub timer {
 	my $self = shift;
-	my ($id, $state) = ($self->param('id'), $self->param('state'));
-	my $r = $self->db->resultset('Item')->find($id)->update({sold=>\'now()'});
+	my $timer = $self->param('timer');
+	my $id = $self->param('id') or return $self->render_not_found;
+	my $r;
+	given ( $self->role ) {
+		when ( 'admins' ) {
+			$r = $self->db->resultset('Item')->find($id)->notify("${timer}timer" => 1)->update;
+		}
+		when ( 'auctioneers' ) {
+			$r = $self->db->resultset('Item')->find($id)->respond("${timer}timer")->update({timer=>$timer eq 'start' ? $self->datetime_mysql : undef});
+		}
+		default { return $self->render_not_found }
+	}
 	$self->respond_to(
 		json => {json => {res=>$r?'ok':'err'}},
 	);
 }
 
+sub sell {
+	my $self = shift;
+	my $id = $self->param('id') or return $self->render_not_found;
+	my $r;
+	given ( $self->role ) {
+		when ( 'admins' ) {
+			$r = $self->db->resultset('Item')->find($id)->notify(sell => 1)->update;
+		}
+		when ( 'auctioneers' ) {
+			$r = $self->db->resultset('Item')->find($id);
+			if ( $r->sold ) {
+				$r->update({cleared=>$self->datetime_mysql});
+			} else {
+				$r->respond('sell')->update({sold=>$self->datetime_mysql});
+			}
+		}
+		default { return $self->render_not_found }
+	}
+	$self->respond_to(
+		json => {json => {res=>$r?'ok':'err'}},
+	);
+}
+
+sub bidhistory {
+	my $self = shift;
+	my $item_id = $self->param('id') or return $self->render_json({res=>'err'});
+	my $rs = $self->db->resultset(Bid => 'BidHistory')->search({item_id=>$item_id}, {order_by=>'bidtime desc'});
+	$self->respond_to(
+		json => {json => [$rs->all]},
+	);
+}
+
 sub bid {
 	my $self = shift;
-	my $item_id = $self->param('id') or return return $self->render_json({res=>'err'});
-	my $phone = $self->param('phone') or return return $self->render_json({res=>'err'});
-	my $bidder_id = $self->param('bidder_id');
-	my $name = $self->param('name') or return return $self->render_json({res=>'err'});
-	my $bid = $self->param('bid') or return return $self->render_json({res=>'err'});
+	my $id = $self->param('id') or return $self->render_json({res=>'err'});
 	my $r;
-	unless ( $bidder_id ) {
-		my $new_bidder = $self->db->resultset('Bidder')->create({name=>$name,phone=>$phone});
-		return $self->render_json({res=>'err'}) unless $bidder_id = $new_bidder->id;
+	given ( $self->role ) {
+		when ( 'auctioneers' ) {
+			$r = $self->db->resultset('Item')->find($id)->respond('newbid')->update;
+		}
+		when ( /^operators$|^admins$/ ) {
+			my $phone = $self->param('phone') or return $self->render_json({res=>'err'});
+			my $bidder_id = $self->param('bidder_id');
+			my $name = $self->param('name') or return $self->render_json({res=>'err'});
+			my $bid = $self->param('bid') or return $self->render_json({res=>'err'});
+			unless ( $bidder_id ) {
+				my $new_bidder = $self->db->resultset('Bidder')->create({year=>$self->datetime->year,name=>$name,phone=>$phone});
+				return $self->render_json({res=>'err'}) unless $bidder_id = $new_bidder->id;
+			}
+			$bid = $self->db->resultset('Bid')->create({item_id=>$id,bidder_id=>$bidder_id,bid=>$bid,bidtime=>$self->datetime_mysql}) or return return $self->render_json({res=>'err'});
+			$r = $self->db->resultset('Item')->find($id)->notify(newbid=>1)->update({highbid_id=>$bid->id});
+		}
+		default { return $self->render_not_found }
 	}
-	$bid = $self->db->resultset('Bid')->create({item_id=>$item_id,bidder_id=>$bidder_id,bid=>$bid,bidtime=>$self->datetime_mysql}) or return return $self->render_json({res=>'err'});
-	$r = $self->db->resultset('Item')->find($item_id)->update({highbid_id=>$bid->id});
+	$self->respond_to(
+		json => {json => {res=>$r?'ok':'err'}},
+	);
+}
+
+sub bidder {
+	my $self = shift;
+	my $bidder_id = $self->param('id') or return $self->render_json({res=>'err'});
+	my $bidder = {
+		year => $self->datetime->year,
+		address => $self->param('address') || '',
+		city => $self->param('city') || '',
+		state => $self->param('state') || '',
+		zip => $self->param('zip') || '',
+	};
+	my $r;
+	$r = $self->db->resultset('Item')->find($self->param('item_id'))->update({paid=>\'now()'}) && $self->db->resultset('Bidder')->find($bidder_id)->update($bidder);
 	$self->respond_to(
 		json => {json => {res=>$r?'ok':'err'}},
 	);

@@ -16,10 +16,18 @@ sub TO_JSON {
 		my $f1 = my $f2 = join '.', @field;
 		$f1 =~ s/\./\}\{/g;
 		$f2 =~ s/\./->/g;
-		eval "\$tables1{$table}{$f1} = \$self->$table->$f2";
+		next if eval "\$tables1{$table}{$f1} = \$self->$table->$f2";
+		#my $f1 = my $f2 = join '.', @field;
+		#$f1 =~ s/\./\}\{/g;
+		#$f2 =~ s/\./->/g;
+		#eval "\$tables1{$table}{$f1} = \$self->$table->$f2";
         }
+	foreach ( grep { /^\[.*?\]$/ } $self->_colmodel ) {
+		s/^\[|\]$//g;
+		eval { $tables1{$_} = $self->$_->$_ };
+	}
         warn Data::Dumper::Dumper({%tables1}) if $ENV{COLMODEL_DEBUG};
-        return { (map { $_ => $self->$_ } grep { !/\./ } $self->_colmodel), (%tables1) };
+        return { (map { $_ => $self->$_ } grep { !/\W/ } $self->_colmodel), (%tables1) };
 }
 
 sub TO_XLS {

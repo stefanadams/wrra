@@ -1,0 +1,83 @@
+% extends '/admin/layouts/grid', title=>'Items Currently In Bidding';
+% content grid => begin
+
+// Pops an alert after add form indicating the item number that was just added
+function alertAddedItemNumber(response,postdata) {
+    var json=response.responseText;
+    var result=eval("("+json+")");
+    if (result.number) alert("Added Item Number "+result.number);
+    return [result.res,result.msg,null];
+}
+function formatGridCells(data) {
+        // Reference in .jqGrid {options} loadComplete: property
+        $('table#list1 tbody tr td[title="Yes"]').css('color', 'green');
+        $('table#list1 tbody tr td[title="No"]').css('color', 'red');
+        $('table#list1 tbody tr td[aria-describedby="list1_items"]').css('color', 'green');
+        $('table#list1 tbody tr td[aria-describedby="list1_items"][title="0"]').css('color', 'red');
+        $('table#list1 tbody tr td[aria-describedby="list1_status"][title="Not Ready"]').css('color', 'black');
+        $('table#list1 tbody tr td[aria-describedby="list1_status"][title="Ready"]').css('color', 'green');
+        $('table#list1 tbody tr td[aria-describedby="list1_status"][title="OnDeck"]').css('color', 'yellow');
+        $('table#list1 tbody tr td[aria-describedby="list1_status"][title="Bidding"]').css('color', 'orange');
+        $('table#list1 tbody tr td[aria-describedby="list1_status"][title="Sold"]').css('color', 'red');
+        $('table#list1 tbody tr td[aria-describedby="list1_status"][title="Complete"]').css('color', 'blue');
+}
+$("#list1").jqGrid({
+    caption: "Items Currently in Bidding",
+    sortname: 'number',
+
+    colModel:[
+            {name:'number',label:'Number',width:70},
+            {name:'item',label:'Item',width:200},
+            {name:'value',label:'Value',width:70},
+            {name:'highbid',label:'High Bid',width:70},
+            {name:'auctioneer',label:'Auctioneer',width:70},
+            {name:'status',label:'Status',width:70},
+            {name:'minbid',label:'Min Bid',width:70},
+            {name:'cansell',label:'Can Sell',width:70,formatter:'boolFmatter'},
+            {name:'bellringer',label:'Bellringer',width:70,formatter:'boolFmatter'},
+            {name:'scheduled',label:'Scheduled',width:70,formatter:'boolFmatter'},
+            {name:'started',label:'Started',width:70,formatter:'boolFmatter'},
+            {name:'timer',label:'Timer Started',width:70,formatter:'boolFmatter'},
+            {name:'timerminutes',label:'Timer Length',width:70},
+            {name:'sold',label:'Sold',width:70,formatter:'boolFmatter'},
+            {name:'cleared',label:'Cleared',width:70,formatter:'boolFmatter'},
+            {name:'contacted',label:'Contacted',width:70,formatter:'boolFmatter'}
+    ],
+    subGrid: true,
+    subGridRowExpanded: function(subgrid_id, row_id) {
+            var subgrid_table_id;
+            subgrid_table_id = subgrid_id+"_t";
+            jQuery("#"+subgrid_id).html("<table id='"+subgrid_table_id+"' class='scroll'></table>");
+            jQuery("#"+subgrid_table_id).jqGrid({
+                    url:"pl/manage/bidding/item/"+row_id,
+                    mtype: 'POST',
+                    datatype: "json",
+                    jsonReader: {repeatitems: false, id: "bid_id", subgrid: {root: "rows", repeatitems: true}},
+                    colModel: [
+                            {name:"phone",label:"Phone",width:140,editable:true,editoptions:{dataInit:phoneMask},editrules:{required:true},formoptions:{elmsuffix:'(*)'},formatter:'phoneFmatter'},
+                            {name:"bidder",label:"Bidder",width:170,editable:true,editrules:{required:true},formoptions:{elmsuffix:'(*)'}},
+                            {name:"bid",label:"Bid",width:70,editable:true,editoptions:{size:10},editrules:{required:true,number:true,minValue:0},formoptions:{elmsuffix:'(*)'},formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
+                            {name:"bidtime",label:"Bid Time",width:180},
+                            {name:"bidage",label:"Bid Age",width:70},
+                    ],
+		});
+    }
+}).navGrid('#pager1',
+    {edit:false,add:false,del:false},
+    // {edit}, {add}, {del}, {search}, {view}
+    {
+    },
+    {
+    },
+    {
+    },
+    {
+        url: "<%= url_for 'search_bidding' %>",
+        caption: "Search Items Bidding"
+    },
+    {
+        url: "<%= url_for 'view_bidding' %>",
+        caption: "View Items Bidding"
+    }
+);
+% end
