@@ -35,9 +35,9 @@ hr.tooltip {color: #ADD9ED}
 .bellringer {background-color: #fc3}
 .start-a {cursor:pointer;}
 .start-b {cursor:pointer;}
-a.newbid {font-weight:bold;color:black;background-color:mediumpurple;cursor:pointer;padding:1px}
+a.newbid {font-weight:bold;color:black;background-color:lightblue;cursor:pointer;padding:1px}
 img.newbid {cursor:pointer;}
-.item-number {color:purple;text-decoration:underline;cursor:pointer;}
+.item-number {color:blue;text-decoration:underline;cursor:pointer;}
 .starttimer {cursor:pointer;}
 .stoptimer {cursor:pointer;}
 .holdover {cursor:pointer;}
