@@ -189,6 +189,7 @@ sub setup_routing {
 	$admin->jqgrid([Bellitems => 'Bellitem']);
 	$admin->jqgrid([Bidders => 'Bidder']);
 	$admin->jqgrid([Bids => 'Bid']);
+	$admin->jqgrid([Bidding => 'Item']);
 	$admin->under('/seq_items')
 		->dbroute(['/' => SeqItems => 'Item'], {seq_items => 'list'}, \'get', extra_path => ':n')
 		->dbroute(['/' => SeqItems => 'Item'], {seq_items => 'sequence'}, \'post', extra_path => ':n');

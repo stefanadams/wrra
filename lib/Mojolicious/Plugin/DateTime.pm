@@ -17,10 +17,10 @@ sub register {
 		my $datetime;
 		if ( $app->mode ne 'production' ) {
 			$datetime = $basedt->clone->add(seconds=>time-$start);
-			warn "FAKE: $datetime\n";
+			#warn "FAKE: $datetime\n";
 		} else {
 			$datetime = DateTime->now(time_zone=>'local');
-			warn "REAL: $datetime\n";
+			#warn "REAL: $datetime\n";
 		}
 		return $self->{datetime}->{now} = $datetime;
 	});

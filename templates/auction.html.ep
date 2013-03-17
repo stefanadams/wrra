@@ -1036,7 +1036,7 @@ $(document).ready(function(){
 								{#/if}
 							</tr>
 						{#else}
-							<tr><td colspan=6><span name="tableempty">No items currently up for bid</span></td></tr>
+							<tr><td colspan=6><span name="tableempty">No more items scheduled to start today</span></td></tr>
 						{#/for}
 						</tbody>
 					</table>
@@ -1090,7 +1090,7 @@ $(document).ready(function(){
 								{#/if}
 							</tr>
 						{#else}
-							<tr><td colspan=6><span name="tableempty">No items currently up for bid</span></td></tr>
+							<tr><td colspan=6><span name="tableempty">No more items waiting to be started</span></td></tr>
 						{#/for}
 						</tbody>
 					</table>

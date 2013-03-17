@@ -75,6 +75,15 @@ sub register {
 		#warn Data::Dumper::Dumper({closed=>$closed, hours=>[$c->hours->[0]->datetime, $c->hours->[1]->datetime]});
 		return $closed;
 	});
+	$app->helper(in_progress => sub {
+		my ($c, $year) = @_;
+		return 0 unless @{$c->hours};
+		my $range = $c->config->{auctions}->{$c->years($year)->[0]} or return wantarray ? () : [];
+		my @auctions = $c->range($range);
+		my $in_progress = $c->datetime >= $c->hours($c->auctions->[0])->[0] && $c->datetime <= $c->hours($c->auctions->[-1])->[1];
+		#warn Data::Dumper::Dumper([$c->datetime->datetime, $c->hours($c->auctions->[0])->[0]->datetime, $c->hours($c->auctions->[-1])->[1]->datetime]);
+		return $in_progress;
+	});
 }
 
 1;
