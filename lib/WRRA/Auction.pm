@@ -5,8 +5,10 @@ use Mojo::JSON;
 
 sub auction {
 	my $self = shift;
+	$ENV{DBIC_TRACE}=1;
 	my $auction = $self->memd || $self->memd($self->_auction);
 	$auction->{header}->{ad} = $self->_display_ad;
+	$ENV{DBIC_TRACE}=0;
 	$self->respond_to(
 		json => {json => $auction},
 	);
@@ -68,7 +70,7 @@ sub _items {
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 		}
 		when ( 'bidding' ) {
-			$rs = $rs->current_year->bidding->search(undef, {prefetch=>{bids=>'bidder'}});
+			$rs = $rs->current_year->bidding->search(undef, {prefetch=>['highbid', 'bids']});
 			$rs = $rs->auctioneer($self->username) if $self->role eq 'auctioneers';
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 			foreach ( @$items ) {
@@ -81,6 +83,7 @@ sub _items {
 					last;
 				};
 				$_ = $self->_fakebidding($_);
+#				foreach ( $self->db->resultset('Bid'
 				$_->{bellringer} = $_->{bellringer} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{timer} = $_->{timer} ? Mojo::JSON->true : Mojo::JSON->false;
 				$_->{cansell} = $_->{cansell} ? Mojo::JSON->true : Mojo::JSON->false;

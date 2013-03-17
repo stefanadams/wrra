@@ -4,7 +4,7 @@ use 5.010;
 use base 'WRRA::Schema::Result::Item';
 
 # The columns to be rendered
-sub _colmodel { qw/id number name runningtime timertime description value notifications notify cansell bellringer status nstatus auctioneer url timer startbid minbid highbid.bid highbid.id highbid.bidder.id highbid.bidder.name donor.name donor.url donor.advertisement scheduled started sold contacted cleared/ }
+sub _colmodel { qw/id number name runningtime timertime description value notifications notify cansell bellringer status nstatus auctioneer url timer startbid minbid highbid.bid highbid.id highbid.bidder.id highbid.bidder.name [bids] donor.name donor.url donor.advertisement scheduled started sold contacted cleared/ }
 
 # The columns to be rendered as special accessor methods
 #sub received { shift->SUPER::received->ymd }
