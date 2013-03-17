@@ -226,6 +226,16 @@ function processContent(value) {
 				$("#logout").click(function(){on_click_logout(auction)});
 
 				if ( auction.session.user.role=='auctioneer' && auction.session.user.name!="auctioneer" ) $('img.auctioneer').hide(); else $('img.auctioneer').show();
+                                $(".bidhistory").click(function(){
+                                    var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                    $.get('<%= url_for 'bidhistory' %>', {id:row.id}, function(data){
+					var hist = '';
+                                        data.forEach(function(a,b){
+                                            hist = hist + a.bidder.name+" ("+a.bid+")<br />\n";
+                                        });
+                                        $.dialog_alert(hist, "Bid History");
+                                    });
+                                });
 
 				// Items
 				//if (!!$(this).attr('item') && $(this).find('span.truncate').html().length > $(this).find('span.truncate').attr("length")){content.push($(this).attr('item'));}
@@ -275,8 +285,9 @@ function processContent(value) {
 //				$('#items tbody img[ack="sold"]').each(function(){processContent(0);$(this).click(function(){$.post('<%= url_for 'clear' %>'+$(this).attr('title'), function(){processContent(1);});});});
 
 				$( document ).tooltip({
+				      show: {delay:0},
 				      items: "img, [pic], [title]",
-				      content: function() {
+				      content: function(callback) {
 					  var element = $( this );
 					  if ( element.is( "[pic]" ) ) {
 					      var text = element.attr('text');
@@ -695,7 +706,7 @@ $(document).ready(function(){
 	    resizable: false,
 	    title: title,
 	    modal: true
-	  }).text(message);
+	  }).html(message);
 	}
 	});
 
@@ -902,7 +913,7 @@ $(document).ready(function(){
 									</div>
 									</div>
 								</td>
-								<td col="bidder" title="{#foreach $T.r.bids as b}{$T.b.name} ({$T.b.bid})<br />{#/for}">
+								<td col="bidder" class="bidhistory">
 									<div style="margin:0 auto;">
 									<div col="bidder" style="margin:0 auto; width: 141px;">
 									<div style="float: left; width: 80%;">

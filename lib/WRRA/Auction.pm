@@ -268,6 +268,15 @@ sub sell {
 	);
 }
 
+sub bidhistory {
+	my $self = shift;
+	my $item_id = $self->param('id') or return $self->render_json({res=>'err'});
+	my $rs = $self->db->resultset(Bid => 'BidHistory')->search({item_id=>$item_id}, {order_by=>'bidtime desc'});
+	$self->respond_to(
+		json => {json => [$rs->all]},
+	);
+}
+
 sub bid {
 	my $self = shift;
 	my $id = $self->param('id') or return $self->render_json({res=>'err'});

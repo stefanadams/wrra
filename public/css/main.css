@@ -43,6 +43,7 @@ img.newbid {cursor:pointer;}
 .holdover {cursor:pointer;}
 .sell {cursor:pointer;}
 .clear {cursor:pointer;}
+.bidhistory {cursor:pointer;}
 
 table.items {width:95%;border-collapse:collapse;margin-left:auto;margin-right:auto}
 table.items tr.highlight {background-color:#bbb}
