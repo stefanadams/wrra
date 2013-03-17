@@ -129,6 +129,7 @@ sub delete {
                 push @err, 0 and next unless defined $r;
                 $r = $result_class->_delete($r, $request) if $result_class->can('_delete');
                 push @err, $_ unless $r->delete;
+warn Data::Dumper::Dumper({delete=>[@err]});
         }
 	{res=>(@err?'err':'ok')}
 }

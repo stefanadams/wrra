@@ -19,7 +19,7 @@ sub register {
 		return unless ref $postdata eq 'HASH';
 		$c->req->headers->content_type($ct);
 		$c->req->headers->add('X-MergePostData' => $ct);
-		$c->param($_) or $c->param($_ => $postdata->{$_}) for keys %$postdata;
+		$c->req->param($_) or $c->req->param($_ => $postdata->{$_}) for keys %$postdata;
 	});
 }
 

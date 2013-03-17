@@ -51,6 +51,7 @@ sub register {
 		} else {
 			if ( $object = $memd->get($name) ) {
 				$c->app->log->debug("serving from cache for $name");
+				$c->stash('memd.cached' => 1);
 				return $object;
 			}
 		}

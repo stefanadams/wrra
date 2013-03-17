@@ -64,7 +64,7 @@ sub register {
 		my ($c, $op, $rs) = @_;
 		$self->controller($c);
 		$self->resultset($rs);
-		$self->request(ref $c->merged ? $c->merged : {$c->merged});
+		$self->request($c->req->params->to_hash);
 		$self->id($self->request->{id});
 		$self->result({});
 		{

@@ -29,7 +29,7 @@ $(document).ready(function(){
 //    });
 
     $.extend($.jgrid.defaults, {
-        //mtype: 'POST',
+        //mtype: 'GET',
         datatype: 'json',
         url: '<%= url_for %>',
         cellurl: '<%= url_for %>/update',
@@ -80,7 +80,7 @@ $(document).ready(function(){
 //        multipleSearch: true,
     });
     $.extend($.jgrid.edit, {
-        ajaxEditOptions: { type: "POST" },
+        ajaxEditOptions: { type: "POST", contentType: 'application/json' },
         serializeEditData: function (postData) { return JSON.stringify(postData); },
         width: 700,
         closeOnEscape: true,
@@ -92,7 +92,7 @@ $(document).ready(function(){
         }
     });
     $.extend($.jgrid.del, {
-        ajaxDelOptions: { type: "DELETE" },
+        ajaxDelOptions: { type: "POST", contentType: 'application/json' },
         serializeDelData: function (postData) { return JSON.stringify(postData); },
         afterSubmit: function (response,postdata) {
             var json=response.responseText;

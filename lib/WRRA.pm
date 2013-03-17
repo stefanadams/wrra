@@ -137,6 +137,7 @@ sub setup_routing {
 	$auction->post('/start')->over(has_priv=>'auctioneers')->to('auction#start');
 	$auction->post('/timer/:timer', timer=>[qw/start stop/])->over(has_priv=>'auctioneers')->to('auction#timer')->name('timer');
 	$auction->post('/sell')->over(has_priv=>'auctioneers')->to('auction#sell');
+	$auction->get('/bidhistory')->to('auction#bidhistory');
 	$auction->post('/bid')->to('auction#bid');
 	$auction->post('/bidder')->to('auction#bidder');
 
@@ -188,6 +189,7 @@ sub setup_routing {
 	$admin->jqgrid([Bellitems => 'Bellitem']);
 	$admin->jqgrid([Bidders => 'Bidder']);
 	$admin->jqgrid([Bids => 'Bid']);
+	$admin->jqgrid([Bidding => 'Item']);
 	$admin->under('/seq_items')
 		->dbroute(['/' => SeqItems => 'Item'], {seq_items => 'list'}, \'get', extra_path => ':n')
 		->dbroute(['/' => SeqItems => 'Item'], {seq_items => 'sequence'}, \'post', extra_path => ':n');

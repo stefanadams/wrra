@@ -29,7 +29,7 @@ sub register {
     my ($c, $rs) = @_;
     $self->controller($c);
     $self->resultset($rs);
-    $self->request(ref $c->merged ? $c->merged : {$c->merged});
+    $self->request($c->req->params->to_hash);
     $rs = ($rs->result_class)->_search($rs, $self->request) if ($rs->result_class)->can('_search');
     $rs = ($rs->result_class)->_read($rs, $self->request) if ($rs->result_class)->can('_read');
     return $rs;

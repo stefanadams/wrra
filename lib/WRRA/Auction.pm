@@ -5,10 +5,8 @@ use Mojo::JSON;
 
 sub auction {
 	my $self = shift;
-	$ENV{DBIC_TRACE}=1;
 	my $auction = $self->memd || $self->memd($self->_auction);
 	$auction->{header}->{ad} = $self->_display_ad;
-	$ENV{DBIC_TRACE}=0;
 	$self->respond_to(
 		json => {json => $auction},
 	);
@@ -66,12 +64,12 @@ sub _items {
 		when ( 'ondeck' ) {
 			return undef unless $self->has_priv('auctioneers');
 			$rs = $rs->current_year->ondeck;
-			$rs = $rs->auctioneer($self->username) if $self->role eq 'auctioneers';
+			$rs = $rs->auctioneer($self->username) if $self->role && $self->role eq 'auctioneers' && $self->username ne 'auctioneer';
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 		}
 		when ( 'bidding' ) {
 			$rs = $rs->current_year->bidding->search(undef, {prefetch=>['highbid', 'bids']});
-			$rs = $rs->auctioneer($self->username) if $self->role eq 'auctioneers';
+			$rs = $rs->auctioneer($self->username) if $self->role && $self->role eq 'auctioneers' && $self->username ne 'auctioneer';
 			$items = Mojo::JSON->new->decode(Mojo::JSON->new->encode([$rs->all]));
 			foreach ( @$items ) {
 				# if((find_in_set('newbid',`items`.`notify`) > 0),1,NULL) `newbid`
@@ -270,6 +268,15 @@ sub sell {
 	);
 }
 
+sub bidhistory {
+	my $self = shift;
+	my $item_id = $self->param('id') or return $self->render_json({res=>'err'});
+	my $rs = $self->db->resultset(Bid => 'BidHistory')->search({item_id=>$item_id}, {order_by=>'bidtime desc'});
+	$self->respond_to(
+		json => {json => [$rs->all]},
+	);
+}
+
 sub bid {
 	my $self = shift;
 	my $id = $self->param('id') or return $self->render_json({res=>'err'});
@@ -278,13 +285,13 @@ sub bid {
 		when ( 'auctioneers' ) {
 			$r = $self->db->resultset('Item')->find($id)->respond('newbid')->update;
 		}
-		when ( 'operators' ) {
+		when ( /^operators$|^admins$/ ) {
 			my $phone = $self->param('phone') or return $self->render_json({res=>'err'});
 			my $bidder_id = $self->param('bidder_id');
 			my $name = $self->param('name') or return $self->render_json({res=>'err'});
 			my $bid = $self->param('bid') or return $self->render_json({res=>'err'});
 			unless ( $bidder_id ) {
-				my $new_bidder = $self->db->resultset('Bidder')->create({name=>$name,phone=>$phone});
+				my $new_bidder = $self->db->resultset('Bidder')->create({year=>$self->datetime->year,name=>$name,phone=>$phone});
 				return $self->render_json({res=>'err'}) unless $bidder_id = $new_bidder->id;
 			}
 			$bid = $self->db->resultset('Bid')->create({item_id=>$id,bidder_id=>$bidder_id,bid=>$bid,bidtime=>$self->datetime_mysql}) or return return $self->render_json({res=>'err'});
@@ -301,6 +308,7 @@ sub bidder {
 	my $self = shift;
 	my $bidder_id = $self->param('id') or return $self->render_json({res=>'err'});
 	my $bidder = {
+		year => $self->datetime->year,
 		address => $self->param('address') || '',
 		city => $self->param('city') || '',
 		state => $self->param('state') || '',

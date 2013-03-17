@@ -6,6 +6,7 @@
 
 <!-- <META HTTP-EQUIV="refresh" content="120;URL=<%= url_for %>"> -->
 
+<link href='http://fonts.googleapis.com/css?family=Tinos' rel='stylesheet' type='text/css'>
 <link   rel="stylesheet" type="text/css" media="screen" href="/css/main.css" />
 <link   rel="stylesheet" type="text/css" media="screen" href="/css/jquery.contextMenu.css" />
 <link   href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/themes/base/jquery-ui.css" type="text/css" rel="stylesheet" media="all" />
@@ -22,6 +23,7 @@
 
 
 <script type="text/javascript">
+localStorage['stop_error_pause'] = 0;
 localStorage['allowHumanMsg'] = 1;
 var alert;
 var alert_msg;
@@ -123,6 +125,21 @@ function contextMenu(auction) {
 
 function pc() { processContent(2); }
 function processContent(value) {
+	if ( value == 'pause' ) {
+		var t = new Date().getTime() - localStorage['stop_error_pause'];
+console.log('pause: '+t);
+		if ( t > 500 ) {
+			console.log('real pause');
+//			processContent(0);
+		}
+		return true;
+	}
+	if ( value == 'resume' ) {
+console.log('resume');
+		localStorage['stop_error_pause'] = new Date().getTime();
+//		setTimeout(processContent(1), 6000);
+		return true;
+	}
 	if ( value == 2 ) {
 		$("#content").processTemplateStop();
 		value=1;
@@ -225,6 +242,16 @@ function processContent(value) {
 				$("#logout").click(function(){on_click_logout(auction)});
 
 				if ( auction.session.user.role=='auctioneer' && auction.session.user.name!="auctioneer" ) $('img.auctioneer').hide(); else $('img.auctioneer').show();
+                                $(".bidhistory").click(function(){
+                                    var i = $(this).closest('tr').attr('key'); var row = auction.items.bidding[i];
+                                    $.get('<%= url_for 'bidhistory' %>', {id:row.id}, function(data){
+					var hist = '';
+                                        data.forEach(function(a,b){
+                                            hist = hist + a.bidder.name+" ("+a.bid+")<br />\n";
+                                        });
+                                        $.dialog_alert(hist, "Bid History");
+                                    });
+                                });
 
 				// Items
 				//if (!!$(this).attr('item') && $(this).find('span.truncate').html().length > $(this).find('span.truncate').attr("length")){content.push($(this).attr('item'));}
@@ -237,9 +264,9 @@ function processContent(value) {
 						var more = text;
 						$(this).click(function(){$.dialog_alert(more, 'More...');});
 						if ( len > 0 ) {
-							text = text.substring(0,len)+'... <img src="img/paper1.gif" alt="'+text+'"/>';
+							text = text.substring(0,len)+'... <img src="img/info.png" alt="'+text+'"/>';
 						} else {
-							text = '<img src="img/paper1.gif" alt="'+text+'"/>';
+							text = '<img src="img/info.png" alt="'+text+'"/>';
 						}
 					}
 					$(this).html(text);
@@ -275,7 +302,9 @@ function processContent(value) {
 
 				$( document ).tooltip({
 				      items: "img, [pic], [title]",
-				      content: function() {
+				      open: function(e,ui){ return processContent('pause'); },
+				      close: function(e,ui){ return processContent('resume'); },
+				      content: function(callback) {
 					  var element = $( this );
 					  if ( element.is( "[pic]" ) ) {
 					      var text = element.attr('text');
@@ -463,27 +492,13 @@ function on_click_alert(auction){
 }
 
 function on_click_operator(key, opt, auction) {
-	var item_id, number, minbid, highbid, status, nstatus, timer, bellringer;
 	if ( key ) {
-		console.log(key, opt.$trigger.attr("itemid"));
-		item_id=opt.$trigger.attr('itemid');
-		number=opt.$trigger.attr('number');
-		minbid=opt.$trigger.attr('minbid');
-		highbid=opt.$trigger.attr('highbid');
-		nstatus=opt.$trigger.attr('nstatus');
-		timer=opt.$trigger.attr('timer');
-		bellringer=opt.$trigger.attr('bellringer');
+		var i = opt.$trigger.closest('tr').attr('key');
 	} else {
-		console.log(opt.attr('itemid'));
-		item_id=opt.attr('itemid');
-		number=opt.attr('number');
-		minbid=opt.attr('minbid');
-		highbid=opt.attr('highbid');
-		nstatus=opt.attr('nstatus');
-		timer=opt.attr('timer');
-		bellringer=opt.attr('bellringer');
+		var i = opt.closest('tr').attr('key');
 	}
-	console.log('operator', nstatus, status);
+	var row = auction.items.bidding[i];
+	console.log('operator', row.nstatus, row.status);
 	refreshTimer(0);
 	$("#dialog-operator").dialog({
 		autoOpen: false,
@@ -492,7 +507,7 @@ function on_click_operator(key, opt, auction) {
 		modal: true,
 		position: {my: "center top", at: "bottom", of: "#headergroup"},
 		open: function() {
-			$('#dialog-operator-form input[name=operator-bid]').val(minbid);
+			$('#dialog-operator-form input[name=operator-bid]').val(row.minbid);
 			$('#dialog-operator-form input[name=operator-phone]').mask("(999) 999-9999");
 			$(this).keypress(function(e) {
 			    if (e.keyCode == $.ui.keyCode.ENTER) {
@@ -508,7 +523,7 @@ function on_click_operator(key, opt, auction) {
 				this_bid.dialog({title: 'Bid...'});
 				if ( $('#dialog-operator-form').valid() ) {
 					console.log('AAA');
-                                        $.post('<%= url_for 'bid' %>', {id:item_id, phone: $('#operator-phone').val(), name: $('#operator-name').val(), bid: $('#operator-bid').val(), approve: 1}, function(data){
+                                        $.post('<%= url_for 'bid' %>', {id:row.id, bidder_id: $('#operator-bidder_id').val(), phone: $('#operator-phone').val(), name: $('#operator-name').val(), bid: $('#operator-bid').val(), approve: 1}, function(data){
                                                 //$.post('/api/approve/'+data.request.request_id+'/1', function(){
                                                 //	$(window).humanMsg("Bid placed! :D", {autoHide: 3*1000})
                                                 //	processContent(0);
@@ -531,11 +546,11 @@ function on_click_operator(key, opt, auction) {
 			refreshTimer(0);
 		}
 	});
-	$("#dialog-operator-title").html("Bid on item "+number+" (Minimum: "+minbid+")");
-	if ( nstatus == "Bidding" ) {
+	$("#dialog-operator-title").html("Bid on item "+row.number+" (Minimum: "+row.minbid+")");
+	if ( row.nstatus == "Bidding" ) {
 		$("#dialog-operator").dialog("open");
 	} else {
-		$.dialog_alert(nstatus, "Closed!");
+		$.dialog_alert(row.nstatus, "Closed!");
 	}
 
 	$("#operator-name").autocomplete({
@@ -545,7 +560,7 @@ function on_click_operator(key, opt, auction) {
 			event.preventDefault;
 			if (ui.item){
 				$('#operator-phone').val(ui.item.phone);
-				$('#operator-bidderid').val(ui.item.id);
+				$('#operator-bidder_id').val(ui.item.id);
 			}
 		}
         }).data( "ui-autocomplete" )._renderItem = function( ul, item ) {
@@ -708,7 +723,7 @@ $(document).ready(function(){
 	    resizable: false,
 	    title: title,
 	    modal: true
-	  }).text(message);
+	  }).html(message);
 	}
 	});
 
@@ -751,7 +766,7 @@ $(document).ready(function(){
 									<span class="title">{$T.header.about.name} {$T.header.about.year} {$T.header.about.night?", Night " + $T.header.about.night:''} {$T.header.about.live?'':' (Offline)'}</span>
 								{#else}
 									<span class="title">{$T.header.about.name} -- Closed</span>
-									<img class="arrowsep" src="img/right_arrow_button.gif" />
+									<img class="arrowsep" src="img/arrow-right.png" />
 									<span class="reopens">Re-opens {$T.header.about.date_next}</span>
 								{#/if}
 								</div>
@@ -773,7 +788,7 @@ $(document).ready(function(){
 												{#/foreach}
 											</span>
 										</span>
-										<img class="arrowsep" src="img/right_arrow_button.gif" />
+										<img class="arrowsep" src="img/arrow-right.png" />
 										<span class="bid">Bid:
 											<span class="phone">
 												{#foreach $T.header.play.bid.phone as phone}
@@ -787,7 +802,7 @@ $(document).ready(function(){
 											<span class="chat"><a class="mast" href="http://dev.washingtonrotary.com/rra/mibew/client.php?locale=en&style=simplicit" id="livechat">Web Chat</a>
 											</span>
 										</span>
-										<img class="arrowsep" src="img/right_arrow_button.gif" />
+										<img class="arrowsep" src="img/arrow-right.png" />
 										{#/if}
 										<span class="pay">Pay:
 											<a id="paypal" class="modal">PayPal</a>
@@ -863,19 +878,21 @@ $(document).ready(function(){
 						</thead>
 						<tbody>
 						{#foreach $T.items.bidding as r}
-							<tr id="tr_{$T.r.id}" key="{$T.r$key}" class="context-item {#if $T.r.timer && !$T.r.sold}timer{#/if} {#if $T.r.sold}sold{#/if}" itemid="{$T.r.id}" sold="{$T.r.sold}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}">
+							<tr id="tr_{$T.r.id}" key="{$T.r$key}" class="context-item {#if $T.r.timer && !$T.r.sold}timer{#/if} {#if $T.r.sold}sold{#/if}" item_id="{$T.r.id}" sold="{$T.r.sold}" name="item" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}" newbid="{$T.r.notify.newbid}" bellringer="{$T.r.bellringer}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}">
 								<td col="item" class=tooltip item="{$T.r.name}" description="{$T.r.description}" img="{$T.r.img}">
 									<div col="item">
 									<div style="float:left;width:80%">
 									{#if $T.r.auctioneer}
-										<img class="auctioneer context-item {#if $T.session.user.privs.admins}ci-re-assign{#/if}" src="img/{$T.r.auctioneer}.gif" />
+										{#if ($T.session.user.role=="auctioneers" && $T.session.user.name=="auctioneer") || $T.session.user.role!="auctioneers"}
+										<img class="auctioneer context-item {#if $T.session.user.privs.admins}ci-re-assign{#/if}" src="img/{$T.r.auctioneer}.png" />
+										{#/if}
 									{#/if}
 									{#if $T.session.user.privs.operators}
-										<a id="operator-{$T.r.id}" title="Place Bid" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+										<a id="operator-{$T.r.id}" title="Place Bid" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#elseif $T.session.user.privs.auctioneers}
-										<a id="auctioneer-{$T.r.id}" class="{#if $T.r.notify.newbid}newbid{#/if}" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+										<a id="auctioneer-{$T.r.id}" class="{#if $T.r.notify.newbid}newbid{#/if}" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#elseif $T.session.user.name}
-										<a id="bid-{$T.r.id}" class="item-number modal" itemid="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
+										<a id="bid-{$T.r.id}" class="item-number modal" item_id="{$T.r.id}" number="{$T.r.number}" timer="{$T.r.timer}" status="{$T.r.status}" nstatus="{$T.r.nstatus}" minbid="{$T.r.minbid}" value="{$T.r.value}" highbid="{$T.r.highbid.bid}"><span class="item number">{$T.r.number}</span><span class="item"></a>:</span>
 									{#else}
 										<span class="item number">{$T.r.number}</span><span class="item">:</span>
 									{#/if}
@@ -885,8 +902,8 @@ $(document).ready(function(){
 									</div>
 									<div style="float:right;width:20%;text-align:right">
 									{#if $T.r.description}<span class="truncate" length="0">{$T.r.description}</span>{#/if}
-									{#if $T.r.url}<a href="{$T.r.url}" target="_new"><img src="img/chain1.png" style="border-style: none" title="Visit the product website of Item #{$T.r.number}"/></a>{#/if}
-									{#if $T.r.img}<a href="{$T.r.img}" target="_new"><img src="img/attach_image.gif" text="{$T.r.img}" pic="pic" /></a>{#/if}
+									{#if $T.r.url}<a href="{$T.r.url}" target="_new"><img src="img/link.png" style="border-style: none" title="Visit the product website of Item #{$T.r.number}"/></a>{#/if}
+									{#if $T.r.img}<a href="{$T.r.img}" target="_new"><img src="img/picture.png" text="{$T.r.img}" pic="pic" /></a>{#/if}
 									</div>
 									</div>
 								</td>
@@ -897,7 +914,7 @@ $(document).ready(function(){
 									</div>
 									<div style="float:right;width:20%;text-align:right">
 									{#if !$T.r.sold}
-										{#if $T.r.timer}<img src="img/timer-on.gif" title="Running Time: {$T.r.runningtime}<br>Timer Time: {$T.r.timertime}"/>{#/if}
+										{#if $T.r.timer}<img src="img/timer.png" title="Running Time: {$T.r.runningtime}<br>Timer Time: {$T.r.timertime}"/>{#/if}
 									{#/if}
 									</div>
 									</div>
@@ -908,26 +925,26 @@ $(document).ready(function(){
 									<span class="currency">{$T.r.highbid.bid}</span>
 									</div>
 									<div style="float:right;width:20%;text-align:right">
-									{#if $T.r.notify.newbid}<img class="{#if $T.session.user.privs.auctioneers}newbid{#/if}" src="img/paddle1.gif" title="New Bid"/>{#/if}
-									{#if $T.r.bellringer}<img src="img/bell2.png" title="Bell Ringer"/>{#/if}
+									{#if $T.r.bellringer}<img src="img/bell.png" title="Bell Ringer"/>{#/if}
+									{#if $T.r.notify.newbid}<img class="{#if $T.session.user.privs.auctioneers}newbid{#/if}" src="img/newbid.png" title="New Bid"/>{#/if}
 									</div>
 									</div>
 								</td>
-								<td col="bidder" title="{#foreach $T.r.bids as b}{$T.b.name} ({$T.b.bid}){#/for}">
+								<td col="bidder" class="bidhistory">
 									<div style="margin:0 auto;">
 									<div col="bidder" style="margin:0 auto; width: 141px;">
 									<div style="float: left; width: 80%;">
 									<span class="bidder">{$T.r.highbid.bidder.name}</span>
 									</div>
 									<div style="float:right;width:20%; text-align:left;">
-									{#if $T.session.user.privs.admins || $T.session.user.privs.auctioneers}
+									{#if $T.session.user.privs.auctioneers}
 										{#if $T.r.sold}
-											<img src="img/sold.gif" ack="sold"/>
+											<img src="img/sell-sold.png" ack="sold"/>
 										{#elseif $T.r.notifications.sell}
-											<img src="img/sell.gif" />
+											<img src="img/sell-requested.png" />
 										{#/if}
 									{#else}
-										{#if $T.r.timer}<img src="img/sold.gif" />{#/if}
+										{#if $T.r.sold}<img src="img/sell-sold.png" />{#/if}
 									{#/if}
 									</div>
 									</div>
@@ -937,23 +954,23 @@ $(document).ready(function(){
 								<td col="actions">
 									{#if $T.session.user.privs.admins}
                                                                                 {#if $T.r.notify.sell}
-                                                                                        <img src="img/gavel3.png" alt="Sale Requested">
+                                                                                        {#if $T.r.cansell}<img src="img/sell-requested.png" alt="Sale Requested">{#/if}
                                                                                 {#elseif !$T.r.notify.sell && $T.r.cansell}
-                                                                                        <img class="sell" src="img/gavel4.gif" alt="Request to Sell">
+                                                                                        <img class="sell" src="img/sell-request.png" alt="Request to Sell">
                                                                                 {#elseif $T.r.notify.starttimer && !$T.r.timer}
-                                                                                        <img src="img/timer-requested.gif" alt="Timer Requested">
+                                                                                        <img src="img/timer-requested.png" alt="Timer Requested">
                                                                                 {#elseif !$T.r.notify.starttimer && !$T.r.timer}
-                                                                                        <img class="starttimer" src="img/timer-request.gif" alt="Request to Start Timer">
+                                                                                        <img class="starttimer" src="img/timer-request.png" alt="Request to Start Timer">
                                                                                 {#/if}
 									{#else}
                                                                                 {#if $T.r.sold}
-                                                                                        <img class="clear" src="img/no.gif" alt="Clear Item from Board">
+                                                                                        <img class="clear" src="img/clear.png" alt="Clear Item from Board">
                                                                                 {#elseif $T.r.notify.sell}
-                                                                                        <img class="sell" src="img/gavel4.gif" alt="Sell Item Now">
+											{#if $T.r.cansell}<img class="sell" src="img/sell-request.png" alt="Sell Item Now">{#/if}
                                                                                 {#elseif $T.r.notify.holdover}
                                                                                         <img class="holdover" src="img/star1.gif" alt="Announce to Hold Over">
                                                                                 {#elseif $T.r.notify.starttimer}
-                                                                                        <img class="starttimer" src="img/timer-request.gif" alt="Start Timer Now">
+                                                                                        <img class="starttimer" src="img/timer-request.png" alt="Start Timer Now">
                                                                                 {#/if}
 									{#/if}
 								</td>
@@ -966,13 +983,13 @@ $(document).ready(function(){
 									{#if 0 && $T.r.donor.url}</a>{#/if}
 									</div>
 									<div style="float:right;width:20%;text-align:right">
-									{#if $T.r.donor.url}<a href="{$T.r.donor.url}" target="_new"><img src="img/chain1.png" style="border-style: none" title="Visit the website of {$T.r.donor.name}" /></a>{#/if}
+									{#if $T.r.donor.url}<a href="{$T.r.donor.url}" target="_new"><img src="img/link.png" style="border-style: none" title="Visit the website of {$T.r.donor.name}" /></a>{#/if}
 									</div>
 									</div>
 								</td>
 								<td col="message" class="tooltip" message="{$T.r.donor.advertisement}">
 									<div col="message">
-									<span class="message truncate" length="160" itemid="{$T.r.id}">{$T.r.donor.advertisement}</span>
+									<span class="message truncate" length="160" item_id="{$T.r.id}">{$T.r.donor.advertisement}</span>
 									</div>
 								</td>
 							</tr>
@@ -984,13 +1001,13 @@ $(document).ready(function(){
 					{#if !$T.session.user.role}
 					<div id="key">
 						<span class="key">Key:
-							<img valign='middle' src='img/paddle1.gif' width='16' height='16' class="tooltip above" description="New Bid">&nbsp;= New Bid |
-							<img valign='middle' src='img/bell2.png' width='16' height='16' class="tooltip above" description="Bell Ringer">&nbsp;= Bell Ringer |
-							<img valign='middle' src='img/timer-on.gif' width='16' height='16' class="tooltip above" description="Timer">&nbsp;= Timer |
-							<img valign='middle' src='img/sold.gif' width='16' height='16' class="tooltip above" description="Sold">&nbsp;= Sold |
-							<img valign='middle' src='img/paper1.gif' width='16' height='16' class="tooltip above" description="More description">&nbsp;= More description |
-							<img valign='middle' src='img/chain1.png' width='16' height='16' class="tooltip_fixed above" description="<a href='http://google.com' target='_new'>Link</a>">&nbsp;= External link |
-							<img valign='middle' src='img/attach_image.gif' width='16' height='16' class="tooltip above" description="<img src='img/attach_image.gif' />">&nbsp;= View image
+							<img valign='middle' src='img/newbid.png' width='16' height='16' class="tooltip above" description="New Bid">&nbsp;= New Bid |
+							<img valign='middle' src='img/bell.png' width='16' height='16' class="tooltip above" description="Bell Ringer">&nbsp;= Bell Ringer |
+							<img valign='middle' src='img/timer.png' width='16' height='16' class="tooltip above" description="Timer">&nbsp;= Timer |
+							<img valign='middle' src='img/sell-sold.png' width='16' height='16' class="tooltip above" description="Sold">&nbsp;= Sold |
+							<img valign='middle' src='img/info.png' width='16' height='16' class="tooltip above" description="More description">&nbsp;= More description |
+							<img valign='middle' src='img/link.png' width='16' height='16' class="tooltip_fixed above" description="<a href='http://google.com' target='_new'>Link</a>">&nbsp;= External link |
+							<img valign='middle' src='img/picture.png' width='16' height='16' class="tooltip above" description="<img src='img/picture.png' />">&nbsp;= View image
 						</span>
 					</div>
 					{#/if}
@@ -1007,7 +1024,7 @@ $(document).ready(function(){
 						</thead>
 						<tbody>
 						{#foreach $T.items.ready as r}
-							<tr id="ready_{$T.r.id}" class="context-item" itemid="{$T.r.id}" key="{$T.r$key}" name="item">
+							<tr id="ready_{$T.r.id}" class="context-item" item_id="{$T.r.id}" key="{$T.r$key}" name="item">
 								<td>
 									<div style="float:left;width:100%">
 									<span class="item number">{$T.r.number}</span><span class="item">:</span>
@@ -1028,15 +1045,15 @@ $(document).ready(function(){
 								<td align="center">
 									<div>
 									<div style="float:center;width:80%">
-									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start-a" src="img/a.gif" alt="Assign to A"/>
-									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start-b" src="img/b.gif" alt="Assign to B"/>
+									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start-a" src="img/a.png" alt="Assign to A"/>
+									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start-b" src="img/b.png" alt="Assign to B"/>
 									</div>
 									</div>
 								</td>
 								{#/if}
 							</tr>
 						{#else}
-							<tr><td colspan=6><span name="tableempty">No items currently up for bid</span></td></tr>
+							<tr><td colspan=6><span name="tableempty">No more items scheduled to start today</span></td></tr>
 						{#/for}
 						</tbody>
 					</table>
@@ -1049,11 +1066,18 @@ $(document).ready(function(){
 						</thead>
 						<tbody>
 						{#foreach $T.items.ondeck as r}
-							<tr id="ondeck_{$T.r.id}" class="context-item" itemid="{$T.r.id}" key="{$T.r$key}" name="item">
+							<tr id="ondeck_{$T.r.id}" class="context-item" item_id="{$T.r.id}" key="{$T.r$key}" name="item">
 								<td>
-									<div style="float:left;width:100%">
+									<div col="item">
+									<div style="float:left;width:80%">
+									{#if $T.r.auctioneer}
+										{#if ($T.session.user.role=="auctioneers" && $T.session.user.name=="auctioneer") || $T.session.user.role!="auctioneers"}
+										<img class="auctioneer context-item {#if $T.session.user.privs.admins}ci-re-assign{#/if}" src="img/{$T.r.auctioneer}.png" />
+										{#/if}
+									{#/if}
 									<span class="item number">{$T.r.number}</span><span class="item">:</span>
 									<span class="truncate" length="70">{$T.r.name}</span>
+									</div>
 									</div>
 								</td>
 								<td>
@@ -1070,8 +1094,12 @@ $(document).ready(function(){
 								<td align="center">
 									<div>
 									<div style="float:{#if $T.r$iteration%2==0}left{#else}right{#/if};width:60%">
-									{#if $T.items.bidding.length < <%= app->config->{auctioneers}->{max_items} || 5 %>}
-									<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start" src="img/start1.png" />
+									{#if $T.session.user.name!="auctioneer"}
+										{#if $T.items.bidding.length < <%= app->config->{auctioneers}->{max_items} || 5 %>}
+										<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start" src="img/start.png" />
+										{#/if}
+									{#else}
+										<img id="start_{$T.r.id}" item_id="{$T.r.id}" class="start" src="img/start.png" />
 									{#/if}
 									</div>
 									</div>
@@ -1079,7 +1107,7 @@ $(document).ready(function(){
 								{#/if}
 							</tr>
 						{#else}
-							<tr><td colspan=6><span name="tableempty">No items currently up for bid</span></td></tr>
+							<tr><td colspan=6><span name="tableempty">No more items waiting to be started</span></td></tr>
 						{#/for}
 						</tbody>
 					</table>
@@ -1126,8 +1154,8 @@ $(document).ready(function(){
 	<div id="dialog-paypal" title="Pay by Credit Card" class="modal">
 		<form id="dialog-paypal-form" action='https://www.paypal.com/cgi-bin/webscr' method='post'>
 			<input type='hidden' name='cmd' value='_s-xclick'><input type='hidden' name='hosted_button_id' value='4113257'>
-			<input type='hidden' name='bidderid' id="paypal-bidder_id">
-			<input type='hidden' name='itemid' id="paypal-item_id">
+			<input type='hidden' name='bidder_id' id="paypal-bidder_id">
+			<input type='hidden' name='item_id' id="paypal-item_id">
 			<table>
 				<tr><td colspan="2">Complete the form below to pay for your item:<div id="paypal-empty-message"></div></td></tr>
 				<tr><td><em>*</em>Item #:</td><td><input type='hidden' name='on0' value='Item ID'><input class="required" id="paypal-os0" type='text' name='os0' maxlength='4'></td></tr>
@@ -1143,9 +1171,10 @@ $(document).ready(function(){
 
 	<div id="dialog-operator" title="Operator" class="modal">
 		<form id="dialog-operator-form" name="operator" action='<%= url_for 'bid' %>' method='post'>
+			<input type='hidden' name='bidder_id' id="paypal-bidder_id">
 			<table>
 				<tr><td colspan="2"><div id="dialog-operator-title">Submit Bid</div></td></tr>
-				<tr><td><em>*</em>Bidder</td><td><input class="required" id="operator-name" type='text' name='operator-name' maxlength='60' value=''><input id="operator-bidderid" type='hidden' name='operator-bidderid' maxlength='60' value=''></td></tr>
+				<tr><td><em>*</em>Bidder</td><td><input class="required" id="operator-name" type='text' name='operator-name' maxlength='60' value=''><input id="operator-bidder_id" type='hidden' name='operator-bidder_id' maxlength='60' value=''></td></tr>
 				<tr><td><em>*</em>Phone</td><td><input class="required" id="operator-phone" type='text' name='operator-phone' maxlength='60' value=''></td></tr>
 				<tr><td><em>*</em>Amount</td><td><input class="required" id="operator-bid" type='text' name='operator-bid' maxlength='60' value=''></td></tr>
 			</table>
