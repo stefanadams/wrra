@@ -1,0 +1,6 @@
+<select>
+  <option value="" />
+  % foreach ( @$rs ) {
+      <option value="<%= $_->id %>"><%= $_->name %></option>
+  % } 
+</select>
