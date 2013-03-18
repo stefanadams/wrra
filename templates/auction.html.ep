@@ -60,7 +60,7 @@ function contextMenu(auction) {
                     },
                     items: {
                         a: {name: "Re-assign to A", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='a' ? true : false; }},
-                        b: {name: "Re-assign to B", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='b' ? true : false; }},
+                        b: {name: "Re-assign to B", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='b' ? true : false; }}
                     }
                 };
             }
@@ -93,8 +93,8 @@ function contextMenu(auction) {
 					name: "Re-assign Auctioneer",
 					items: {
 						a: {name: "A", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='a' ? true : false; }},
-						b: {name: "B", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='b' ? true : false; }},
-					},
+						b: {name: "B", disabled: function(key, opt){ var row = get_row(opt.$trigger, auction, 'bidding'); return row.auctioneer=='b' ? true : false; }}
+					}
 				},
 				"sep1": "---------",
 				notify_starttimer: {name: "Request Timer Start", disabled: function(key, opt){ return opt.$trigger.attr("timer") ? false : true; }},
@@ -106,7 +106,7 @@ function contextMenu(auction) {
 				"sep3": "---------",
 				place_bid: {name: "Place Bid"},
 				retract_bid: {name: "Clear Last Bid"},
-				retract_item: {name: "Retract Item Now"},
+				retract_item: {name: "Retract Item Now"}
 			    }
 			};
 		} else {
@@ -411,7 +411,7 @@ function on_click_paypal(auction) {
                                 $('#paypal-state').val(ui.item.state);
                                 $('#paypal-zip').val(ui.item.zip);  
                         }
-		},
+		}
 	});
 }
 
