@@ -5,8 +5,10 @@ use Mojo::JSON;
 
 sub auction {
 	my $self = shift;
+$self->profiler;
 	my $auction = $self->memd || $self->memd($self->_auction);
 	$auction->{header}->{ad} = $self->_display_ad;
+$self->profiler;
 	$self->respond_to(
 		json => {json => $auction},
 	);
