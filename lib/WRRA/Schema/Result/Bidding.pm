@@ -32,12 +32,12 @@ sub _create {
 	$r->number($number);
 	return $r;
 };
-sub _search { $_[1]->current_year };
+sub _search { $_[1]->current_year->bidding };
 #sub _update { $_[1] };
 #sub _delete { $_[1] };
 
 # The relationships associated with this result (table)
-our $relationships = [qw/highbid bid bidder donor/];
+our $relationships = [qw/highbid donor/];
 
 # When reading (i.e. searching or ordering), use this hashref to lookup references (scalar) or use mysql functions (scalarref)
 # As a special case, if an arrayref is provided, index [0] is provided for search routines and index [1] is provided for ordering routines.

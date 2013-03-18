@@ -11,7 +11,7 @@ sub register {
 		$self->{profiler} = DateTime::HiRes->now unless $self->{profiler};
 		my $p = delete $self->{profiler};
 		$p = DateTime::HiRes->now->hires_epoch - $p->hires_epoch;
-		warn "Profiler: $p\n";
+		$app->log->info("Profiler: $p");
 	});
 	$app->helper(profiler_start => sub {
 		my $c = shift;
@@ -32,7 +32,7 @@ sub register {
 			$p = pop @{$self->{profiler_stack}};
 		}
 		$p = DateTime::HiRes->now->hires_epoch - $p->hires_epoch;
-		warn "Profiler $name: $p\n";
+		$app->log->info("Profiler $name: $p");
 	});
 }
 

@@ -77,6 +77,7 @@ __PACKAGE__->set_primary_key("bellitem_id");
 # Created by DBIx::Class::Schema::Loader v0.07022 @ 2013-03-13 14:11:46
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:t6Ekp8t8snD8ySNiUgL7pg
 
+__PACKAGE__->has_many(items => 'WRRA::Schema::Result::Item', 'bellitem_id', {join_type=>''});
 sub id { shift->bellitem_id }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

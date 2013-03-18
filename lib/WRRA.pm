@@ -1,8 +1,6 @@
 package WRRA;
 use Mojo::Base 'Mojolicious';
 
-use List::MoreUtils qw(firstidx);
-
 # This method will run once at server start
 sub startup {
 	my $self = shift;
@@ -178,6 +176,7 @@ sub setup_routing {
 	$ac->auto_complete([PayNumber => 'Item']);
 	my $bs = $api->under('/bs');
 	$bs->build_select([Rotarians => 'Rotarian']);
+	$bs->build_select([Bellitems => 'Bellitem']);
 
 	$r->get('/bookmarks')->to(cb=>sub{shift->redirect_to('/admin/bookmarks')});
 	my $admin = $r->under('/admin')->over(has_priv=>'admins');
@@ -190,6 +189,7 @@ sub setup_routing {
 	$admin->jqgrid([Bidders => 'Bidder']);
 	$admin->jqgrid([Bids => 'Bid']);
 	$admin->jqgrid([Bidding => 'Item']);
+	$admin->jqgrid([Winners => 'Item']);
 	$admin->under('/seq_items')
 		->dbroute(['/' => SeqItems => 'Item'], {seq_items => 'list'}, \'get', extra_path => ':n')
 		->dbroute(['/' => SeqItems => 'Item'], {seq_items => 'sequence'}, \'post', extra_path => ':n');
@@ -199,8 +199,7 @@ sub setup_routing {
 	$reports->jqgrid_ro([Flyer => 'Item']);
 	$reports->jqgrid_ro([Bankreport => 'Item']);
 	$reports->jqgrid_ro([Summary => 'Item']);
-	$reports->jqgrid_ro([Stockreport => 'Stockitem']);
-	$reports->jqgrid_ro([Winners => 'Item']);
+	$reports->jqgrid_ro([Stockreport => 'Item']);
 
 	#my $sol_aids = $admin->under('/solicitation_aids');
 	#$sol_aids->get('/checklist')->xhr->to('crud#read', m=>'checklist', v=>'checklist');
