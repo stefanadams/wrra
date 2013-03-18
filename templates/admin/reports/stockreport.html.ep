@@ -6,10 +6,10 @@ $("#list1").jqGrid({
     sortorder: 'asc',
 
     colModel:[
-            {name:'name',label:'Pre-arranged Item',width:200,editable:false},
+            {name:'stockitem.name',label:'Pre-arranged Item',width:200,editable:false},
             {name:'count',label:'Count',width:25,align:'right',editable:false},
-            {name:'value',label:'Value',width:25,align:'right',editable:false,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
-            {name:'cost',label:'Cost',width:25, align:'right',editable:false,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
+            {name:'stockitem.value',label:'Value',width:25,align:'right',editable:false,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
+            {name:'stockitem.cost',label:'Cost',width:25, align:'right',editable:false,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
     ],
 }).navGrid('#pager1', {edit:false,add:false,del:false});
 % end

@@ -199,7 +199,7 @@ sub setup_routing {
 	$reports->jqgrid_ro([Flyer => 'Item']);
 	$reports->jqgrid_ro([Bankreport => 'Item']);
 	$reports->jqgrid_ro([Summary => 'Item']);
-	$reports->jqgrid_ro([Stockreport => 'Stockitem']);
+	$reports->jqgrid_ro([Stockreport => 'Item']);
 
 	#my $sol_aids = $admin->under('/solicitation_aids');
 	#$sol_aids->get('/checklist')->xhr->to('crud#read', m=>'checklist', v=>'checklist');
