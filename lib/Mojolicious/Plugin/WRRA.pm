@@ -2,9 +2,6 @@ package Mojolicious::Plugin::WRRA;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use List::MoreUtils qw(firstidx);
-#use DateTime;
-#use DateTime::Format::DateParse;
-use DateTime::Format::MySQL;
 
 sub register {
 	my ($self, $app, $conf) = @_;
@@ -51,14 +48,17 @@ sub register {
 		#warn Data::Dumper::Dumper({hours=>[map { $_->datetime } @hours]});
 		return wantarray ? @hours : [@hours];
 	});
+
 	$app->helper(date_next => sub {
 		my $c = shift;
+		return $c->config->{date_next} if defined $c->config->{date_next};
 		my $date_next = $c->hours($c->auctions->[0])->[0] || $c->hours($c->auctions($c->years->[1])->[0])->[0] || $c->datetime($c->datetime)->add(years=>1);
 		#warn Data::Dumper::Dumper({date_next=>defined $date_next ? $date_next->ymd : ''});
 		return $date_next;
 	});
 	$app->helper(night => sub {
 		my ($c, $date) = @_;
+		return $c->config->{night} if defined $c->config->{night};
 		$date = $date ? $c->datetime($date) : $c->datetime;
 		return undef unless $date;
 		my @auctions = $c->range($c->config->{auctions}->{$date->year});
@@ -69,7 +69,7 @@ sub register {
 	});
 	$app->helper(closed => sub {
 		my $c = shift;
-		return 1 if $c->config->{closed}; #&& $c->app->mode ne 'development';
+		return $c->config->{closed} if defined $c->config->{closed}; #&& $c->app->mode ne 'development';
 		return 1 unless @{$c->hours};
 		my $closed = $c->datetime >= $c->hours($c->auctions->[0])->[0] && $c->datetime <= $c->hours($c->auctions->[0])->[1] ? 0 : 1;
 		#warn Data::Dumper::Dumper({closed=>$closed, hours=>[$c->hours->[0]->datetime, $c->hours->[1]->datetime]});
@@ -77,6 +77,7 @@ sub register {
 	});
 	$app->helper(in_progress => sub {
 		my ($c, $year) = @_;
+		return $c->config->{in_progress} if defined $c->config->{in_progress};
 		return 0 unless @{$c->hours};
 		my $range = $c->config->{auctions}->{$c->years($year)->[0]} or return wantarray ? () : [];
 		my @auctions = $c->range($range);
