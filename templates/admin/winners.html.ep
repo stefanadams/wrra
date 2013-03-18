@@ -1,0 +1,21 @@
+% extends '/admin/layouts/grid', title=>'Winners';
+% content grid => begin
+$("#list1").jqGrid({
+    caption: "Winners",
+
+    colModel:[
+        {name:'scheduled.day_name',label:'Night',width:50,editable:false,sortable:false},
+        {name:'number',label:'Number',width:20,editable:false,sortable:true},
+        {name:'name',label:'Item',width:200,editable:false,sortable:false},
+        {name:'value',label:'Value', width:25, align:'right',editable:false,sortable:false,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
+	{name:'bellringer',label:'Bellringer',width:25,sortable:true,editable:false,edittype:'select',editoptions:{multiple:false,value:'1:Yes;0:No'},formatter:'bool'},
+        {name:'bellitem.name',label:'Bellringer Item',width:100,sortable:true,editable:true,edittype:'select',editoptions:{multiple:false,dataUrl:'<%= url_for 'bs_bellitems' %>'}},
+        {name:'highbid.bid',label:'Winning Bid', width:25, align:'right',editable:false,sortable:false,formatter:'currency',formatoptions:{decimalSeparator:".", thousandsSeparator: ",", decimalPlaces: 0, prefix: "$"}},
+        {name:'highbid.bidder.name',label:'Winner',width:200,editable:false,sortable:false},
+        {name:'highbid.bidder.phone',label:'Phone',width:200,editable:false,sortable:false},
+	{name:'contacted',label:'Contacted',width:25,sortable:true,editable:true,edittype:'select',editoptions:{multiple:false,value:'1:Yes;0:No'},formatter:'timebool'},
+	{name:'paid',label:'Paid',width:25,editable:true,sortable:true,edittype:'select',editoptions:{multiple:false,value:'1:Yes;0:No'},formatter:'timebool'},
+        {name:'donor.name',label:'Donor',width:200,editable:false,sortable:false},
+    ],
+}).navGrid('#pager1', {edit:false,add:false,del:false});
+% end

@@ -72,7 +72,7 @@ $(document).ready(function(){
     <p><%= link_to 'Manage Bids' => 'bids' %></p>
     <p><%= link_to 'Manage Bidders' => 'bidders' %></p>
     <p><%= link_to 'Manage Items Currently In Bidding' => 'bidding' %></p>
-    <p><%= link_to 'Manage Winners' => 'winners' => (class=>'disable') %></p>
+    <p><%= link_to 'Manage Winners' => 'winners' %></p>
   </div>
   <h3>Live Reports</h3>
   <div>
