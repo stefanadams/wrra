@@ -115,6 +115,10 @@ $(document).ready(function(){
             if ( cellvalue == 1 ) return 'Yes';
             return 'No';
         },
+        timebool : function (cellvalue, options, rowdata) {
+            if ( cellvalue == undefined ) return 'No';
+            return 'Yes';
+        },
         category : function (cellvalue, options, rowdata) {
             if ( cellvalue ) return cellvalue.charAt(0).toUpperCase() + cellvalue.slice(1);
             return '&nbsp;';
