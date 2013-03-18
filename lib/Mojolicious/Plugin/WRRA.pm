@@ -69,6 +69,7 @@ sub register {
 	});
 	$app->helper(closed => sub {
 		my $c = shift;
+		return 0 if $c->has_priv('backend');
 		return $c->config->{closed} if defined $c->config->{closed}; #&& $c->app->mode ne 'development';
 		return 1 unless @{$c->hours};
 		my $closed = $c->datetime >= $c->hours($c->auctions->[0])->[0] && $c->datetime <= $c->hours($c->auctions->[0])->[1] ? 0 : 1;
