@@ -685,7 +685,7 @@ $(document).ready(function(){
 
 	$.ajaxSetup({
 		//contentType: 'application/json',
-		headers: {Accept: 'application/json'},
+		headers: {Accept: 'application/json'}
 	});
 	$(document).ajaxComplete(function(event, request, settings) {
 		if ( request.status >= 400 ) {
