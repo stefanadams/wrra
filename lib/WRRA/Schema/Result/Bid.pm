@@ -113,11 +113,12 @@ __PACKAGE__->belongs_to(item => 'WRRA::Schema::Result::Item', 'item_id');
 
 sub id { shift->bid_id }
 
-use DateTime;
 sub bidage {
 	my $self = shift;
-	return 'More than a day' if time-$self->bidtime->epoch > 60*60*24;
-	return join ':', map { sprintf '%02d', $_ } DateTime->now(time_zone=>'local')->subtract_datetime($self->bidtime)->in_units(qw/hours minutes seconds/);
+	my $datetime = $self->result_source->schema->controller->datetime->clone;
+	my $bidtime = $self->bidtime;
+	return 'More than a day' if $datetime->epoch - $bidtime->epoch > 60*60*24;
+	return join ':', map { sprintf '%02d', $_ } $datetime->subtract_datetime($bidtime)->in_units(qw/hours minutes seconds/);
 }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
