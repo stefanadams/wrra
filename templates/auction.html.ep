@@ -778,9 +778,6 @@ $(document).ready(function(){
 													{#/if}
 												{#/foreach}
 											</span>
-											<span class="choicesep">/</span>
-											<span class="chat"><a class="mast" href="http://dev.washingtonrotary.com/rra/mibew/client.php?locale=en&style=simplicit" id="livechat">Web Chat</a>
-											</span>
 										</span>
 										<img class="arrowsep" src="img/arrow-right.png" />
 										{#/if}
