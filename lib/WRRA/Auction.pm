@@ -304,20 +304,26 @@ sub bid {
 	);
 }
 
-sub bidder {
+sub pay {
 	my $self = shift;
-	my $bidder_id = $self->param('id') or return $self->render_json({res=>'err'});
-	my $bidder = {
-		year => $self->datetime->year,
-		address => $self->param('address') || '',
-		city => $self->param('city') || '',
-		state => $self->param('state') || '',
-		zip => $self->param('zip') || '',
-	};
-	my $r;
-	$r = $self->db->resultset('Item')->find($self->param('item_id'))->update({paid=>\'now()'}) && $self->db->resultset('Bidder')->find($bidder_id)->update($bidder);
+	my ($rb, $ri);
+	if ( my $bidder_id = $self->param('bidder_id') ) {
+		my $bidder = {
+			year => $self->datetime->year,
+			address => $self->param('address') || '',
+			city => $self->param('city') || '',
+			state => $self->param('state') || '',
+			zip => $self->param('zip') || '',
+		};
+		$rb = $self->db->resultset('Bidder')->find($bidder_id);
+		$rb->update($bidder) if $rb;
+	}
+	if ( my $item_id = $self->param('item_id') ) {
+		$ri = $self->db->resultset('Item')->search({item_id=>$item_id,sold=>{'='=>undef}});
+		$ri->update({paid=>\'now()'}) if $ri;
+	}
 	$self->respond_to(
-		json => {json => {res=>$r?'ok':'err'}},
+		json => {json => {res=>'ok', msg=>$rb && $ri ? 'really ok' : 'not really ok'}},
 	);
 }
 

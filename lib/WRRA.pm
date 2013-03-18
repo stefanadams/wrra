@@ -139,7 +139,7 @@ sub setup_routing {
 	$auction->post('/sell')->over(has_priv=>'auctioneers')->to('auction#sell');
 	$auction->get('/bidhistory')->to('auction#bidhistory');
 	$auction->post('/bid')->to('auction#bid');
-	$auction->post('/bidder')->to('auction#bidder');
+	$auction->post('/pay')->to('auction#pay');
 
 	#$auction->post('/assign/:id/:auctioneer')->over(has_priv=>'admins')->to('auction#assign');
 	#$auction->post('/start/:id')->over(has_priv=>'auctioneers')->to('auction#start');

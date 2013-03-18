@@ -354,8 +354,7 @@ function on_click_paypal(auction) {
 		position: {my: "center top", at: "bottom", of: "#headergroup"},
 		open: function() {
 			$('#dialog-paypal-form input').val('');
-			$('#dialog-paypal-form input[name="os0"]').mask("999?9");
-			$('#dialog-paypal-form input[name="os5"]').mask("99999?-9999");
+			$('#dialog-paypal-form input[name="payal-zip"]').mask("99999?-9999");
 			$(this).keypress(function(e) {
 			    if (e.keyCode == $.ui.keyCode.ENTER) {
 				//console.log('You pressed enter!');
@@ -369,26 +368,30 @@ function on_click_paypal(auction) {
 				t.dialog("disable"); 
 				t.dialog({title: 'Connecting to Paypal...'});
 				if ( $('#dialog-paypal-form').valid() ) {
-					$.post('<%= url_for 'bidder' %>', {id:$('#paypal-bidder_id').val()}, {
-						item_id: $('#paypal-item_id').val(),
-						address: $('#paypal-os1').val(),
-						city: $('#paypal-os2').val(),
-						state: $('#paypal-os4').val(),
-						zip: $('#paypal-os5').val()
-					}, function(data){
-						if ( data.res == 'ok' ) {
-							$('#dialog-paypal-form').submit();
-						} else {
-							t.dialog("disable"); 
-							t.dialog({title: 'Identify yourself'});
-						}
-					});
+                                              $.post('<%= url_for 'pay' %>', {
+						      bidder_id: $('#paypal-bidder_id').val(),
+                                                      item_id: $('#paypal-os0').val(),
+                                                      address: $('#paypal-os1').val(),
+                                                      city: $('#paypal-city').val(),
+                                                      state: $('#paypal-state').val(),
+                                                      zip: $('#paypal-zip').val()
+                                              }, function(data){
+						      $('#paypal-os0').val($('#paypal-os0').val()+' ( $'+$('#paypal-bid').val()+' )');
+						      $('#paypal-os1').val($('#paypal-os1').val()+' / '+$('#paypal-city').val()+' '+$('#paypal-state').val()+' '+$('#paypal-zip').val());
+                                                      if ( data.res == 'ok' ) {
+                                                              $('#dialog-paypal-form').submit();
+                                                      } else {
+                                                              t.dialog("disable"); 
+                                                              t.dialog({title: 'Pay by Credit Card Error'});
+					                      $("#paypal-empty-message").show().text("Error connecting to Paypal.").delay(3000).hide('highlight');
+                                                      }
+                                              });
 				}
 			},
 			Cancel: function(){$(this).dialog("close");}
 		},
 		close: function(){
-			$('#dialog-paypal-form input').val('');
+			//$('#dialog-paypal-form input').val('');
 			refreshTimer(1);
 		}
 	});
@@ -401,12 +404,12 @@ function on_click_paypal(auction) {
 			if (ui.item){
 				$('#paypal-bidder_id').val(ui.item.highbid.bidder.id);
 				$('#paypal-item_id').val(ui.item.id);
-				$('#paypal-name').val(ui.item.name);
+				$('#paypal-bid').val(ui.item.highbid.bid);
 				$('#paypal-os1').val(ui.item.highbid.bidder.address);
 				if ( ui.item.highbid.bidder.city ) {
-					$('#paypal-os2').val(ui.item.highbid.bidder.city);
-					$('#paypal-os4').val(ui.item.highbid.bidder.state);
-					$('#paypal-os5').val(ui.item.highbid.bidder.zip);
+					$('#paypal-city').val(ui.item.highbid.bidder.city);
+					$('#paypal-state').val(ui.item.highbid.bidder.state);
+					$('#paypal-zip').val(ui.item.highbid.bidder.zip);
 				}
 			}
 		},
@@ -423,13 +426,13 @@ function on_click_paypal(auction) {
 		.append( "<a>" + item.label + " : " + item.desc + "</a>" )
 		.appendTo( ul );
 	};
-	$("#paypal-os2").autocomplete({
+	$("#paypal-city").autocomplete({
 		source: "<%= url_for 'ac_city' %>",
 		minLength: 2,
 		select: function(event, ui){
                         if (ui.item){
-                                $('#paypal-os4').val(ui.item.state);
-                                $('#paypal-os5').val(ui.item.zip);  
+                                $('#paypal-state').val(ui.item.state);
+                                $('#paypal-zip').val(ui.item.zip);  
                         }
 		},
 	});
@@ -1152,18 +1155,18 @@ $(document).ready(function(){
 
 
 	<div id="dialog-paypal" title="Pay by Credit Card" class="modal">
-		<form id="dialog-paypal-form" action='https://www.paypal.com/cgi-bin/webscr' method='post'>
-			<input type='hidden' name='cmd' value='_s-xclick'><input type='hidden' name='hosted_button_id' value='4113257'>
+		<form id="dialog-paypal-form" action="https://www.paypal.com/cgi-bin/webscr" method="post">
+			<input type="hidden" name="cmd" value="_s-xclick"><input type="hidden" name="hosted_button_id" value="DA8JCGZ8GJQWG">
 			<input type='hidden' name='bidder_id' id="paypal-bidder_id">
 			<input type='hidden' name='item_id' id="paypal-item_id">
+			<input type='hidden' name='bid' id="paypal-bid">
 			<table>
 				<tr><td colspan="2">Complete the form below to pay for your item:<div id="paypal-empty-message"></div></td></tr>
-				<tr><td><em>*</em>Item #:</td><td><input type='hidden' name='on0' value='Item ID'><input class="required" id="paypal-os0" type='text' name='os0' maxlength='4'></td></tr>
-				<tr><td><em>*</em>Item:</td><td><input type='hidden' name='on3' value='Item'><input class="required" id="paypal-name" type='text' name='item_name' maxlength='120'></td></tr>
-				<tr><td><em>*</em>Street Address:</td><td><input type='hidden' name='on1' value='Street Address'><input class="required" id="paypal-os1" type='text' name='os1' maxlength='60'></td></tr>
-				<tr><td><em>*</em>City</td><td><input type='hidden' name='on2' value='City'><input class="required" id="paypal-os2" type='text' name='os2' maxlength='60'></td></tr>
-				<tr><td>State</td><td><input type='hidden' name='on4' value='State'><input id="paypal-os4" type='text' name='os4' maxlength='2'></td></tr>
-				<tr><td>Zip</td><td><input type='hidden' name='on5' value='Zip'><input id="paypal-os5" type='text' name='os5' maxlength='10'></td></tr>
+				<tr><td><em>*</em>Item:</td><td><input type='hidden' name='on0' value='Item ID and Description'><input class="required" id="paypal-os0" type='text' name='os0' maxlength='200'></td></tr>
+				<tr><td><em>*</em>Street Address:</td><td><input type='hidden' name='on1' value='Street Address'><input class="required" id="paypal-os1" type='text' name='os1' maxlength='200'></td></tr>
+				<tr><td><em>*</em>City</td><td><input class="required" id="paypal-city" type='text' name='paypal-city' maxlength='60'></td></tr>
+				<tr><td>State</td><td><input class="required" id="paypal-state" type='text' name='paypal-state' maxlength='60'></td></tr>
+				<tr><td>Zip</td><td><input class="required" id="paypal-zip" type='text' name='paypal-zip' maxlength='60'></td></tr>
 <!--				<tr><td colspan="2" align="center"><input type='image' src='https://www.paypal.com/en_US/i/btn/btn_paynowCC_LG.gif' border='0' name='submit' alt='PayPal - The safer, easier way to pay online!'><img alt='' border='0' src='https://www.paypal.com/en_US/i/scr/pixel.gif' width='1' height='1'></td></tr> -->
 			</table>
 		</form>
@@ -1171,7 +1174,7 @@ $(document).ready(function(){
 
 	<div id="dialog-operator" title="Operator" class="modal">
 		<form id="dialog-operator-form" name="operator" action='<%= url_for 'bid' %>' method='post'>
-			<input type='hidden' name='bidder_id' id="paypal-bidder_id">
+			<input type='hidden' name='bidder_id' id="operator-bidder_id">
 			<table>
 				<tr><td colspan="2"><div id="dialog-operator-title">Submit Bid</div></td></tr>
 				<tr><td><em>*</em>Bidder</td><td><input class="required" id="operator-name" type='text' name='operator-name' maxlength='60' value=''><input id="operator-bidder_id" type='hidden' name='operator-bidder_id' maxlength='60' value=''></td></tr>
