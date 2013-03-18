@@ -77,7 +77,7 @@ $(document).ready(function(){
   <h3>Live Reports</h3>
   <div>
     <p><%= link_to 'View Current Summary' => 'summary' => (class=>'disable') %></p>
-    <p><%= link_to 'Bank Report' => 'bankreport' => (class=>'disable') %></p>
+    <p><%= link_to 'Bank Report' => 'bankreport' %></p>
     <p><%= link_to 'Pre-arranged Items Report' => 'stockreport' => (class=>'disable') %></p>
   </div>
   <h3>Notes</h3>
