@@ -279,16 +279,8 @@ function processContent(value) {
 					});
 				});
 
-//				$('#items tbody tr[timer="true"]').css('background-color', 'yellow');
-//				$('#items tbody tr[sold="true"]').css('background-color', '#414794');
-//				$('#items tbody img[notify="timer"]').each(function(){processContent(0);$(this).click(function(){$.post('<%= url_for 'starttimer' %>'+$(this).attr('title'), function(){processContent(1);});});});
-//				$('#items tbody img[notify="sell"]').each(function(){processContent(0);$(this).click(function(){$.post('<%= url_for 'sell' %>'+$(this).attr('title'), function(){processContent(1);});});});
-//				$('#items tbody img[ack="sold"]').each(function(){processContent(0);$(this).click(function(){$.post('<%= url_for 'clear' %>'+$(this).attr('title'), function(){processContent(1);});});});
-
 				$( document ).tooltip({
 				      items: "img, [pic], [title]",
-				      open: function(e,ui){ return processContent('pause'); },
-				      close: function(e,ui){ return processContent('resume'); },
 				      content: function(callback) {
 					  var element = $( this );
 					  if ( element.is( "[pic]" ) ) {
