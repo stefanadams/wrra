@@ -14,7 +14,7 @@ sub register {
 	}
 
 	unless ( $memd ) {
-		$memd = new Cache::Memcached $conf->{conf} || {servers => [qw/127.0.0.1:11211/]};
+		$memd = new Cache::Memcached $conf->{conf} || $app->config->{memcached} || {servers => [qw/127.0.0.1:11211/]};
 		$memd->flush_all;
 	}
 
