@@ -125,21 +125,6 @@ function contextMenu(auction) {
 
 function pc() { processContent(2); }
 function processContent(value) {
-	if ( value == 'pause' ) {
-		var t = new Date().getTime() - localStorage['stop_error_pause'];
-console.log('pause: '+t);
-		if ( t > 500 ) {
-			console.log('real pause');
-//			processContent(0);
-		}
-		return true;
-	}
-	if ( value == 'resume' ) {
-console.log('resume');
-		localStorage['stop_error_pause'] = new Date().getTime();
-//		setTimeout(processContent(1), 6000);
-		return true;
-	}
 	if ( value == 2 ) {
 		$("#content").processTemplateStop();
 		value=1;
