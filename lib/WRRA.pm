@@ -179,7 +179,8 @@ sub setup_routing {
 	$bs->build_select([Bellitems => 'Bellitem']);
 
 	$r->get('/bookmarks')->to(cb=>sub{shift->redirect_to('/admin/bookmarks')});
-	my $admin = $r->under('/admin')->over(has_priv=>'admins');
+	#my $admin = $r->under('/admin')->over(has_priv=>'admins');
+	my $admin = $r->under('/admin');
 	$admin->jqgrid([Rotarians => 'Rotarian']);
 	$admin->jqgrid([Donors => 'Donor'])->dbroute(['/items' => DonorItems => 'Item'], {jqgrid => 'read'});
 	$admin->jqgrid([Stockitems => 'Stockitem']);
